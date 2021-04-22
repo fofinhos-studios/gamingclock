@@ -1,0 +1,27 @@
+Frontend:
+    Versão 0.1:
+        ✔ Caixa de busca, mas que apenas tenta puxar o jogo do HLTB @done(21-04-21 23:03)
+        ✔ Jogo por jogo vai populando uma tabela @done(21-04-21 23:03)
+        → Botão de submeter pede pro backend calcular o schedule
+        → Exibe o calendário em forma de json mesmo, crua
+    Versão 0.2:
+        → Caixa de busca com autocomplete
+        → Salvar lista com identificador único
+        → Gerar calendário syncável (.ical, etc.), exibir calendário bonitinho
+    Versão 0.3:
+        → Web App, com criação de conta e banco de dados
+        → Possibilidade de contribuir com listas
+Backend:
+    Versão 0.1:
+        ✔ Puxar dados do HowLongToBeat @done(21-04-21 23:03)
+        → Calcular calendário baseado na lista de jogos, retornar .json
+    Versão 0.2:
+        → Mais métodos de calcular cronograma
+            → Sequencial
+            → Alternando
+            → Especificar horas do dia e dias disponíveis
+        → Transformar calendário em .ical e similares
+        → Aprender como fazer a busca com autocomplete, puxando uma lista de jogos de acordo com o que o usuário digitar
+        → Gerar identificador único baseado no conteúdo da lista
+    Versão 0.3:
+        → Suportar as funcionalidades da versão 0.3 (a definir)
