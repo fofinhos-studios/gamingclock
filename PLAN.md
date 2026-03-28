@@ -172,6 +172,8 @@ git commit -m "feat: scaffold backend project with FastAPI, pytest, and health e
 
 ### Task 1.2: Create frontend project structure
 
+> **Partial progress:** `bun init -y` ran, all deps installed (`preact`, `@preact/preset-vite`, `vite`, `tailwindcss`, `@tailwindcss/vite`), `bun.lock` and `node_modules` present. **Still needed:** `vite.config.ts`, `index.html`, `src/main.tsx`, `src/app.tsx`, `src/index.css`, `SKILL.md`, add `scripts` to `package.json`, replace `tsconfig.json` with spec version (needs `jsxImportSource: "preact"`).
+
 **Files:**
 - Create: `frontend/package.json`
 - Create: `frontend/index.html`
