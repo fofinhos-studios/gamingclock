@@ -318,9 +318,11 @@ describe("HomePage", () => {
         within(schedulePanel).getByText(/total planned hours/i),
       ).toBeTruthy();
       expect(within(schedulePanel).getByText(/estimated finish/i)).toBeTruthy();
+      expect(within(schedulePanel).getByText(/^sessions$/i)).toBeTruthy();
       expect(
         within(schedulePanel).getByText(/total elapsed days/i),
       ).toBeTruthy();
+      expect(within(schedulePanel).getByText(/^2$/)).toBeTruthy();
       expect(within(schedulePanel).getByText(/3 days/i)).toBeTruthy();
     } finally {
       globalThis.fetch = originalFetch;
