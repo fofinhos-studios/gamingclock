@@ -239,8 +239,7 @@ function getScheduleElapsedDays(
   schedule: ScheduleResponse | null,
 ): number | null {
   const firstSessionDate = schedule?.sessions[0]?.date;
-  const lastDate =
-    schedule?.estimated_end_date ?? schedule?.sessions.at(-1)?.date;
+  const lastDate = schedule?.sessions.at(-1)?.date;
 
   if (!firstSessionDate || !lastDate) {
     return null;
