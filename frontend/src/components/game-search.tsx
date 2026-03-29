@@ -1,3 +1,4 @@
+import { Plus, Search } from "lucide-preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import { resolveGame, searchGames } from "../services/api";
@@ -142,8 +143,15 @@ export function GameSearch({ onAddGame }: Props) {
       <div class="planner-pane__header">
         <div class="space-y-1">
           <p class="section-eyebrow">Search</p>
-          <h2 id="search-games-heading" class="planner-panel__title">
-            Find games
+          <h2
+            id="search-games-heading"
+            class="planner-panel__title planner-heading"
+          >
+            <Search
+              class="planner-icon planner-heading__icon"
+              aria-hidden="true"
+            />
+            <span>Find games</span>
           </h2>
         </div>
         <p class="planner-panel__copy">
@@ -272,6 +280,7 @@ export function GameSearch({ onAddGame }: Props) {
                               : ""
                           }
                         >
+                          <Plus class="planner-icon" aria-hidden="true" />
                           {addingId === game.igdb_id ? "Resolving" : "Add"}
                         </Button>
                       </div>

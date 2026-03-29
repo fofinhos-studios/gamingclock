@@ -25,3 +25,5 @@ dist/
 *.env
 .serena/
 .worktrees/
+.superpowers/
+docs/superpowers/plans/

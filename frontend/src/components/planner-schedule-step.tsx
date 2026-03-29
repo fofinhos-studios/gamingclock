@@ -1,3 +1,4 @@
+import { AlertCircle, CalendarRange, Sparkles } from "lucide-preact";
 import type {
   ScheduleAlgorithm,
   ScheduleResponse,
@@ -49,8 +50,15 @@ export function PlannerScheduleStep({
         <div class="planner-pane__header">
           <div class="space-y-1">
             <p class="section-eyebrow">Schedule</p>
-            <h2 id="planner-schedule-heading" class="planner-panel__title">
-              Generate schedule
+            <h2
+              id="planner-schedule-heading"
+              class="planner-panel__title planner-heading"
+            >
+              <CalendarRange
+                class="planner-icon planner-heading__icon"
+                aria-hidden="true"
+              />
+              <span>Generate schedule</span>
             </h2>
           </div>
           <p class="planner-panel__copy">
@@ -99,6 +107,7 @@ export function PlannerScheduleStep({
               variant="primary"
               size="sm"
             >
+              <Sparkles class="planner-icon" aria-hidden="true" />
               Generate Schedule
             </Button>
             <p class="planner-controls__hint">
@@ -111,7 +120,13 @@ export function PlannerScheduleStep({
 
         {prerequisiteMessages.length > 0 && (
           <div id={prerequisitesDescriptionId} class="planner-inline-notice">
-            <p class="planner-inline-notice__label">Before you generate</p>
+            <p class="planner-inline-notice__label">
+              <AlertCircle
+                class="planner-icon planner-inline-notice__icon"
+                aria-hidden="true"
+              />
+              <span>Before you generate</span>
+            </p>
             <ul class="planner-inline-notice__list">
               {prerequisiteMessages.map((prerequisite) => (
                 <li key={prerequisite.id}>{prerequisite.message}</li>

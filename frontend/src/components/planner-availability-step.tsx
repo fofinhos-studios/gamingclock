@@ -1,3 +1,4 @@
+import { CalendarDays } from "lucide-preact";
 import type { WeeklyAvailability } from "../types";
 import { AvailabilityForm } from "./availability-form";
 
@@ -20,7 +21,13 @@ export function PlannerAvailabilityStep({
         <div class="planner-pane__header">
           <div class="space-y-1">
             <p class="section-eyebrow">Availability</p>
-            <h2 class="planner-panel__title">Weekly cadence</h2>
+            <h2 class="planner-panel__title planner-heading">
+              <CalendarDays
+                class="planner-icon planner-heading__icon"
+                aria-hidden="true"
+              />
+              <span>Weekly cadence</span>
+            </h2>
           </div>
           <p class="planner-panel__copy">
             Save the days and hours you can realistically play.

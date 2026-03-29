@@ -1,7 +1,9 @@
+import { CalendarDays, CalendarRange, Gamepad2 } from "lucide-preact";
+
 const PLANNER_TABS = [
-  { id: "games", label: "Games" },
-  { id: "availability", label: "Availability" },
-  { id: "schedule", label: "Schedule" },
+  { id: "games", label: "Games", icon: Gamepad2 },
+  { id: "availability", label: "Availability", icon: CalendarDays },
+  { id: "schedule", label: "Schedule", icon: CalendarRange },
 ] as const;
 
 export type PlannerTab = (typeof PLANNER_TABS)[number]["id"];
@@ -52,6 +54,7 @@ export function PlannerTabs({ activeTab, onChange }: Props) {
       >
         {PLANNER_TABS.map((tab, index) => {
           const selected = tab.id === activeTab;
+          const Icon = tab.icon;
 
           return (
             <button
@@ -73,7 +76,13 @@ export function PlannerTabs({ activeTab, onChange }: Props) {
               <span class="planner-rail__tab-index">
                 {String(index + 1).padStart(2, "0")}
               </span>
-              <span class="planner-rail__tab-label">{tab.label}</span>
+              <span class="planner-rail__tab-content">
+                <Icon
+                  class="planner-icon planner-rail__tab-icon"
+                  aria-hidden="true"
+                />
+                <span class="planner-rail__tab-label">{tab.label}</span>
+              </span>
             </button>
           );
         })}
