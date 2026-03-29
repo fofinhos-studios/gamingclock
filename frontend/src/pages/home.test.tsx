@@ -22,6 +22,7 @@ describe("HomePage", () => {
     expect(view.getByText(/search games/i)).toBeTruthy();
     expect(view.queryByText(/weekly cadence/i)).toBeNull();
     expect(view.queryByText(/your gaming schedule/i)).toBeNull();
+    expect(view.queryByRole("complementary")).toBeNull();
   });
 
   test("switches planner steps manually through the top tabs", async () => {
@@ -38,5 +39,7 @@ describe("HomePage", () => {
       view.getByRole("button", { name: /generate schedule/i }),
     ).toBeTruthy();
     expect(view.queryByText(/weekly cadence/i)).toBeNull();
+    expect(view.queryByText(/ready to plan/i)).toBeNull();
+    expect(view.queryByText(/before you generate/i)).toBeNull();
   });
 });
