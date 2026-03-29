@@ -35,8 +35,14 @@ bunx @biomejs/biome check --write src/
 ## API and Pages
 
 - `src/services/api.ts` is the single place for backend HTTP calls.
-- `src/pages/home.tsx` owns the end-to-end MVP flow and composes the page sections.
+- `src/pages/home.tsx` owns the centered planner shell, the active tab, the single backlog state, availability, scheduling, and the generated schedule/error state.
 - `src/components/` holds raw-element MVP UI pieces for search, lists, availability, and schedule display.
+
+## Planner Flow And Boundaries
+
+- `src/components/planner-games-step.tsx`, `src/components/planner-availability-step.tsx`, and `src/components/planner-schedule-step.tsx` split the page into focused planner steps.
+- `src/components/planner-tabs.tsx` keeps the accessible tab strip, and `src/components/planner-summary.tsx` keeps the always-visible status column.
+- The MVP assumes one backlog only. Future multi-list support should re-enter in `src/pages/home.tsx` by lifting the backlog into a collection-level container while keeping the step component props backlog-shaped.
 
 ## Calendar Flow
 
@@ -46,7 +52,7 @@ bunx @biomejs/biome check --write src/
 ## Search And Resolution Flow
 
 - `src/components/game-search.tsx` performs debounced IGDB autocomplete after 2 typed characters and resolves a selected game through `POST /games/resolve`.
-- `src/pages/home.tsx` stores resolved and unresolved list items, sums only resolved HLTB hours, and blocks schedule generation while unresolved games remain.
+- `src/pages/home.tsx` stores resolved and unresolved backlog items, sums only resolved HLTB hours, and blocks schedule generation while unresolved games remain.
 - `src/services/api.ts` is the single integration boundary for `searchGames()`, `resolveGame()`, `generateSchedule()`, and `downloadIcal()`.
 
 ## Minimalist Monochrome UI System

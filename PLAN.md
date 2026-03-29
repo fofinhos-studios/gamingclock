@@ -2993,7 +2993,7 @@ git commit -m "chore: remove legacy v0.1 files replaced by monorepo structure"
 - [x] Task 5.6: ScheduleView component
 
 ### Phase 6: Page Assembly
-- [x] Task 6.1: HomePage full flow
+- [x] Task 6.1: HomePage full flow and centered planner shell
 
 ### Phase 7: Integration & Polish
 - [x] Task 7.1: Biome config

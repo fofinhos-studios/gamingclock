@@ -163,14 +163,14 @@ export function HomePage(_props: RoutableProps) {
         Skip to planner
       </a>
 
-      <main id="planner" class="px-4 py-8 md:px-6 md:py-12">
-        <div class="mx-auto max-w-6xl">
+      <main id="planner" class="planner-shell px-4 py-8 md:px-6 md:py-12">
+        <div class="planner-shell__frame">
           <Card class="p-6 md:p-8">
             <div class="space-y-6">
-              <header class="space-y-3">
+              <header class="planner-shell__header space-y-3">
                 <p class="section-eyebrow">Planner</p>
-                <h1 class="text-5xl leading-none md:text-6xl">Gaming Clock</h1>
-                <p class="max-w-2xl text-lg text-[var(--muted-foreground)]">
+                <h1 class="planner-shell__title">Gaming Clock</h1>
+                <p class="planner-shell__lede">
                   Build one backlog, set weekly time, and generate a realistic
                   play schedule.
                 </p>
@@ -178,14 +178,14 @@ export function HomePage(_props: RoutableProps) {
 
               <PlannerTabs activeTab={activeTab} onChange={setActiveTab} />
 
-              <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
-                <div class="space-y-6 min-w-0">
+              <div class="planner-shell__layout">
+                <div class="planner-shell__steps">
                   <section
                     id="planner-panel-games"
                     role="tabpanel"
                     aria-labelledby="planner-tab-games"
                     hidden={activeTab !== "games"}
-                    class="min-w-0"
+                    class="planner-shell__panel"
                   >
                     <PlannerGamesStep
                       backlogName={backlogName}
@@ -201,7 +201,7 @@ export function HomePage(_props: RoutableProps) {
                     role="tabpanel"
                     aria-labelledby="planner-tab-availability"
                     hidden={activeTab !== "availability"}
-                    class="min-w-0"
+                    class="planner-shell__panel"
                   >
                     <PlannerAvailabilityStep
                       availability={availability}
@@ -215,7 +215,7 @@ export function HomePage(_props: RoutableProps) {
                     role="tabpanel"
                     aria-labelledby="planner-tab-schedule"
                     hidden={activeTab !== "schedule"}
-                    class="min-w-0"
+                    class="planner-shell__panel"
                   >
                     <PlannerScheduleStep
                       availability={availability}
