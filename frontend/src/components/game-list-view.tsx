@@ -1,3 +1,4 @@
+import { List, Trash2, Trophy } from "lucide-preact";
 import type { ListGame } from "../types";
 import { Button, Field } from "./ui";
 
@@ -31,8 +32,15 @@ export function GameListView({
       <div class="planner-pane__header">
         <div class="space-y-1">
           <p class="section-eyebrow">Backlog</p>
-          <h2 id="current-list-heading" class="planner-panel__title">
-            Current list
+          <h2
+            id="current-list-heading"
+            class="planner-panel__title planner-heading"
+          >
+            <List
+              class="planner-icon planner-heading__icon"
+              aria-hidden="true"
+            />
+            <span>Current list</span>
           </h2>
         </div>
         <div class="planner-inline-stats">
@@ -56,6 +64,10 @@ export function GameListView({
 
       {games.length === 0 ? (
         <div class="planner-empty-state">
+          <Trophy
+            class="planner-icon planner-empty-state__icon"
+            aria-hidden="true"
+          />
           <p class="planner-empty-state__title">
             No games in this backlog yet.
           </p>
@@ -117,6 +129,7 @@ export function GameListView({
                   variant="outline"
                   onClick={() => onRemoveGame(index)}
                 >
+                  <Trash2 class="planner-icon" aria-hidden="true" />
                   Remove
                 </Button>
               </div>

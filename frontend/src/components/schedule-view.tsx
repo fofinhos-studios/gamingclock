@@ -1,3 +1,11 @@
+import {
+  CalendarRange,
+  Clock3,
+  Download,
+  Flag,
+  Hourglass,
+  Rows3,
+} from "lucide-preact";
 import type { ScheduleResponse } from "../types";
 import { Button } from "./ui";
 
@@ -39,8 +47,15 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
       <div class="planner-pane__header">
         <div class="space-y-1">
           <p class="section-eyebrow">Output</p>
-          <h2 id="schedule-heading" class="planner-panel__title">
-            Generated schedule
+          <h2
+            id="schedule-heading"
+            class="planner-panel__title planner-heading"
+          >
+            <CalendarRange
+              class="planner-icon planner-heading__icon"
+              aria-hidden="true"
+            />
+            <span>Generated schedule</span>
           </h2>
         </div>
 
@@ -50,28 +65,53 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
           size="sm"
           onClick={onDownloadIcal}
         >
+          <Download class="planner-icon" aria-hidden="true" />
           Download .ics
         </Button>
       </div>
 
       <div class="planner-metric-grid">
         <div class="planner-metric">
-          <p class="planner-metric__label">Total planned hours</p>
+          <p class="planner-metric__label">
+            <Hourglass
+              class="planner-icon planner-metric__icon"
+              aria-hidden="true"
+            />
+            <span>Total planned hours</span>
+          </p>
           <p class="planner-metric__value">{schedule.total_hours.toFixed(1)}</p>
         </div>
         <div class="planner-metric">
-          <p class="planner-metric__label">Estimated finish</p>
+          <p class="planner-metric__label">
+            <Flag
+              class="planner-icon planner-metric__icon"
+              aria-hidden="true"
+            />
+            <span>Estimated finish</span>
+          </p>
           <p class="planner-metric__value">
             {schedule.estimated_end_date ?? "Not available"}
           </p>
         </div>
         <div class="planner-metric">
-          <p class="planner-metric__label">Sessions</p>
+          <p class="planner-metric__label">
+            <Rows3
+              class="planner-icon planner-metric__icon"
+              aria-hidden="true"
+            />
+            <span>Sessions</span>
+          </p>
           <p class="planner-metric__value">{schedule.sessions.length}</p>
         </div>
         {totalElapsedDays !== null && (
           <div class="planner-metric">
-            <p class="planner-metric__label">Total elapsed days</p>
+            <p class="planner-metric__label">
+              <Clock3
+                class="planner-icon planner-metric__icon"
+                aria-hidden="true"
+              />
+              <span>Total elapsed days</span>
+            </p>
             <p class="planner-metric__value">
               {totalElapsedDays} day{totalElapsedDays === 1 ? "" : "s"}
             </p>

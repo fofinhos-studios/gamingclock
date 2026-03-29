@@ -226,6 +226,17 @@
     text-transform: uppercase;
   }
 
+  .planner-rail__tab-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+  }
+
+  .planner-rail__tab-icon {
+    color: inherit;
+  }
+
   .planner-app__workspace {
     display: grid;
     gap: 0.75rem;
@@ -289,6 +300,9 @@
   }
 
   .planner-statusbar__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
     color: var(--muted-foreground);
     font-size: 0.7rem;
     font-weight: 600;
@@ -347,6 +361,16 @@
     font-weight: 600;
     letter-spacing: -0.02em;
     line-height: 1.1;
+  }
+
+  .planner-heading {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .planner-heading__icon {
+    color: var(--muted-foreground);
   }
 
   .planner-panel__copy {
@@ -501,6 +525,10 @@
     padding: 1rem;
     border: 1px dashed var(--border-light);
     background: var(--muted);
+  }
+
+  .planner-empty-state__icon {
+    color: var(--muted-foreground);
   }
 
   .planner-empty-state__title {
@@ -679,11 +707,18 @@
   }
 
   .planner-inline-notice__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
     font-family: var(--font-mono);
     font-size: 0.72rem;
     font-weight: 500;
     letter-spacing: 0.04em;
     text-transform: uppercase;
+  }
+
+  .planner-inline-notice__icon {
+    color: var(--muted-foreground);
   }
 
   .planner-inline-notice__list {
@@ -717,11 +752,18 @@
   }
 
   .planner-metric__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
     color: var(--muted-foreground);
     font-size: 0.72rem;
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
+  }
+
+  .planner-metric__icon {
+    color: inherit;
   }
 
   .planner-metric__value {
@@ -768,6 +810,13 @@
     font-size: 0.77rem;
     font-weight: 600;
     letter-spacing: 0.03em;
+  }
+
+  .planner-icon {
+    flex: 0 0 auto;
+    width: 0.95rem;
+    height: 0.95rem;
+    stroke-width: 1.8;
   }
 
   .ui-hint {

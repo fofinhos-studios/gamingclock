@@ -1,3 +1,4 @@
+import { Save } from "lucide-preact";
 import { useState } from "preact/hooks";
 
 import type { DayAvailability, WeeklyAvailability } from "../types";
@@ -164,6 +165,7 @@ export function AvailabilityForm({ onSubmit }: Props) {
           variant="primary"
           size="sm"
         >
+          <Save class="planner-icon" aria-hidden="true" />
           Save Availability
         </Button>
       </div>
