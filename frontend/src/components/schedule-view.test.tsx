@@ -39,7 +39,7 @@ describe("ScheduleView", () => {
       <ScheduleView schedule={schedule} onDownloadIcal={() => {}} />,
     );
 
-    expect(view.getByText(/total span/i)).toBeTruthy();
+    expect(view.getByText(/total elapsed days/i)).toBeTruthy();
     expect(view.getByText(/3 days/i)).toBeTruthy();
   });
 });
