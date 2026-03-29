@@ -48,7 +48,7 @@ export function GameSearch({ onAddGame }: Props) {
         const games = await searchGames(trimmedQuery);
         setResults(games.slice(0, 8));
         setIsDropdownOpen(true);
-        setHighlightedIndex(0);
+        setHighlightedIndex(games.length > 0 ? 0 : -1);
       } catch (searchError) {
         setResults([]);
         setError(
@@ -138,24 +138,21 @@ export function GameSearch({ onAddGame }: Props) {
   };
 
   return (
-    <section aria-labelledby="search-games-heading" class="space-y-6">
-      <div class="space-y-3">
-        <p class="section-eyebrow">Search</p>
-        <h3 id="search-games-heading" class="text-4xl md:text-5xl">
-          Search Games
-        </h3>
-        <p class="section-copy max-w-none">
-          Start typing to search IGDB, then add a game straight into your
-          backlog.
+    <section aria-labelledby="search-games-heading" class="space-y-4">
+      <div class="planner-pane__header">
+        <div class="space-y-1">
+          <p class="section-eyebrow">Search</p>
+          <h2 id="search-games-heading" class="planner-panel__title">
+            Find games
+          </h2>
+        </div>
+        <p class="planner-panel__copy">
+          Type at least 2 characters. Arrow keys move through the live results.
         </p>
       </div>
 
-      <div class="space-y-4" ref={containerRef}>
-        <Field
-          label="Search by title"
-          controlId="game-search-input"
-          hint="Type at least 2 characters. Arrow keys move through the result list."
-        >
+      <div ref={containerRef} class="space-y-3">
+        <Field label="Search by title" controlId="game-search-input">
           <Input
             id="game-search-input"
             type="text"
@@ -170,20 +167,33 @@ export function GameSearch({ onAddGame }: Props) {
             onInput={(event) =>
               setQuery((event.target as HTMLInputElement).value)
             }
-            placeholder="Search for a game..."
+            placeholder="Search for a game"
+            autoComplete="off"
           />
         </Field>
+
+        {error && !isDropdownOpen && (
+          <p role="alert" class="planner-error">
+            {error}
+          </p>
+        )}
 
         {isDropdownOpen &&
           (loading ||
             error ||
             (!loading && query.trim().length >= 2 && results.length > 0) ||
             (!loading && query.trim().length >= 2 && results.length === 0)) && (
-            <div class="max-h-[34rem] overflow-y-auto border border-black bg-white">
-              {loading && <p class="p-5">Searching...</p>}
-              {error && <p class="p-5">{error}</p>}
+            <div class="planner-search-results">
+              {loading && (
+                <p class="planner-search-results__message">Searching...</p>
+              )}
+              {error && (
+                <p role="alert" class="planner-search-results__message">
+                  {error}
+                </p>
+              )}
               {!loading && !error && results.length === 0 && (
-                <p class="p-5">No matches found.</p>
+                <p class="planner-search-results__message">No matches found.</p>
               )}
               {!loading &&
                 !error &&
@@ -196,98 +206,80 @@ export function GameSearch({ onAddGame }: Props) {
                       ref={(element) => {
                         resultRefs.current[index] = element;
                       }}
-                      class={`group border-b border-black p-5 last:border-b-0 ${
-                        isHighlighted
-                          ? "bg-black text-white"
-                          : "bg-white text-black"
+                      class={`planner-result ${
+                        isHighlighted ? "planner-result--active" : ""
                       }`}
+                      onMouseEnter={() => setHighlightedIndex(index)}
                     >
-                      <div class="grid gap-4 md:grid-cols-[5rem_minmax(0,1fr)]">
-                        {game.cover_url ? (
-                          <img
-                            src={previewCoverUrl(game.cover_url)}
-                            alt={game.name}
-                            loading="lazy"
-                            decoding="async"
-                            width={80}
-                            height={120}
-                            class="h-30 w-20 border-2 border-current object-cover transition-all duration-100 group-hover:border-[4px]"
-                          />
-                        ) : (
-                          <div class="flex h-30 w-20 items-center justify-center border-2 border-current text-center font-[var(--font-mono)] text-[0.65rem] uppercase tracking-[0.2em]">
-                            No image
-                          </div>
-                        )}
-
-                        <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_14rem]">
-                          <div class="space-y-3">
-                            <div class="space-y-2">
-                              <h4 class="text-3xl leading-none">{game.name}</h4>
-                              <p class="timeline-meta">
-                                {game.release_year === null
-                                  ? "Unknown year"
-                                  : game.release_year}
-                                {game.rating === null
-                                  ? ""
-                                  : ` / rating ${game.rating.toFixed(1)}`}
-                              </p>
-                            </div>
-                            <p class="timeline-detail">
-                              {game.platforms.length > 0
-                                ? game.platforms.join(", ")
-                                : "Platforms unavailable"}
-                            </p>
-                            <p class="timeline-detail">
-                              {game.genres.length > 0
-                                ? game.genres.join(", ")
-                                : "Genres unavailable"}
-                            </p>
-                            {game.summary && (
-                              <p
-                                class={
-                                  isHighlighted
-                                    ? "text-white/80"
-                                    : "text-[var(--muted-foreground)]"
-                                }
-                              >
-                                {game.summary}
-                              </p>
-                            )}
-                          </div>
-
-                          <div class="space-y-3">
-                            <Button
-                              type="button"
-                              variant={isHighlighted ? "primary" : "outline"}
-                              size="sm"
-                              block
-                              onClick={() => void handleAddGame(game)}
-                              onFocus={() => setHighlightedIndex(index)}
-                              disabled={addingId === game.igdb_id}
-                              aria-label={`Add ${game.name} to backlog`}
-                              class={
-                                isHighlighted
-                                  ? "border-white bg-white text-black hover:border-white hover:bg-black hover:text-white"
-                                  : undefined
-                              }
-                            >
-                              {addingId === game.igdb_id
-                                ? "Resolving"
-                                : "Add to backlog"}
-                            </Button>
-                          </div>
+                      {game.cover_url ? (
+                        <img
+                          src={previewCoverUrl(game.cover_url)}
+                          alt={game.name}
+                          loading="lazy"
+                          decoding="async"
+                          width={56}
+                          height={80}
+                          class="planner-result__cover"
+                        />
+                      ) : (
+                        <div class="planner-result__cover planner-result__cover--empty">
+                          No image
                         </div>
+                      )}
+
+                      <div class="planner-result__body">
+                        <div class="planner-result__row">
+                          <h3 class="planner-result__title">{game.name}</h3>
+                          <p class="planner-result__meta">
+                            {game.release_year === null
+                              ? "Unknown year"
+                              : game.release_year}
+                            {game.rating === null
+                              ? ""
+                              : ` / ${game.rating.toFixed(1)}`}
+                          </p>
+                        </div>
+
+                        <p class="planner-result__detail">
+                          {game.platforms.length > 0
+                            ? game.platforms.join(", ")
+                            : "Platforms unavailable"}
+                        </p>
+
+                        <p class="planner-result__detail">
+                          {game.genres.length > 0
+                            ? game.genres.join(", ")
+                            : "Genres unavailable"}
+                        </p>
+
+                        {game.summary && (
+                          <p class="planner-result__summary">{game.summary}</p>
+                        )}
+                      </div>
+
+                      <div class="planner-result__actions">
+                        <Button
+                          type="button"
+                          variant={isHighlighted ? "primary" : "outline"}
+                          size="sm"
+                          onClick={() => void handleAddGame(game)}
+                          onFocus={() => setHighlightedIndex(index)}
+                          disabled={addingId === game.igdb_id}
+                          aria-label={`Add ${game.name} to backlog`}
+                          class={
+                            isHighlighted
+                              ? "border-black bg-black text-white hover:bg-neutral-900"
+                              : ""
+                          }
+                        >
+                          {addingId === game.igdb_id ? "Resolving" : "Add"}
+                        </Button>
                       </div>
                     </article>
                   );
                 })}
             </div>
           )}
-
-        <p class="timeline-meta text-[var(--muted-foreground)]">
-          Results stay in the dropdown until you add a game or change the
-          search.
-        </p>
       </div>
     </section>
   );

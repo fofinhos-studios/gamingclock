@@ -27,19 +27,22 @@ export function GameListView({
   );
 
   return (
-    <section aria-labelledby="current-list-heading" class="space-y-6">
-      <div class="space-y-3">
-        <p class="section-eyebrow">Current backlog</p>
-        <h3 id="current-list-heading" class="text-4xl md:text-5xl">
-          Active backlog
-        </h3>
-        <p class="section-copy max-w-none">
-          Games: {games.length} / Resolved hours: {totalHours.toFixed(1)} /
-          Unresolved games: {unresolvedGames.length}
-        </p>
+    <section aria-labelledby="current-list-heading" class="space-y-4">
+      <div class="planner-pane__header">
+        <div class="space-y-1">
+          <p class="section-eyebrow">Backlog</p>
+          <h2 id="current-list-heading" class="planner-panel__title">
+            Current list
+          </h2>
+        </div>
+        <div class="planner-inline-stats">
+          <span>{games.length} games</span>
+          <span>{totalHours.toFixed(1)}h resolved</span>
+          <span>{unresolvedGames.length} unresolved</span>
+        </div>
       </div>
 
-      <Field label="Backlog name" controlId="active-list-name">
+      <Field label="Backlog name" controlId="active-list-name" class="max-w-md">
         <input
           id="active-list-name"
           type="text"
@@ -52,76 +55,70 @@ export function GameListView({
       </Field>
 
       {games.length === 0 ? (
-        <div class="empty-state space-y-3">
-          <p class="text-3xl">No games in this backlog yet.</p>
-          <p class="text-[var(--muted-foreground)]">
-            Use search to add a few titles and start planning.
+        <div class="planner-empty-state">
+          <p class="planner-empty-state__title">
+            No games in this backlog yet.
+          </p>
+          <p class="planner-empty-state__text">
+            Search on the left and add titles directly into the list.
           </p>
         </div>
       ) : (
-        <div class="grid gap-4">
+        <div class="planner-backlog-list">
           {games.map((game, index) => (
-            <article
-              key={`${game.name}-${index}`}
-              class="group border border-black p-5 transition-colors duration-100 hover:bg-black hover:text-white"
-            >
-              <div class="grid gap-5 lg:grid-cols-[5rem_minmax(0,1fr)_auto]">
-                <div>
-                  {game.cover_url ? (
-                    <img
-                      src={previewCoverUrl(game.cover_url)}
-                      alt={game.name}
-                      loading="lazy"
-                      decoding="async"
-                      width={80}
-                      height={120}
-                      class="h-30 w-20 border-2 border-current object-cover transition-all duration-100 group-hover:border-[4px]"
-                    />
-                  ) : (
-                    <div class="flex h-30 w-20 items-center justify-center border-2 border-current text-center font-[var(--font-mono)] text-[0.65rem] uppercase tracking-[0.2em]">
-                      No image
-                    </div>
-                  )}
+            <article key={`${game.name}-${index}`} class="planner-backlog-row">
+              {game.cover_url ? (
+                <img
+                  src={previewCoverUrl(game.cover_url)}
+                  alt={game.name}
+                  loading="lazy"
+                  decoding="async"
+                  width={56}
+                  height={80}
+                  class="planner-backlog-row__cover"
+                />
+              ) : (
+                <div class="planner-backlog-row__cover planner-backlog-row__cover--empty">
+                  No image
                 </div>
+              )}
 
-                <div class="space-y-4">
-                  <div class="space-y-2">
-                    <h4 class="text-3xl leading-none">{game.name}</h4>
-                    <p class="timeline-detail group-hover:text-white/80">
-                      {game.platforms.length > 0
-                        ? game.platforms.join(", ")
-                        : "Platforms unavailable"}
-                    </p>
-                    <p class="timeline-detail group-hover:text-white/80">
-                      {game.hltb_status === "resolved"
-                        ? `Resolved from ${game.hltb_match_name ?? game.name}`
-                        : "HLTB duration not found yet"}
-                    </p>
-                  </div>
-
-                  <div class="flex flex-wrap gap-2">
-                    <span class="chip">
+              <div class="planner-backlog-row__body">
+                <div class="planner-backlog-row__header">
+                  <h3 class="planner-backlog-row__title">{game.name}</h3>
+                  <div class="planner-chip-group">
+                    <span class="planner-chip">
                       {game.main_story_hours === null
-                        ? "No HLTB time yet"
-                        : `${game.main_story_hours}h main story`}
+                        ? "No HLTB time"
+                        : `${game.main_story_hours}h main`}
                     </span>
                     {game.release_year !== null && (
-                      <span class="chip">{game.release_year}</span>
+                      <span class="planner-chip">{game.release_year}</span>
                     )}
                   </div>
                 </div>
 
-                <div class="self-start">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onRemoveGame(index)}
-                    class="group-hover:border-white group-hover:bg-black group-hover:text-white"
-                  >
-                    Remove
-                  </Button>
-                </div>
+                <p class="planner-backlog-row__detail">
+                  {game.platforms.length > 0
+                    ? game.platforms.join(", ")
+                    : "Platforms unavailable"}
+                </p>
+                <p class="planner-backlog-row__detail">
+                  {game.hltb_status === "resolved"
+                    ? `Resolved from ${game.hltb_match_name ?? game.name}`
+                    : "HLTB duration not found yet"}
+                </p>
+              </div>
+
+              <div class="planner-backlog-row__actions">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onRemoveGame(index)}
+                >
+                  Remove
+                </Button>
               </div>
             </article>
           ))}

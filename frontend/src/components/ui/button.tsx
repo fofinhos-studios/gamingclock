@@ -13,16 +13,16 @@ interface ButtonProps extends JSX.HTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "border-2 border-black bg-black text-white hover:bg-white hover:text-black",
+    "border border-black bg-black text-white hover:bg-neutral-800 hover:text-white",
   outline:
-    "border-2 border-black bg-white text-black hover:bg-black hover:text-white",
+    "border border-black bg-white text-black hover:bg-neutral-100 hover:text-black",
   ghost:
-    "border-b border-transparent bg-transparent px-0 py-1 text-black hover:border-black",
+    "border border-transparent bg-transparent px-0 py-1 text-black hover:bg-neutral-100",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "min-h-11 px-4 py-2 text-[0.7rem] tracking-[0.24em]",
-  md: "min-h-12 px-6 py-3 text-[0.72rem] tracking-[0.28em]",
+  sm: "min-h-9 px-3 py-1.5 text-[0.68rem] tracking-[0.16em]",
+  md: "min-h-10 px-4 py-2 text-[0.7rem] tracking-[0.18em]",
 };
 
 export function Button({
