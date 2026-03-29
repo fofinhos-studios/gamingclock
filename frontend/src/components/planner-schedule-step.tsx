@@ -13,6 +13,7 @@ interface Props {
   schedule: ScheduleResponse | null;
   actionError: string;
   canGenerateSchedule: boolean;
+  prerequisiteMessages: string[];
   onAlgorithmChange: (algorithm: ScheduleAlgorithm) => void;
   onStartDateChange: (startDate: string) => void;
   onGenerateSchedule: () => void;
@@ -26,6 +27,7 @@ export function PlannerScheduleStep({
   schedule,
   actionError,
   canGenerateSchedule,
+  prerequisiteMessages,
   onAlgorithmChange,
   onStartDateChange,
   onGenerateSchedule,
@@ -49,6 +51,31 @@ export function PlannerScheduleStep({
           availability ? "texture-vertical" : ""
         }`}
       >
+        {prerequisiteMessages.length > 0 && (
+          <div
+            class={`space-y-2 border-2 p-4 ${
+              availability
+                ? "border-white/70 bg-black/20 text-white"
+                : "border-black/20 bg-black/5"
+            }`}
+          >
+            <p
+              class={`font-[var(--font-mono)] text-xs uppercase tracking-[0.24em] ${
+                availability
+                  ? "text-white/70"
+                  : "text-[var(--muted-foreground)]"
+              }`}
+            >
+              Schedule prerequisites
+            </p>
+            <ul class="space-y-2 text-sm">
+              {prerequisiteMessages.map((message) => (
+                <li key={message}>{message}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <Field label="Start date" controlId="schedule-start-date">
           <Input
             id="schedule-start-date"
@@ -78,7 +105,7 @@ export function PlannerScheduleStep({
         </Field>
 
         {actionError && (
-          <p class={availability ? "text-white" : "text-black"}>
+          <p role="alert" class={availability ? "text-white" : "text-black"}>
             {actionError}
           </p>
         )}
