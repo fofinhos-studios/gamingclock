@@ -1,4 +1,5 @@
 import { CalendarDays, CalendarRange, Gamepad2 } from "lucide-preact";
+import { useTransientFeedback } from "../hooks/use-transient-feedback";
 
 const PLANNER_TABS = [
   { id: "games", label: "Games", icon: Gamepad2 },
@@ -14,8 +15,11 @@ interface Props {
 }
 
 export function PlannerTabs({ activeTab, onChange }: Props) {
+  const feedback = useTransientFeedback<PlannerTab>(1400);
+
   const focusTab = (tab: PlannerTab) => {
     onChange(tab);
+    feedback.trigger(tab);
     queueMicrotask(() => {
       const element = document.getElementById(`planner-tab-${tab}`);
       if (element instanceof HTMLButtonElement) {
@@ -64,11 +68,14 @@ export function PlannerTabs({ activeTab, onChange }: Props) {
               type="button"
               class={`planner-rail__tab ${
                 selected ? "planner-rail__tab--active" : ""
-              }`}
+              } ${feedback.active === tab.id ? "planner-rail__tab--confirmed" : ""}`}
               aria-selected={selected}
               aria-controls={`planner-panel-${tab.id}`}
               tabIndex={selected ? 0 : -1}
-              onClick={() => onChange(tab.id)}
+              onClick={() => {
+                onChange(tab.id);
+                feedback.trigger(tab.id);
+              }}
               onKeyDown={(event) =>
                 handleKeyDown(event as KeyboardEvent, index)
               }

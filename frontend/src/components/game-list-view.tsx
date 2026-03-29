@@ -1,4 +1,6 @@
-import { List, Trash2, Trophy } from "lucide-preact";
+import { Check, List, Trash2, Trophy } from "lucide-preact";
+import { useState } from "preact/hooks";
+import { useTransientFeedback } from "../hooks/use-transient-feedback";
 import type { ListGame } from "../types";
 import { Button, Field } from "./ui";
 
@@ -15,6 +17,8 @@ export function GameListView({
   onRemoveGame,
   onRenameList,
 }: Props) {
+  const [removingIndex, setRemovingIndex] = useState<number | null>(null);
+  const removeFeedback = useTransientFeedback<number>(1500);
   const previewCoverUrl = (coverUrl: string) =>
     coverUrl.replace("/t_thumb/", "/t_cover_small/");
 
@@ -22,10 +26,14 @@ export function GameListView({
     (sum, game) => sum + (game.main_story_hours ?? 0),
     0,
   );
-  const unresolvedGames = games.filter(
-    (game) =>
-      game.hltb_status === "unresolved" || game.main_story_hours === null,
-  );
+
+  const handleRemoveGame = async (index: number) => {
+    setRemovingIndex(index);
+    removeFeedback.trigger(index, 1500);
+    await new Promise((resolve) => window.setTimeout(resolve, 700));
+    onRemoveGame(index);
+    setRemovingIndex(null);
+  };
 
   return (
     <section aria-labelledby="current-list-heading" class="space-y-4">
@@ -46,7 +54,6 @@ export function GameListView({
         <div class="planner-inline-stats">
           <span>{games.length} games</span>
           <span>{totalHours.toFixed(1)}h resolved</span>
-          <span>{unresolvedGames.length} unresolved</span>
         </div>
       </div>
 
@@ -99,11 +106,7 @@ export function GameListView({
                 <div class="planner-backlog-row__header">
                   <h3 class="planner-backlog-row__title">{game.name}</h3>
                   <div class="planner-chip-group">
-                    <span class="planner-chip">
-                      {game.main_story_hours === null
-                        ? "No HLTB time"
-                        : `${game.main_story_hours}h main`}
-                    </span>
+                    <span class="planner-chip">{`${game.main_story_hours ?? 0}h main`}</span>
                     {game.release_year !== null && (
                       <span class="planner-chip">{game.release_year}</span>
                     )}
@@ -116,9 +119,7 @@ export function GameListView({
                     : "Platforms unavailable"}
                 </p>
                 <p class="planner-backlog-row__detail">
-                  {game.hltb_status === "resolved"
-                    ? `Resolved from ${game.hltb_match_name ?? game.name}`
-                    : "HLTB duration not found yet"}
+                  {`Resolved from ${game.hltb_match_name ?? game.name}`}
                 </p>
               </div>
 
@@ -127,10 +128,23 @@ export function GameListView({
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={() => onRemoveGame(index)}
+                  onClick={() => void handleRemoveGame(index)}
+                  disabled={removingIndex === index}
+                  feedbackState={
+                    removingIndex === index || removeFeedback.active === index
+                      ? "success"
+                      : "idle"
+                  }
                 >
-                  <Trash2 class="planner-icon" aria-hidden="true" />
-                  Remove
+                  {removingIndex === index ||
+                  removeFeedback.active === index ? (
+                    <Check class="planner-icon" aria-hidden="true" />
+                  ) : (
+                    <Trash2 class="planner-icon" aria-hidden="true" />
+                  )}
+                  {removingIndex === index || removeFeedback.active === index
+                    ? "Removed"
+                    : "Remove"}
                 </Button>
               </div>
             </article>

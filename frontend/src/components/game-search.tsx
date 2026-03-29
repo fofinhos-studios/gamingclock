@@ -1,17 +1,19 @@
-import { Plus, Search } from "lucide-preact";
+import { Check, LoaderCircle, Search } from "lucide-preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
+import { useTransientFeedback } from "../hooks/use-transient-feedback";
 import { resolveGame, searchGames } from "../services/api";
 import type { CatalogGame, ListGame } from "../types";
-import { Button, Field, Input } from "./ui";
+import { Field, Input } from "./ui";
 
 interface Props {
+  games: ListGame[];
   onAddGame: (game: ListGame) => void;
 }
 
-export function GameSearch({ onAddGame }: Props) {
+export function GameSearch({ games, onAddGame }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const resultRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const resultRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CatalogGame[]>([]);
   const [loading, setLoading] = useState(false);
@@ -19,6 +21,8 @@ export function GameSearch({ onAddGame }: Props) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [error, setError] = useState("");
+  const [infoMessage, setInfoMessage] = useState("");
+  const addFeedback = useTransientFeedback<number>(1700);
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
@@ -38,6 +42,7 @@ export function GameSearch({ onAddGame }: Props) {
       setResults([]);
       setLoading(false);
       setError("");
+      setInfoMessage("");
       setHighlightedIndex(-1);
       return undefined;
     }
@@ -45,11 +50,12 @@ export function GameSearch({ onAddGame }: Props) {
     const timeoutId = window.setTimeout(async () => {
       setLoading(true);
       setError("");
+      setInfoMessage("");
       try {
-        const games = await searchGames(trimmedQuery);
-        setResults(games.slice(0, 8));
+        const nextResults = await searchGames(trimmedQuery);
+        setResults(nextResults.slice(0, 8));
         setIsDropdownOpen(true);
-        setHighlightedIndex(games.length > 0 ? 0 : -1);
+        setHighlightedIndex(nextResults.length > 0 ? 0 : -1);
       } catch (searchError) {
         setResults([]);
         setError(
@@ -74,12 +80,21 @@ export function GameSearch({ onAddGame }: Props) {
   }, [highlightedIndex]);
 
   const handleAddGame = async (game: CatalogGame) => {
+    if (games.some((backlogGame) => backlogGame.igdb_id === game.igdb_id)) {
+      setInfoMessage(`${game.name} is already in your backlog.`);
+      setError("");
+      return;
+    }
+
     setAddingId(game.igdb_id);
     setError("");
+    setInfoMessage("");
 
     try {
       const resolvedGame = await resolveGame(game);
+      addFeedback.trigger(game.igdb_id, 1700);
       onAddGame(resolvedGame);
+      await new Promise((resolve) => window.setTimeout(resolve, 900));
       setQuery("");
       setResults([]);
       setIsDropdownOpen(false);
@@ -186,6 +201,12 @@ export function GameSearch({ onAddGame }: Props) {
           </p>
         )}
 
+        {infoMessage && (
+          <p class="planner-inline-feedback" aria-live="polite">
+            {infoMessage}
+          </p>
+        )}
+
         {isDropdownOpen &&
           (loading ||
             error ||
@@ -209,15 +230,28 @@ export function GameSearch({ onAddGame }: Props) {
                   const isHighlighted = index === highlightedIndex;
 
                   return (
-                    <article
+                    <button
                       key={game.igdb_id}
                       ref={(element) => {
                         resultRefs.current[index] = element;
                       }}
+                      type="button"
                       class={`planner-result ${
                         isHighlighted ? "planner-result--active" : ""
+                      } ${
+                        addingId === game.igdb_id
+                          ? "planner-result--loading"
+                          : ""
+                      } ${
+                        addFeedback.active === game.igdb_id
+                          ? "planner-result--success"
+                          : ""
                       }`}
                       onMouseEnter={() => setHighlightedIndex(index)}
+                      onFocus={() => setHighlightedIndex(index)}
+                      onClick={() => void handleAddGame(game)}
+                      disabled={addingId === game.igdb_id}
+                      aria-label={`Add ${game.name} to backlog`}
                     >
                       {game.cover_url ? (
                         <img
@@ -263,28 +297,25 @@ export function GameSearch({ onAddGame }: Props) {
                         {game.summary && (
                           <p class="planner-result__summary">{game.summary}</p>
                         )}
-                      </div>
 
-                      <div class="planner-result__actions">
-                        <Button
-                          type="button"
-                          variant={isHighlighted ? "primary" : "outline"}
-                          size="sm"
-                          onClick={() => void handleAddGame(game)}
-                          onFocus={() => setHighlightedIndex(index)}
-                          disabled={addingId === game.igdb_id}
-                          aria-label={`Add ${game.name} to backlog`}
-                          class={
-                            isHighlighted
-                              ? "border-black bg-black text-white hover:bg-neutral-900"
-                              : ""
-                          }
-                        >
-                          <Plus class="planner-icon" aria-hidden="true" />
-                          {addingId === game.igdb_id ? "Resolving" : "Add"}
-                        </Button>
+                        {(addingId === game.igdb_id ||
+                          addFeedback.active === game.igdb_id) && (
+                          <p class="planner-result__feedback">
+                            {addingId === game.igdb_id ? (
+                              <LoaderCircle
+                                class="planner-icon planner-icon--spin"
+                                aria-hidden="true"
+                              />
+                            ) : (
+                              <Check class="planner-icon" aria-hidden="true" />
+                            )}
+                            <span>
+                              {addingId === game.igdb_id ? "Adding" : "Added"}
+                            </span>
+                          </p>
+                        )}
                       </div>
-                    </article>
+                    </button>
                   );
                 })}
             </div>

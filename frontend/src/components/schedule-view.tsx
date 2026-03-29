@@ -1,17 +1,21 @@
 import {
   CalendarRange,
+  Check,
   Clock3,
   Download,
   Flag,
   Hourglass,
+  LoaderCircle,
   Rows3,
 } from "lucide-preact";
+import { useState } from "preact/hooks";
+import { useTransientFeedback } from "../hooks/use-transient-feedback";
 import type { ScheduleResponse } from "../types";
 import { Button } from "./ui";
 
 interface Props {
   schedule: ScheduleResponse;
-  onDownloadIcal: () => void;
+  onDownloadIcal: () => Promise<boolean>;
 }
 
 function calculateElapsedDays(schedule: ScheduleResponse): number | null {
@@ -32,6 +36,9 @@ function calculateElapsedDays(schedule: ScheduleResponse): number | null {
 }
 
 export function ScheduleView({ schedule, onDownloadIcal }: Props) {
+  const [isDownloading, setIsDownloading] = useState(false);
+  const feedback = useTransientFeedback<"success">();
+
   if (schedule.sessions.length === 0) {
     return (
       <section>
@@ -41,6 +48,17 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
   }
 
   const totalElapsedDays = calculateElapsedDays(schedule);
+
+  const handleDownloadClick = async () => {
+    setIsDownloading(true);
+    const success = await onDownloadIcal();
+    setIsDownloading(false);
+    if (success) {
+      feedback.trigger("success", 1800);
+    } else {
+      feedback.clear();
+    }
+  };
 
   return (
     <section aria-labelledby="schedule-heading" class="space-y-4">
@@ -63,10 +81,31 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
           type="button"
           variant="primary"
           size="sm"
-          onClick={onDownloadIcal}
+          onClick={() => void handleDownloadClick()}
+          disabled={isDownloading}
+          feedbackState={
+            isDownloading
+              ? "loading"
+              : feedback.active === "success"
+                ? "success"
+                : "idle"
+          }
         >
-          <Download class="planner-icon" aria-hidden="true" />
-          Download .ics
+          {isDownloading ? (
+            <LoaderCircle
+              class="planner-icon planner-icon--spin"
+              aria-hidden="true"
+            />
+          ) : feedback.active === "success" ? (
+            <Check class="planner-icon" aria-hidden="true" />
+          ) : (
+            <Download class="planner-icon" aria-hidden="true" />
+          )}
+          {isDownloading
+            ? "Downloading"
+            : feedback.active === "success"
+              ? "Downloaded"
+              : "Download .ics"}
         </Button>
       </div>
 

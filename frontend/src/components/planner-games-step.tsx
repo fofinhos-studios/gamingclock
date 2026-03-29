@@ -20,7 +20,7 @@ export function PlannerGamesStep({
   return (
     <div class="planner-games-workspace">
       <div class="planner-pane planner-pane--search">
-        <GameSearch onAddGame={onAddGame} />
+        <GameSearch games={games} onAddGame={onAddGame} />
       </div>
 
       <div class="planner-pane planner-pane--backlog">

@@ -9,6 +9,7 @@ interface ButtonProps extends JSX.HTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   block?: boolean;
+  feedbackState?: "idle" | "loading" | "success";
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
@@ -29,6 +30,7 @@ export function Button({
   variant = "outline",
   size = "md",
   block = false,
+  feedbackState = "idle",
   class: className,
   type = "button",
   ...props
@@ -36,8 +38,9 @@ export function Button({
   return (
     <button
       type={type}
+      data-feedback={feedbackState}
       class={cx(
-        "inline-flex items-center justify-center gap-2 font-[var(--font-mono)] uppercase transition-colors duration-100 disabled:cursor-not-allowed disabled:opacity-40",
+        "ui-button inline-flex items-center justify-center gap-2 font-[var(--font-mono)] uppercase transition-colors duration-100 disabled:cursor-not-allowed disabled:opacity-40",
         sizeClasses[size],
         variantClasses[variant],
         block && "w-full",

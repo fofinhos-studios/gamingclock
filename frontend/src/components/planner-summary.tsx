@@ -1,5 +1,4 @@
 import {
-  AlertCircle,
   CalendarDays,
   CalendarRange,
   Clock3,
@@ -15,7 +14,6 @@ interface Props {
   backlogName: string;
   trackedGameCount: number;
   resolvedHours: number;
-  unresolvedGameCount: number;
   availabilityStatus: string;
   availabilityDetail: string;
   scheduleStatus: string;
@@ -30,7 +28,6 @@ export function PlannerSummary({
   backlogName,
   trackedGameCount,
   resolvedHours,
-  unresolvedGameCount,
   availabilityStatus,
   availabilityDetail,
   scheduleStatus,
@@ -57,11 +54,6 @@ export function PlannerSummary({
           label="Resolved hours"
           value={`${resolvedHours.toFixed(1)}h`}
           icon={Clock3}
-        />
-        <SummaryItem
-          label="Need HLTB match"
-          value={String(unresolvedGameCount)}
-          icon={AlertCircle}
         />
         <SummaryItem
           label="Availability status"
