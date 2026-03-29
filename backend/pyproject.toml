@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "gamingclock"
 version = "0.1.0"
@@ -7,10 +11,13 @@ dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.34",
     "pydantic>=2.11",
+    "httpx>=0.28",
     "howlongtobeatpy>=1.0",
+    "icalendar>=6.1",
+    "python-dotenv>=1.1",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "pytest>=8.3",
     "pytest-xdist>=3.5",
@@ -18,6 +25,7 @@ dev = [
     "polyfactory>=2.19",
     "httpx>=0.28",
     "ruff>=0.11",
+    "ty>=0.0.1a17",
 ]
 
 [tool.ruff]
@@ -30,3 +38,9 @@ select = ["E", "F", "I", "N", "UP", "B", "SIM", "RUF"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

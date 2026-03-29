@@ -120,8 +120,8 @@ def client():
 
 ```bash
 cd backend
-pip install -e ".[dev]"
-uvicorn gamingclock.main:app --reload --port 8000
+uv sync --group dev
+uv run uvicorn gamingclock.main:app --reload --port 8000
 ```
 
 ## How to test
@@ -155,8 +155,8 @@ def test_health(client):
 
 ```bash
 cd backend
-pip install -e ".[dev]"
-pytest tests/test_health.py -v
+uv sync --group dev
+uv run pytest tests/test_health.py -v
 ```
 
 Expected: PASS
@@ -370,22 +370,22 @@ git commit -m "feat: scaffold frontend with Vite, Preact, and Tailwind CSS"
 
 # Backend
 backend-install:
-    cd backend && pip install -e ".[dev]"
+    cd backend && uv sync --group dev
 
 backend-dev:
-    cd backend && uvicorn gamingclock.main:app --reload --port 8000
+    cd backend && uv run uvicorn gamingclock.main:app --reload --port 8000
 
 backend-test:
-    cd backend && pytest -v
+    cd backend && uv run pytest -v
 
 backend-test-parallel:
-    cd backend && pytest -n auto
+    cd backend && uv run pytest -n auto
 
 backend-lint:
-    cd backend && ruff check src/ tests/
+    cd backend && uv run ruff check src/ tests/
 
 backend-format:
-    cd backend && ruff format src/ tests/
+    cd backend && uv run ruff format src/ tests/
 
 # Frontend
 frontend-install:
@@ -455,7 +455,7 @@ WORKDIR /app
 COPY pyproject.toml .
 COPY src/ src/
 
-RUN pip install --no-cache-dir .
+RUN uv sync --locked --no-dev
 
 EXPOSE 8000
 
@@ -564,7 +564,7 @@ jobs:
           allow-prereleases: true
 
       - name: Install dependencies
-        run: cd backend && pip install -e ".[dev]"
+        run: cd backend && uv sync --group dev
 
       - name: Lint
         run: cd backend && ruff check src/ tests/
@@ -2960,46 +2960,46 @@ git commit -m "chore: remove legacy v0.1 files replaced by monorepo structure"
 
 ### Phase 1: Scaffolding
 - [x] Task 1.1: Backend project structure
-- [ ] Task 1.2: Frontend project structure
-- [ ] Task 1.3: Justfile
-- [ ] Task 1.4: Docker Compose
-- [ ] Task 1.5: GitHub Actions CI
-- [ ] Task 1.6: Prek pre-commit hooks
+- [x] Task 1.2: Frontend project structure
+- [x] Task 1.3: Justfile
+- [x] Task 1.4: Docker Compose
+- [x] Task 1.5: GitHub Actions CI
+- [x] Task 1.6: Prek pre-commit hooks
 
 ### Phase 2: Backend Models
-- [ ] Task 2.1: Game model
-- [ ] Task 2.2: GameList model
-- [ ] Task 2.3: Schedule and Availability models
-- [ ] Task 2.4: Polyfactory factories
+- [x] Task 2.1: Game model
+- [x] Task 2.2: GameList model
+- [x] Task 2.3: Schedule and Availability models
+- [x] Task 2.4: Polyfactory factories
 
 ### Phase 3: Backend Services
-- [ ] Task 3.1: HLTB service
-- [ ] Task 3.2: IGDB mock service
-- [ ] Task 3.3: Scheduler — sequential algorithm
-- [ ] Task 3.4: Scheduler — alternating algorithm tests
-- [ ] Task 3.5: iCal export service
+- [x] Task 3.1: HLTB service
+- [x] Task 3.2: IGDB mock service
+- [x] Task 3.3: Scheduler — sequential algorithm
+- [x] Task 3.4: Scheduler — alternating algorithm tests
+- [x] Task 3.5: iCal export service
 
 ### Phase 4: Backend API Routes
-- [ ] Task 4.1: Game search endpoint
-- [ ] Task 4.2: Schedule generation endpoint
-- [ ] Task 4.3: iCal download endpoint
+- [x] Task 4.1: Game search endpoint
+- [x] Task 4.2: Schedule generation endpoint
+- [x] Task 4.3: iCal download endpoint
 
 ### Phase 5: Frontend Components
-- [ ] Task 5.1: Routing and page structure
-- [ ] Task 5.2: API service layer
-- [ ] Task 5.3: GameSearch component
-- [ ] Task 5.4: GameListView component
-- [ ] Task 5.5: AvailabilityForm component
-- [ ] Task 5.6: ScheduleView component
+- [x] Task 5.1: Routing and page structure
+- [x] Task 5.2: API service layer
+- [x] Task 5.3: GameSearch component
+- [x] Task 5.4: GameListView component
+- [x] Task 5.5: AvailabilityForm component
+- [x] Task 5.6: ScheduleView component
 
 ### Phase 6: Page Assembly
-- [ ] Task 6.1: HomePage full flow
+- [x] Task 6.1: HomePage full flow
 
 ### Phase 7: Integration & Polish
-- [ ] Task 7.1: Biome config
-- [ ] Task 7.2: Frontend package.json scripts
-- [ ] Task 7.3: E2E smoke test
-- [ ] Task 7.4: Backend test suite + lint pass
-- [ ] Task 7.5: Frontend build + lint pass
-- [ ] Task 7.6: Docker Compose verification
-- [ ] Task 7.7: Clean up legacy files
+- [x] Task 7.1: Biome config
+- [x] Task 7.2: Frontend package.json scripts
+- [x] Task 7.3: E2E smoke test
+- [x] Task 7.4: Backend test suite + lint pass
+- [x] Task 7.5: Frontend build + lint pass
+- [x] Task 7.6: Docker Compose verification
+- [x] Task 7.7: Clean up legacy files

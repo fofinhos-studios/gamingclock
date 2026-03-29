@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          allow-prereleases: true
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install dependencies
+        run: cd backend && uv sync --group dev
+
+      - name: Lint
+        run: cd backend && uv run ruff check src/ tests/ && uv run ty check
+
+      - name: Test
+        run: cd backend && uv run pytest -n auto -v
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: cd frontend && bun install
+
+      - name: Lint
+        run: cd frontend && bunx @biomejs/biome check src/
+
+      - name: Build
+        run: cd frontend && bun run build
