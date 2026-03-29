@@ -6,7 +6,6 @@ import { PlannerGamesStep } from "../components/planner-games-step";
 import { PlannerScheduleStep } from "../components/planner-schedule-step";
 import { PlannerSummary } from "../components/planner-summary";
 import { type PlannerTab, PlannerTabs } from "../components/planner-tabs";
-import { Card } from "../components/ui";
 import { downloadIcal, generateSchedule } from "../services/api";
 import type {
   ListGame,
@@ -14,6 +13,29 @@ import type {
   ScheduleResponse,
   WeeklyAvailability,
 } from "../types";
+
+const TAB_CONTENT: Record<
+  PlannerTab,
+  { title: string; detail: string; eyebrow: string }
+> = {
+  games: {
+    title: "Build backlog",
+    detail:
+      "Search, inspect, and maintain one working list without leaving the screen.",
+    eyebrow: "Step 01",
+  },
+  availability: {
+    title: "Set weekly time",
+    detail: "Define realistic play windows before generating the plan.",
+    eyebrow: "Step 02",
+  },
+  schedule: {
+    title: "Generate schedule",
+    detail:
+      "Pick a start date, choose the algorithm, and review the full timeline.",
+    eyebrow: "Step 03",
+  },
+};
 
 export function HomePage(_props: RoutableProps) {
   const [activeTab, setActiveTab] = useState<PlannerTab>("games");
@@ -26,6 +48,7 @@ export function HomePage(_props: RoutableProps) {
   const [schedule, setSchedule] = useState<ScheduleResponse | null>(null);
   const [actionError, setActionError] = useState("");
   const [startDate, setStartDate] = useState(getLocalCalendarDate());
+
   const clearGeneratedSchedule = () => {
     setSchedule(null);
     setActionError("");
@@ -82,6 +105,7 @@ export function HomePage(_props: RoutableProps) {
   const scheduleDetail = schedule
     ? `Finishes ${schedule.estimated_end_date ?? "when sessions complete"}`
     : (schedulePrerequisites[0]?.message ?? "You can generate a schedule now");
+  const activeStep = TAB_CONTENT[activeTab];
 
   const addGame = (game: ListGame) => {
     setGames((currentGames) => [...currentGames, game]);
@@ -163,93 +187,95 @@ export function HomePage(_props: RoutableProps) {
         Skip to planner
       </a>
 
-      <main id="planner" class="planner-shell px-4 py-8 md:px-6 md:py-12">
-        <div class="planner-shell__frame">
-          <Card class="p-6 md:p-8">
-            <div class="space-y-6">
-              <header class="planner-shell__header space-y-3">
-                <p class="section-eyebrow">Planner</p>
-                <h1 class="planner-shell__title">Gaming Clock</h1>
-                <p class="planner-shell__lede">
-                  Build one backlog, set weekly time, and generate a realistic
-                  play schedule.
-                </p>
-              </header>
-
-              <PlannerTabs activeTab={activeTab} onChange={setActiveTab} />
-
-              <div class="planner-shell__layout">
-                <div class="planner-shell__steps">
-                  <section
-                    id="planner-panel-games"
-                    role="tabpanel"
-                    aria-labelledby="planner-tab-games"
-                    hidden={activeTab !== "games"}
-                    class="planner-shell__panel"
-                  >
-                    <PlannerGamesStep
-                      backlogName={backlogName}
-                      games={games}
-                      onAddGame={addGame}
-                      onRemoveGame={removeGame}
-                      onRenameBacklog={setBacklogName}
-                    />
-                  </section>
-
-                  <section
-                    id="planner-panel-availability"
-                    role="tabpanel"
-                    aria-labelledby="planner-tab-availability"
-                    hidden={activeTab !== "availability"}
-                    class="planner-shell__panel"
-                  >
-                    <PlannerAvailabilityStep
-                      availability={availability}
-                      gameCount={games.length}
-                      onSubmit={handleSetAvailability}
-                    />
-                  </section>
-
-                  <section
-                    id="planner-panel-schedule"
-                    role="tabpanel"
-                    aria-labelledby="planner-tab-schedule"
-                    hidden={activeTab !== "schedule"}
-                    class="planner-shell__panel"
-                  >
-                    <PlannerScheduleStep
-                      availability={availability}
-                      algorithm={algorithm}
-                      startDate={startDate}
-                      schedule={schedule}
-                      actionError={actionError}
-                      canGenerateSchedule={canGenerateSchedule}
-                      prerequisiteMessages={schedulePrerequisites}
-                      onAlgorithmChange={handleAlgorithmChange}
-                      onStartDateChange={handleStartDateChange}
-                      onGenerateSchedule={() => void handleGenerateSchedule()}
-                      onDownloadIcal={() => void handleDownloadIcal()}
-                    />
-                  </section>
-                </div>
-
-                <PlannerSummary
-                  backlogName={backlogName}
-                  trackedGameCount={games.length}
-                  resolvedHours={resolvedHours}
-                  unresolvedGameCount={unresolvedGames.length}
-                  availabilityStatus={availabilityStatus}
-                  availabilityDetail={availabilityDetail}
-                  scheduleStatus={scheduleStatus}
-                  scheduleDetail={scheduleDetail}
-                  totalPlannedHours={schedule?.total_hours}
-                  totalSessions={schedule?.sessions.length}
-                  estimatedFinishDate={schedule?.estimated_end_date}
-                  totalElapsedDays={totalElapsedDays}
-                />
-              </div>
+      <main id="planner" class="planner-app">
+        <div class="planner-app__frame">
+          <div class="planner-app__rail">
+            <div class="planner-brand">
+              <p class="planner-brand__name">Gaming Clock</p>
+              <p class="planner-brand__detail">Single backlog pipeline</p>
             </div>
-          </Card>
+
+            <PlannerTabs activeTab={activeTab} onChange={setActiveTab} />
+          </div>
+
+          <div class="planner-app__workspace">
+            <header class="planner-toolbar">
+              <div class="planner-toolbar__main">
+                <p class="planner-toolbar__eyebrow">{activeStep.eyebrow}</p>
+                <h1 class="planner-toolbar__title">{activeStep.title}</h1>
+              </div>
+              <p class="planner-toolbar__detail">{activeStep.detail}</p>
+            </header>
+
+            <PlannerSummary
+              backlogName={backlogName}
+              trackedGameCount={games.length}
+              resolvedHours={resolvedHours}
+              unresolvedGameCount={unresolvedGames.length}
+              availabilityStatus={availabilityStatus}
+              availabilityDetail={availabilityDetail}
+              scheduleStatus={scheduleStatus}
+              scheduleDetail={scheduleDetail}
+              totalPlannedHours={schedule?.total_hours}
+              totalSessions={schedule?.sessions.length}
+              estimatedFinishDate={schedule?.estimated_end_date}
+              totalElapsedDays={totalElapsedDays}
+            />
+
+            <div class="planner-workspace__body">
+              <section
+                id="planner-panel-games"
+                role="tabpanel"
+                aria-labelledby="planner-tab-games"
+                hidden={activeTab !== "games"}
+                class="planner-panel"
+              >
+                <PlannerGamesStep
+                  backlogName={backlogName}
+                  games={games}
+                  onAddGame={addGame}
+                  onRemoveGame={removeGame}
+                  onRenameBacklog={setBacklogName}
+                />
+              </section>
+
+              <section
+                id="planner-panel-availability"
+                role="tabpanel"
+                aria-labelledby="planner-tab-availability"
+                hidden={activeTab !== "availability"}
+                class="planner-panel"
+              >
+                <PlannerAvailabilityStep
+                  availability={availability}
+                  gameCount={games.length}
+                  onSubmit={handleSetAvailability}
+                />
+              </section>
+
+              <section
+                id="planner-panel-schedule"
+                role="tabpanel"
+                aria-labelledby="planner-tab-schedule"
+                hidden={activeTab !== "schedule"}
+                class="planner-panel"
+              >
+                <PlannerScheduleStep
+                  availability={availability}
+                  algorithm={algorithm}
+                  startDate={startDate}
+                  schedule={schedule}
+                  actionError={actionError}
+                  canGenerateSchedule={canGenerateSchedule}
+                  prerequisiteMessages={schedulePrerequisites}
+                  onAlgorithmChange={handleAlgorithmChange}
+                  onStartDateChange={handleStartDateChange}
+                  onGenerateSchedule={() => void handleGenerateSchedule()}
+                  onDownloadIcal={() => void handleDownloadIcal()}
+                />
+              </section>
+            </div>
+          </div>
         </div>
       </main>
     </div>

@@ -1,5 +1,3 @@
-import { Card, Stat } from "./ui";
-
 interface Props {
   backlogName: string;
   trackedGameCount: number;
@@ -30,58 +28,67 @@ export function PlannerSummary({
   totalElapsedDays,
 }: Props) {
   return (
-    <aside aria-labelledby="planner-summary-heading" class="min-w-0 self-start">
-      <Card tone="muted" class="space-y-6 p-6">
-        <div class="space-y-3">
-          <p class="section-eyebrow">Summary</p>
-          <h2 id="planner-summary-heading" class="text-3xl leading-none">
-            Planner status
-          </h2>
-          <p class="text-sm text-[var(--muted-foreground)]">
-            Keep track of backlog readiness while you move between steps.
-          </p>
-        </div>
+    <aside aria-labelledby="planner-summary-heading" class="planner-statusbar">
+      <h2 id="planner-summary-heading" class="sr-only">
+        Planner status
+      </h2>
 
-        <dl class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-          <Stat label="Backlog name" value={backlogName} />
-          <Stat label="Tracked games" value={String(trackedGameCount)} />
-          <Stat
-            label="Resolved hours"
-            value={`${resolvedHours.toFixed(1)} hrs`}
-          />
-          <Stat label="Unresolved games" value={String(unresolvedGameCount)} />
-          <Stat
-            label="Availability status"
-            value={availabilityStatus}
-            detail={availabilityDetail}
-          />
-          <Stat
-            label="Schedule status"
-            value={scheduleStatus}
-            detail={scheduleDetail}
-          />
-        </dl>
-
+      <dl class="planner-statusbar__grid">
+        <SummaryItem label="Backlog" value={backlogName} />
+        <SummaryItem label="Games" value={String(trackedGameCount)} />
+        <SummaryItem
+          label="Resolved hours"
+          value={`${resolvedHours.toFixed(1)}h`}
+        />
+        <SummaryItem
+          label="Need HLTB match"
+          value={String(unresolvedGameCount)}
+        />
+        <SummaryItem
+          label="Availability status"
+          value={availabilityStatus}
+          detail={availabilityDetail}
+        />
+        <SummaryItem
+          label="Schedule status"
+          value={scheduleStatus}
+          detail={scheduleDetail}
+        />
         {typeof totalPlannedHours === "number" && (
-          <dl class="grid gap-3 border-t-2 border-black pt-6 sm:grid-cols-2 xl:grid-cols-1">
-            <Stat
-              label="Total planned hours"
-              value={`${totalPlannedHours.toFixed(1)} hrs`}
-            />
-            <Stat label="Total sessions" value={String(totalSessions ?? 0)} />
-            <Stat
-              label="Estimated finish"
-              value={estimatedFinishDate ?? "Not available"}
-            />
-            {typeof totalElapsedDays === "number" && (
-              <Stat
-                label="Total elapsed days"
-                value={`${totalElapsedDays} day${totalElapsedDays === 1 ? "" : "s"}`}
-              />
-            )}
-          </dl>
+          <SummaryItem
+            label="Planned hours"
+            value={`${totalPlannedHours.toFixed(1)}h`}
+          />
         )}
-      </Card>
+        {typeof totalSessions === "number" && (
+          <SummaryItem label="Sessions" value={String(totalSessions)} />
+        )}
+        {estimatedFinishDate && (
+          <SummaryItem label="Finish date" value={estimatedFinishDate} />
+        )}
+        {typeof totalElapsedDays === "number" && (
+          <SummaryItem
+            label="Elapsed days"
+            value={`${totalElapsedDays} day${totalElapsedDays === 1 ? "" : "s"}`}
+          />
+        )}
+      </dl>
     </aside>
+  );
+}
+
+interface SummaryItemProps {
+  label: string;
+  value: string;
+  detail?: string;
+}
+
+function SummaryItem({ label, value, detail }: SummaryItemProps) {
+  return (
+    <div class="planner-statusbar__item">
+      <dt class="planner-statusbar__label">{label}</dt>
+      <dd class="planner-statusbar__value">{value}</dd>
+      {detail && <p class="planner-statusbar__detail">{detail}</p>}
+    </div>
   );
 }

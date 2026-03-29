@@ -4,7 +4,7 @@ import type {
   WeeklyAvailability,
 } from "../types";
 import { ScheduleView } from "./schedule-view";
-import { Button, Card, Field, Input, Select } from "./ui";
+import { Button, Field, Input, Select } from "./ui";
 
 interface PrerequisiteMessage {
   id: string;
@@ -41,42 +41,78 @@ export function PlannerScheduleStep({
   const prerequisitesDescriptionId = "schedule-prerequisites";
 
   return (
-    <section aria-labelledby="planner-schedule-heading" class="space-y-6">
-      <div class="space-y-3">
-        <p class="section-eyebrow">Schedule</p>
-        <h2 id="planner-schedule-heading" class="text-4xl md:text-5xl">
-          Generate schedule
-        </h2>
-        <p class="section-copy max-w-none">
-          Choose a start date and algorithm for your current backlog.
-        </p>
-      </div>
+    <section
+      class="planner-step-stack"
+      aria-labelledby="planner-schedule-heading"
+    >
+      <div class="planner-pane">
+        <div class="planner-pane__header">
+          <div class="space-y-1">
+            <p class="section-eyebrow">Schedule</p>
+            <h2 id="planner-schedule-heading" class="planner-panel__title">
+              Generate schedule
+            </h2>
+          </div>
+          <p class="planner-panel__copy">
+            Pick a start date and algorithm for the current backlog.
+          </p>
+        </div>
 
-      <Card
-        tone={availability ? "inverted" : "default"}
-        class={`flex flex-col gap-6 p-6 md:p-8 ${
-          availability ? "texture-vertical" : ""
-        }`}
-      >
-        {prerequisiteMessages.length > 0 && (
-          <div
-            id={prerequisitesDescriptionId}
-            class={`space-y-2 border-2 p-4 ${
-              availability
-                ? "border-white/70 bg-black/20 text-white"
-                : "border-black/20 bg-black/5"
-            }`}
-          >
-            <p
-              class={`font-[var(--font-mono)] text-xs uppercase tracking-[0.24em] ${
-                availability
-                  ? "text-white/70"
-                  : "text-[var(--muted-foreground)]"
-              }`}
+        <div class="planner-controls">
+          <Field label="Start date" controlId="schedule-start-date">
+            <Input
+              id="schedule-start-date"
+              type="date"
+              value={startDate}
+              onInput={(event) =>
+                onStartDateChange((event.target as HTMLInputElement).value)
+              }
+            />
+          </Field>
+
+          <Field label="Algorithm" controlId="schedule-algorithm">
+            <Select
+              id="schedule-algorithm"
+              value={algorithm}
+              onChange={(event) =>
+                onAlgorithmChange(
+                  (event.target as HTMLSelectElement)
+                    .value as ScheduleAlgorithm,
+                )
+              }
             >
-              Schedule prerequisites
+              <option value="sequential">Sequential</option>
+              <option value="alternating">Alternating</option>
+            </Select>
+          </Field>
+
+          <div class="planner-controls__actions">
+            <Button
+              type="button"
+              onClick={onGenerateSchedule}
+              disabled={!canGenerateSchedule}
+              aria-describedby={
+                prerequisiteMessages.length > 0
+                  ? prerequisitesDescriptionId
+                  : undefined
+              }
+              variant="primary"
+              size="sm"
+            >
+              Generate Schedule
+            </Button>
+            <p class="planner-controls__hint">
+              {availability
+                ? "Changing inputs clears the last generated plan."
+                : "Set weekly availability before generating."}
             </p>
-            <ul class="space-y-2 text-sm">
+          </div>
+        </div>
+
+        {prerequisiteMessages.length > 0 && (
+          <div id={prerequisitesDescriptionId} class="planner-inline-notice">
+            <p class="planner-inline-notice__label">Before you generate</p>
+            <ul class="planner-inline-notice__list">
               {prerequisiteMessages.map((prerequisite) => (
                 <li key={prerequisite.id}>{prerequisite.message}</li>
               ))}
@@ -84,64 +120,17 @@ export function PlannerScheduleStep({
           </div>
         )}
 
-        <Field label="Start date" controlId="schedule-start-date">
-          <Input
-            id="schedule-start-date"
-            type="date"
-            value={startDate}
-            onInput={(event) =>
-              onStartDateChange((event.target as HTMLInputElement).value)
-            }
-            class={availability ? "bg-white text-black" : ""}
-          />
-        </Field>
-
-        <Field label="Algorithm" controlId="schedule-algorithm">
-          <Select
-            id="schedule-algorithm"
-            value={algorithm}
-            onChange={(event) =>
-              onAlgorithmChange(
-                (event.target as HTMLSelectElement).value as ScheduleAlgorithm,
-              )
-            }
-            class={availability ? "bg-white text-black" : ""}
-          >
-            <option value="sequential">Sequential</option>
-            <option value="alternating">Alternating</option>
-          </Select>
-        </Field>
-
         {actionError && (
-          <p role="alert" class={availability ? "text-white" : "text-black"}>
+          <p role="alert" class="planner-error">
             {actionError}
           </p>
         )}
-
-        <Button
-          type="button"
-          onClick={onGenerateSchedule}
-          disabled={!canGenerateSchedule}
-          aria-describedby={
-            prerequisiteMessages.length > 0
-              ? prerequisitesDescriptionId
-              : undefined
-          }
-          variant={availability ? "outline" : "primary"}
-          class={
-            availability
-              ? "border-white bg-white text-black hover:border-white hover:bg-black hover:text-white"
-              : undefined
-          }
-        >
-          Generate Schedule
-        </Button>
-      </Card>
+      </div>
 
       {schedule && (
-        <Card class="p-6 md:p-8">
+        <div class="planner-pane">
           <ScheduleView schedule={schedule} onDownloadIcal={onDownloadIcal} />
-        </Card>
+        </div>
       )}
     </section>
   );

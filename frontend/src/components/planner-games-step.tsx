@@ -1,7 +1,6 @@
 import type { ListGame } from "../types";
 import { GameListView } from "./game-list-view";
 import { GameSearch } from "./game-search";
-import { Card } from "./ui";
 
 interface Props {
   backlogName: string;
@@ -19,19 +18,19 @@ export function PlannerGamesStep({
   onRenameBacklog,
 }: Props) {
   return (
-    <div class="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
-      <Card class="p-6 md:p-8">
+    <div class="planner-games-workspace">
+      <div class="planner-pane planner-pane--search">
         <GameSearch onAddGame={onAddGame} />
-      </Card>
+      </div>
 
-      <Card class="p-6 md:p-8">
+      <div class="planner-pane planner-pane--backlog">
         <GameListView
           name={backlogName}
           games={games}
           onRemoveGame={onRemoveGame}
           onRenameList={onRenameBacklog}
         />
-      </Card>
+      </div>
     </div>
   );
 }
