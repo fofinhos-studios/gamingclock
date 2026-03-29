@@ -33,4 +33,13 @@ describe("ScheduleView", () => {
     expect(view.queryByRole("table")).toBeNull();
     expect(view.getAllByRole("article")).toHaveLength(2);
   });
+
+  test("shows the total elapsed days from first session to estimated finish", () => {
+    const view = render(
+      <ScheduleView schedule={schedule} onDownloadIcal={() => {}} />,
+    );
+
+    expect(view.getByText(/total span/i)).toBeTruthy();
+    expect(view.getByText(/3 days/i)).toBeTruthy();
+  });
 });
