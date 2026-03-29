@@ -1,5 +1,4 @@
 import type {
-  ListGame,
   ScheduleAlgorithm,
   ScheduleResponse,
   WeeklyAvailability,
@@ -9,14 +8,11 @@ import { Button, Card, Field, Input, Select } from "./ui";
 
 interface Props {
   availability: WeeklyAvailability | null;
-  games: ListGame[];
-  unresolvedGames: ListGame[];
   algorithm: ScheduleAlgorithm;
   startDate: string;
   schedule: ScheduleResponse | null;
   actionError: string;
   canGenerateSchedule: boolean;
-  guidance: string[];
   onAlgorithmChange: (algorithm: ScheduleAlgorithm) => void;
   onStartDateChange: (startDate: string) => void;
   onGenerateSchedule: () => void;
@@ -25,14 +21,11 @@ interface Props {
 
 export function PlannerScheduleStep({
   availability,
-  games,
-  unresolvedGames,
   algorithm,
   startDate,
   schedule,
   actionError,
   canGenerateSchedule,
-  guidance,
   onAlgorithmChange,
   onStartDateChange,
   onGenerateSchedule,
@@ -46,7 +39,7 @@ export function PlannerScheduleStep({
           Generate schedule
         </h2>
         <p class="section-copy max-w-none">
-          Choose a start date and algorithm once your backlog is ready to plan.
+          Choose a start date and algorithm for your current backlog.
         </p>
       </div>
 
@@ -56,15 +49,6 @@ export function PlannerScheduleStep({
           availability ? "texture-vertical" : ""
         }`}
       >
-        <div class="space-y-3">
-          <p class={`section-eyebrow ${availability ? "text-white/70" : ""}`}>
-            Ready to plan
-          </p>
-          <p class={`text-xl ${availability ? "text-white" : ""}`}>
-            {games.length} game(s) tracked / {unresolvedGames.length} unresolved
-          </p>
-        </div>
-
         <Field label="Start date" controlId="schedule-start-date">
           <Input
             id="schedule-start-date"
@@ -92,17 +76,6 @@ export function PlannerScheduleStep({
             <option value="alternating">Alternating</option>
           </Select>
         </Field>
-
-        {guidance.length > 0 && (
-          <Card tone="default" class="p-4">
-            <p class="section-eyebrow">Before you generate</p>
-            <ul class="mt-3 grid gap-2 text-[var(--muted-foreground)]">
-              {guidance.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </Card>
-        )}
 
         {actionError && (
           <p class={availability ? "text-white" : "text-black"}>

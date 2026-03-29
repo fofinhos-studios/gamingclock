@@ -49,22 +49,6 @@ export function HomePage(_props: RoutableProps) {
     setActionError("");
   };
 
-  const scheduleGuidance = [
-    ...(games.length === 0
-      ? ["Add at least one game to the backlog before generating a schedule."]
-      : []),
-    ...(!availability
-      ? ["Set your weekly availability before generating a schedule."]
-      : []),
-    ...(unresolvedGames.length > 0
-      ? [
-          `Resolve HLTB time for ${unresolvedGames
-            .map((game) => game.name)
-            .join(", ")}.`,
-        ]
-      : []),
-  ];
-
   const handleGenerateSchedule = async () => {
     if (!availability || games.length === 0 || unresolvedGames.length > 0) {
       return;
@@ -136,14 +120,11 @@ export function HomePage(_props: RoutableProps) {
     ) : (
       <PlannerScheduleStep
         availability={availability}
-        games={games}
-        unresolvedGames={unresolvedGames}
         algorithm={algorithm}
         startDate={startDate}
         schedule={schedule}
         actionError={actionError}
         canGenerateSchedule={canGenerateSchedule}
-        guidance={scheduleGuidance}
         onAlgorithmChange={setAlgorithm}
         onStartDateChange={setStartDate}
         onGenerateSchedule={() => void handleGenerateSchedule()}
@@ -172,23 +153,14 @@ export function HomePage(_props: RoutableProps) {
 
               <PlannerTabs activeTab={activeTab} onChange={setActiveTab} />
 
-              <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_18rem]">
-                <section
-                  id={`planner-panel-${activeTab}`}
-                  role="tabpanel"
-                  aria-labelledby={`planner-tab-${activeTab}`}
-                  class="min-w-0"
-                >
-                  {activePanel}
-                </section>
-
-                <aside class="hidden xl:block">
-                  <div
-                    aria-hidden="true"
-                    class="h-full min-h-[24rem] rounded-[2rem] border-2 border-dashed border-black/20"
-                  />
-                </aside>
-              </div>
+              <section
+                id={`planner-panel-${activeTab}`}
+                role="tabpanel"
+                aria-labelledby={`planner-tab-${activeTab}`}
+                class="min-w-0"
+              >
+                {activePanel}
+              </section>
             </div>
           </Card>
         </div>
