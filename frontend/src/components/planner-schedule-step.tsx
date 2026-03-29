@@ -6,6 +6,11 @@ import type {
 import { ScheduleView } from "./schedule-view";
 import { Button, Card, Field, Input, Select } from "./ui";
 
+interface PrerequisiteMessage {
+  id: string;
+  message: string;
+}
+
 interface Props {
   availability: WeeklyAvailability | null;
   algorithm: ScheduleAlgorithm;
@@ -13,7 +18,7 @@ interface Props {
   schedule: ScheduleResponse | null;
   actionError: string;
   canGenerateSchedule: boolean;
-  prerequisiteMessages: string[];
+  prerequisiteMessages: PrerequisiteMessage[];
   onAlgorithmChange: (algorithm: ScheduleAlgorithm) => void;
   onStartDateChange: (startDate: string) => void;
   onGenerateSchedule: () => void;
@@ -33,6 +38,8 @@ export function PlannerScheduleStep({
   onGenerateSchedule,
   onDownloadIcal,
 }: Props) {
+  const prerequisitesDescriptionId = "schedule-prerequisites";
+
   return (
     <section aria-labelledby="planner-schedule-heading" class="space-y-6">
       <div class="space-y-3">
@@ -53,6 +60,7 @@ export function PlannerScheduleStep({
       >
         {prerequisiteMessages.length > 0 && (
           <div
+            id={prerequisitesDescriptionId}
             class={`space-y-2 border-2 p-4 ${
               availability
                 ? "border-white/70 bg-black/20 text-white"
@@ -69,8 +77,8 @@ export function PlannerScheduleStep({
               Schedule prerequisites
             </p>
             <ul class="space-y-2 text-sm">
-              {prerequisiteMessages.map((message) => (
-                <li key={message}>{message}</li>
+              {prerequisiteMessages.map((prerequisite) => (
+                <li key={prerequisite.id}>{prerequisite.message}</li>
               ))}
             </ul>
           </div>
@@ -114,6 +122,11 @@ export function PlannerScheduleStep({
           type="button"
           onClick={onGenerateSchedule}
           disabled={!canGenerateSchedule}
+          aria-describedby={
+            prerequisiteMessages.length > 0
+              ? prerequisitesDescriptionId
+              : undefined
+          }
           variant={availability ? "outline" : "primary"}
           class={
             availability
