@@ -2,7 +2,12 @@ import datetime
 from collections.abc import Iterator
 
 from gamingclock.models.game import Game
-from gamingclock.models.schedule import PlaySession, ScheduleAlgorithm, WeeklyAvailability
+from gamingclock.models.schedule import (
+    DayAvailability,
+    PlaySession,
+    ScheduleAlgorithm,
+    WeeklyAvailability,
+)
 
 
 class SchedulerService:
@@ -12,26 +17,25 @@ class SchedulerService:
         availability: WeeklyAvailability,
         algorithm: ScheduleAlgorithm,
         start_date: datetime.date,
-        default_start_time: datetime.time = datetime.time(20, 0),
     ) -> list[PlaySession]:
         if not games:
             return []
 
         if algorithm == ScheduleAlgorithm.SEQUENTIAL:
-            return self._sequential(games, availability, start_date, default_start_time)
+            return self._sequential(games, availability, start_date)
         if algorithm == ScheduleAlgorithm.ALTERNATING:
-            return self._alternating(games, availability, start_date, default_start_time)
+            return self._alternating(games, availability, start_date)
         raise ValueError(f"Unknown algorithm: {algorithm}")
 
     @staticmethod
-    def _get_available_days_map(availability: WeeklyAvailability) -> dict[int, float]:
-        return {day.day_of_week: day.hours for day in availability.days}
+    def _get_available_days_map(availability: WeeklyAvailability) -> dict[int, DayAvailability]:
+        return {day.day_of_week: day for day in availability.days}
 
     def _iter_play_dates(
         self,
         start_date: datetime.date,
-        available_days: dict[int, float],
-    ) -> Iterator[tuple[datetime.date, float]]:
+        available_days: dict[int, DayAvailability],
+    ) -> Iterator[tuple[datetime.date, DayAvailability]]:
         current = start_date
         while True:
             weekday = current.weekday()
@@ -44,7 +48,6 @@ class SchedulerService:
         games: list[Game],
         availability: WeeklyAvailability,
         start_date: datetime.date,
-        default_start_time: datetime.time,
     ) -> list[PlaySession]:
         sessions: list[PlaySession] = []
         available_days = self._get_available_days_map(availability)
@@ -53,13 +56,13 @@ class SchedulerService:
         for game in games:
             remaining = game.main_story_hours
             while remaining > 0:
-                date, hours = next(date_iter)
-                session_hours = min(hours, remaining)
+                date, day_availability = next(date_iter)
+                session_hours = min(day_availability.hours, remaining)
                 sessions.append(
                     PlaySession(
                         game_name=game.name,
                         date=date,
-                        start_time=default_start_time,
+                        start_time=datetime.time(day_availability.start_hour, 0),
                         duration_hours=session_hours,
                     )
                 )
@@ -72,7 +75,6 @@ class SchedulerService:
         games: list[Game],
         availability: WeeklyAvailability,
         start_date: datetime.date,
-        default_start_time: datetime.time,
     ) -> list[PlaySession]:
         sessions: list[PlaySession] = []
         available_days = self._get_available_days_map(availability)
@@ -93,13 +95,13 @@ class SchedulerService:
                 break
 
             current_game = game_order[game_idx]
-            date, hours = next(date_iter)
-            session_hours = min(hours, remaining[current_game])
+            date, day_availability = next(date_iter)
+            session_hours = min(day_availability.hours, remaining[current_game])
             sessions.append(
                 PlaySession(
                     game_name=current_game,
                     date=date,
-                    start_time=default_start_time,
+                    start_time=datetime.time(day_availability.start_hour, 0),
                     duration_hours=session_hours,
                 )
             )

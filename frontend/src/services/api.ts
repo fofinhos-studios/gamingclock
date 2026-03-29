@@ -47,7 +47,14 @@ export async function resolveGame(game: CatalogGame): Promise<ListGame> {
   if (!response.ok) {
     throw await parseError(response, "Game resolution failed");
   }
-  return response.json();
+  const resolvedGame = (await response.json()) as ListGame;
+  if (
+    resolvedGame.hltb_status !== "resolved" ||
+    resolvedGame.main_story_hours === null
+  ) {
+    throw new Error(`No HLTB data found for ${game.name}.`);
+  }
+  return resolvedGame;
 }
 
 export async function generateSchedule(

@@ -27,6 +27,7 @@ export interface GameList {
 export interface DayAvailability {
   day_of_week: number;
   hours: number;
+  start_hour: number;
 }
 
 export interface WeeklyAvailability {

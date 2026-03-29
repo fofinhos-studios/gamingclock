@@ -169,6 +169,129 @@ describe("HomePage", () => {
     }
   });
 
+  test("saves the selected weekly start hour and sends it when generating a schedule", async () => {
+    const user = userEvent.setup();
+    const originalFetch = globalThis.fetch;
+    let scheduleRequest: Record<string, unknown> | null = null;
+
+    const searchResult: CatalogGame = {
+      igdb_id: 10,
+      name: "Hollow Knight",
+      cover_url: "https://images.igdb.com/igdb/image/upload/t_thumb/test.jpg",
+      summary: "Bug souls.",
+      genres: ["Action"],
+      platforms: ["PC"],
+      release_year: 2017,
+      rating: 95,
+    };
+
+    const resolvedGame: ListGame = {
+      ...searchResult,
+      hltb_status: "resolved",
+      hltb_match_name: "Hollow Knight",
+      main_story_hours: 27.5,
+      main_extra_hours: 40,
+      completionist_hours: 60,
+    };
+
+    const schedule: ScheduleResponse = {
+      sessions: [
+        {
+          game_name: "Hollow Knight",
+          date: "2026-03-30",
+          start_time: "18:00:00",
+          duration_hours: 2.5,
+        },
+      ],
+      total_hours: 2.5,
+      estimated_end_date: "2026-03-30",
+    };
+
+    globalThis.fetch = (async (
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ) => {
+      const url = String(input);
+
+      if (url.startsWith("/api/games/search?")) {
+        return createJsonResponse([searchResult]);
+      }
+
+      if (url === "/api/games/resolve") {
+        return createJsonResponse(resolvedGame);
+      }
+
+      if (url === "/api/schedule/generate") {
+        scheduleRequest = JSON.parse(String(init?.body ?? "{}")) as Record<
+          string,
+          unknown
+        >;
+        return createJsonResponse(schedule);
+      }
+
+      throw new Error(`Unexpected fetch call: ${url}`);
+    }) as typeof fetch;
+
+    try {
+      const view = render(<HomePage path="/" />);
+      const gamesPanel = view.getByRole("tabpanel");
+      const searchInput = within(gamesPanel).getByRole("textbox", {
+        name: /search by title/i,
+      });
+
+      await user.type(searchInput, "ho");
+
+      await waitFor(() =>
+        expect(
+          view.getByRole("button", { name: /add hollow knight to backlog/i }),
+        ).toBeTruthy(),
+      );
+
+      await user.click(
+        view.getByRole("button", { name: /add hollow knight to backlog/i }),
+      );
+
+      await user.click(view.getByRole("tab", { name: /availability/i }));
+
+      const availabilityPanel = view.getByRole("tabpanel");
+      await user.click(within(availabilityPanel).getByLabelText(/monday/i));
+      await user.click(
+        within(availabilityPanel).getByRole("button", { name: "18:00" }),
+      );
+      await user.click(
+        within(availabilityPanel).getByRole("button", {
+          name: /save availability/i,
+        }),
+      );
+
+      await user.click(view.getByRole("tab", { name: /schedule/i }));
+      await user.click(
+        within(view.getByRole("tabpanel")).getByRole("button", {
+          name: /generate schedule/i,
+        }),
+      );
+
+      await waitFor(() => expect(scheduleRequest).not.toBeNull());
+
+      const requestAvailability = scheduleRequest?.availability as {
+        days: Array<{ day_of_week: number; hours: number; start_hour: number }>;
+      };
+
+      expect(requestAvailability.days).toEqual([
+        {
+          day_of_week: 0,
+          hours: 2,
+          start_hour: 18,
+        },
+      ]);
+      expect(
+        within(view.getByRole("tabpanel")).getByText(/starts 18:00:00/i),
+      ).toBeTruthy();
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   test("shows planner summary status and missing schedule prerequisites", async () => {
     const user = userEvent.setup();
     const view = render(<HomePage path="/" />);
@@ -180,6 +303,7 @@ describe("HomePage", () => {
     expect(within(summaryPanel).getByText(/^games$/i)).toBeTruthy();
     expect(within(summaryPanel).getByText(/resolved hours/i)).toBeTruthy();
     expect(within(summaryPanel).getByText(/availability status/i)).toBeTruthy();
+    expect(within(summaryPanel).queryByText(/need hltb match/i)).toBeNull();
 
     await user.click(view.getByRole("tab", { name: /schedule/i }));
 
@@ -204,7 +328,7 @@ describe("HomePage", () => {
     ).toMatch(/add at least one game to the backlog/i);
   });
 
-  test("explains unresolved backlog entries before schedule generation", async () => {
+  test("shows an error and does not add a game when HLTB data is unavailable", async () => {
     const user = userEvent.setup();
     const originalFetch = globalThis.fetch;
 
@@ -262,21 +386,19 @@ describe("HomePage", () => {
       );
 
       await waitFor(() =>
-        expect(view.getByDisplayValue(/my backlog/i)).toBeTruthy(),
+        expect(
+          within(activePanel).getByText(
+            /no hltb data found for hollow knight/i,
+          ),
+        ).toBeTruthy(),
       );
-
-      await user.click(view.getByRole("tab", { name: /schedule/i }));
-
-      const schedulePanel = view.getByRole("tabpanel");
-      expect(
-        within(schedulePanel).getByText(/resolve hltb time for hollow knight/i),
-      ).toBeTruthy();
+      expect(view.getByText(/no games in this backlog yet/i)).toBeTruthy();
     } finally {
       globalThis.fetch = originalFetch;
     }
   });
 
-  test("renders duplicate unresolved prerequisite entries without duplicate key warnings", async () => {
+  test("keeps duplicate add feedback stable without key warnings", async () => {
     const user = userEvent.setup();
     const originalFetch = globalThis.fetch;
     const originalConsoleError = console.error;
@@ -293,13 +415,13 @@ describe("HomePage", () => {
       rating: 95,
     };
 
-    const unresolvedGame: ListGame = {
+    const resolvedGame: ListGame = {
       ...searchResult,
-      hltb_status: "unresolved",
-      hltb_match_name: null,
-      main_story_hours: null,
-      main_extra_hours: null,
-      completionist_hours: null,
+      hltb_status: "resolved",
+      hltb_match_name: "Hollow Knight",
+      main_story_hours: 27.5,
+      main_extra_hours: 40,
+      completionist_hours: 60,
     };
 
     console.error = (...args: unknown[]) => {
@@ -314,7 +436,7 @@ describe("HomePage", () => {
       }
 
       if (url === "/api/games/resolve") {
-        return createJsonResponse(unresolvedGame);
+        return createJsonResponse(resolvedGame);
       }
 
       throw new Error(`Unexpected fetch call: ${url}`);
@@ -355,14 +477,8 @@ describe("HomePage", () => {
         view.getByRole("button", { name: /add hollow knight to backlog/i }),
       );
 
-      await user.click(view.getByRole("tab", { name: /schedule/i }));
-
-      const schedulePanel = view.getByRole("tabpanel");
-      expect(
-        within(schedulePanel).getAllByText(
-          /resolve hltb time for hollow knight/i,
-        ),
-      ).toHaveLength(2);
+      expect(view.getAllByText(/hollow knight/i).length).toBeGreaterThan(0);
+      expect(view.getAllByDisplayValue(/my backlog/i)).toHaveLength(1);
       expect(
         consoleErrors.some((args) =>
           args.some((arg) => String(arg).toLowerCase().includes("key")),
@@ -595,7 +711,7 @@ describe("HomePage", () => {
       const generateSchedule = async () => {
         await user.click(
           within(schedulePanel()).getByRole("button", {
-            name: /generate schedule/i,
+            name: /generate schedule|generated/i,
           }),
         );
 

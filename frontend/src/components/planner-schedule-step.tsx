@@ -1,4 +1,12 @@
-import { AlertCircle, CalendarRange, Sparkles } from "lucide-preact";
+import {
+  AlertCircle,
+  CalendarRange,
+  Check,
+  LoaderCircle,
+  Sparkles,
+} from "lucide-preact";
+import { useState } from "preact/hooks";
+import { useTransientFeedback } from "../hooks/use-transient-feedback";
 import type {
   ScheduleAlgorithm,
   ScheduleResponse,
@@ -22,8 +30,8 @@ interface Props {
   prerequisiteMessages: PrerequisiteMessage[];
   onAlgorithmChange: (algorithm: ScheduleAlgorithm) => void;
   onStartDateChange: (startDate: string) => void;
-  onGenerateSchedule: () => void;
-  onDownloadIcal: () => void;
+  onGenerateSchedule: () => Promise<boolean>;
+  onDownloadIcal: () => Promise<boolean>;
 }
 
 export function PlannerScheduleStep({
@@ -40,6 +48,19 @@ export function PlannerScheduleStep({
   onDownloadIcal,
 }: Props) {
   const prerequisitesDescriptionId = "schedule-prerequisites";
+  const [isGenerating, setIsGenerating] = useState(false);
+  const feedback = useTransientFeedback<"success">();
+
+  const handleGenerateClick = async () => {
+    setIsGenerating(true);
+    const success = await onGenerateSchedule();
+    setIsGenerating(false);
+    if (success) {
+      feedback.trigger("success", 1800);
+    } else {
+      feedback.clear();
+    }
+  };
 
   return (
     <section
@@ -97,8 +118,8 @@ export function PlannerScheduleStep({
           <div class="planner-controls__actions">
             <Button
               type="button"
-              onClick={onGenerateSchedule}
-              disabled={!canGenerateSchedule}
+              onClick={() => void handleGenerateClick()}
+              disabled={!canGenerateSchedule || isGenerating}
               aria-describedby={
                 prerequisiteMessages.length > 0
                   ? prerequisitesDescriptionId
@@ -106,17 +127,38 @@ export function PlannerScheduleStep({
               }
               variant="primary"
               size="sm"
+              feedbackState={
+                isGenerating
+                  ? "loading"
+                  : feedback.active === "success"
+                    ? "success"
+                    : "idle"
+              }
             >
-              <Sparkles class="planner-icon" aria-hidden="true" />
-              Generate Schedule
+              {isGenerating ? (
+                <LoaderCircle
+                  class="planner-icon planner-icon--spin"
+                  aria-hidden="true"
+                />
+              ) : feedback.active === "success" ? (
+                <Check class="planner-icon" aria-hidden="true" />
+              ) : (
+                <Sparkles class="planner-icon" aria-hidden="true" />
+              )}
+              {isGenerating
+                ? "Generating"
+                : feedback.active === "success"
+                  ? "Generated"
+                  : "Generate Schedule"}
             </Button>
-            <p class="planner-controls__hint">
-              {availability
-                ? "Changing inputs clears the last generated plan."
-                : "Set weekly availability before generating."}
-            </p>
           </div>
         </div>
+
+        <p class="planner-controls__hint">
+          {availability
+            ? "Changing the start date or algorithm clears the current schedule."
+            : "Set weekly availability before generating a schedule."}
+        </p>
 
         {prerequisiteMessages.length > 0 && (
           <div id={prerequisitesDescriptionId} class="planner-inline-notice">
