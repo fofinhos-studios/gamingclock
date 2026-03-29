@@ -102,36 +102,6 @@ export function HomePage(_props: RoutableProps) {
     setActionError("");
   };
 
-  const activePanel =
-    activeTab === "games" ? (
-      <PlannerGamesStep
-        backlogName={backlogName}
-        games={games}
-        onAddGame={addGame}
-        onRemoveGame={removeGame}
-        onRenameBacklog={setBacklogName}
-      />
-    ) : activeTab === "availability" ? (
-      <PlannerAvailabilityStep
-        availability={availability}
-        gameCount={games.length}
-        onSubmit={handleSetAvailability}
-      />
-    ) : (
-      <PlannerScheduleStep
-        availability={availability}
-        algorithm={algorithm}
-        startDate={startDate}
-        schedule={schedule}
-        actionError={actionError}
-        canGenerateSchedule={canGenerateSchedule}
-        onAlgorithmChange={setAlgorithm}
-        onStartDateChange={setStartDate}
-        onGenerateSchedule={() => void handleGenerateSchedule()}
-        onDownloadIcal={() => void handleDownloadIcal()}
-      />
-    );
-
   return (
     <div class="page-shell">
       <a href="#planner" class="skip-link">
@@ -154,12 +124,54 @@ export function HomePage(_props: RoutableProps) {
               <PlannerTabs activeTab={activeTab} onChange={setActiveTab} />
 
               <section
-                id={`planner-panel-${activeTab}`}
+                id="planner-panel-games"
                 role="tabpanel"
-                aria-labelledby={`planner-tab-${activeTab}`}
+                aria-labelledby="planner-tab-games"
+                hidden={activeTab !== "games"}
                 class="min-w-0"
               >
-                {activePanel}
+                <PlannerGamesStep
+                  backlogName={backlogName}
+                  games={games}
+                  onAddGame={addGame}
+                  onRemoveGame={removeGame}
+                  onRenameBacklog={setBacklogName}
+                />
+              </section>
+
+              <section
+                id="planner-panel-availability"
+                role="tabpanel"
+                aria-labelledby="planner-tab-availability"
+                hidden={activeTab !== "availability"}
+                class="min-w-0"
+              >
+                <PlannerAvailabilityStep
+                  availability={availability}
+                  gameCount={games.length}
+                  onSubmit={handleSetAvailability}
+                />
+              </section>
+
+              <section
+                id="planner-panel-schedule"
+                role="tabpanel"
+                aria-labelledby="planner-tab-schedule"
+                hidden={activeTab !== "schedule"}
+                class="min-w-0"
+              >
+                <PlannerScheduleStep
+                  availability={availability}
+                  algorithm={algorithm}
+                  startDate={startDate}
+                  schedule={schedule}
+                  actionError={actionError}
+                  canGenerateSchedule={canGenerateSchedule}
+                  onAlgorithmChange={setAlgorithm}
+                  onStartDateChange={setStartDate}
+                  onGenerateSchedule={() => void handleGenerateSchedule()}
+                  onDownloadIcal={() => void handleDownloadIcal()}
+                />
               </section>
             </div>
           </Card>
