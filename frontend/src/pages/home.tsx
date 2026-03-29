@@ -28,6 +28,10 @@ export function HomePage(_props: RoutableProps) {
   const [startDate, setStartDate] = useState(
     new Date().toISOString().split("T")[0] ?? "",
   );
+  const clearGeneratedSchedule = () => {
+    setSchedule(null);
+    setActionError("");
+  };
 
   const unresolvedGames = games.filter(
     (game) =>
@@ -41,15 +45,27 @@ export function HomePage(_props: RoutableProps) {
     availability !== null && games.length > 0 && unresolvedGames.length === 0;
   const schedulePrerequisites = [
     ...(games.length === 0
-      ? ["Add at least one game to the backlog before generating a schedule."]
+      ? [
+          {
+            id: "games-required",
+            message:
+              "Add at least one game to the backlog before generating a schedule.",
+          },
+        ]
       : []),
     ...(!availability
-      ? ["Set your weekly availability before generating a schedule."]
+      ? [
+          {
+            id: "availability-required",
+            message:
+              "Set your weekly availability before generating a schedule.",
+          },
+        ]
       : []),
-    ...unresolvedGames.map(
-      (game) =>
-        `Resolve HLTB time for ${game.name} before generating a schedule.`,
-    ),
+    ...unresolvedGames.map((game, index) => ({
+      id: `unresolved-${game.igdb_id}-${index}`,
+      message: `Resolve HLTB time for ${game.name} before generating a schedule.`,
+    })),
   ];
   const availabilityStatus = availability ? "Set" : "Missing";
   const availabilityDetail = availability
@@ -67,20 +83,18 @@ export function HomePage(_props: RoutableProps) {
           : "Ready";
   const scheduleDetail = schedule
     ? `Finishes ${schedule.estimated_end_date ?? "when sessions complete"}`
-    : (schedulePrerequisites[0] ?? "You can generate a schedule now");
+    : (schedulePrerequisites[0]?.message ?? "You can generate a schedule now");
 
   const addGame = (game: ListGame) => {
     setGames((currentGames) => [...currentGames, game]);
-    setSchedule(null);
-    setActionError("");
+    clearGeneratedSchedule();
   };
 
   const removeGame = (index: number) => {
     setGames((currentGames) =>
       currentGames.filter((_, gameIndex) => gameIndex !== index),
     );
-    setSchedule(null);
-    setActionError("");
+    clearGeneratedSchedule();
   };
 
   const handleGenerateSchedule = async () => {
@@ -132,8 +146,17 @@ export function HomePage(_props: RoutableProps) {
 
   const handleSetAvailability = (nextAvailability: WeeklyAvailability) => {
     setAvailability(nextAvailability);
-    setSchedule(null);
-    setActionError("");
+    clearGeneratedSchedule();
+  };
+
+  const handleAlgorithmChange = (nextAlgorithm: ScheduleAlgorithm) => {
+    setAlgorithm(nextAlgorithm);
+    clearGeneratedSchedule();
+  };
+
+  const handleStartDateChange = (nextStartDate: string) => {
+    setStartDate(nextStartDate);
+    clearGeneratedSchedule();
   };
 
   return (
@@ -204,8 +227,8 @@ export function HomePage(_props: RoutableProps) {
                       actionError={actionError}
                       canGenerateSchedule={canGenerateSchedule}
                       prerequisiteMessages={schedulePrerequisites}
-                      onAlgorithmChange={setAlgorithm}
-                      onStartDateChange={setStartDate}
+                      onAlgorithmChange={handleAlgorithmChange}
+                      onStartDateChange={handleStartDateChange}
                       onGenerateSchedule={() => void handleGenerateSchedule()}
                       onDownloadIcal={() => void handleDownloadIcal()}
                     />
