@@ -42,61 +42,54 @@ export function AvailabilityForm({ onSubmit }: Props) {
   };
 
   return (
-    <section aria-labelledby="availability-heading" class="space-y-6">
-      <div class="space-y-3">
-        <p class="section-eyebrow">Availability</p>
-        <h3 id="availability-heading" class="text-4xl md:text-5xl">
-          Weekly cadence
-        </h3>
-        <p class="section-copy max-w-none">
-          This is an estimate to help plan your gaming time. Actual play times
-          may vary.
-        </p>
-      </div>
+    <section aria-labelledby="availability-heading" class="space-y-4">
+      <h3 id="availability-heading" class="sr-only">
+        Availability
+      </h3>
 
-      <fieldset class="grid gap-4 md:grid-cols-2">
+      <fieldset class="planner-toggle-grid">
         <legend class="sr-only">Availability mode</legend>
         <label
-          class={`cursor-pointer border border-black p-5 transition-colors duration-100 ${
-            mode === "uniform" ? "bg-black text-white" : "bg-white text-black"
+          class={`planner-option-card ${
+            mode === "uniform" ? "planner-option-card--active" : ""
           }`}
         >
-          <div class="flex items-start gap-3">
-            <input
-              type="radio"
-              checked={mode === "uniform"}
-              onChange={() => setMode("uniform")}
-              class="mt-1"
-            />
-            <div class="space-y-1">
-              <p class="section-eyebrow">Uniform</p>
-              <p class="text-2xl leading-none">Same hours every selected day</p>
-            </div>
+          <input
+            type="radio"
+            checked={mode === "uniform"}
+            onChange={() => setMode("uniform")}
+          />
+          <div class="planner-option-card__body">
+            <p class="planner-option-card__label">Uniform</p>
+            <p class="planner-option-card__text">
+              Same hours on every selected day
+            </p>
           </div>
         </label>
 
         <label
-          class={`cursor-pointer border border-black p-5 transition-colors duration-100 ${
-            mode === "custom" ? "bg-black text-white" : "bg-white text-black"
+          class={`planner-option-card ${
+            mode === "custom" ? "planner-option-card--active" : ""
           }`}
         >
-          <div class="flex items-start gap-3">
-            <input
-              type="radio"
-              checked={mode === "custom"}
-              onChange={() => setMode("custom")}
-              class="mt-1"
-            />
-            <div class="space-y-1">
-              <p class="section-eyebrow">Custom</p>
-              <p class="text-2xl leading-none">Different hours per day</p>
-            </div>
+          <input
+            type="radio"
+            checked={mode === "custom"}
+            onChange={() => setMode("custom")}
+          />
+          <div class="planner-option-card__body">
+            <p class="planner-option-card__label">Custom</p>
+            <p class="planner-option-card__text">Different hours by day</p>
           </div>
         </label>
       </fieldset>
 
       {mode === "uniform" && (
-        <Field label="Hours per selected day" controlId="uniform-hours">
+        <Field
+          label="Hours per selected day"
+          controlId="uniform-hours"
+          class="max-w-xs"
+        >
           <Input
             id="uniform-hours"
             type="number"
@@ -107,33 +100,36 @@ export function AvailabilityForm({ onSubmit }: Props) {
             onInput={(event) =>
               setUniformHours(Number((event.target as HTMLInputElement).value))
             }
-            class="md:max-w-xs"
           />
         </Field>
       )}
 
-      <div class="space-y-4">
-        <p class="section-eyebrow">Days</p>
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div class="space-y-3">
+        <p class="section-eyebrow">Weekly days</p>
+        <div class="planner-day-grid">
           {DAY_NAMES.map((name, index) => {
             const selected = selectedDays.has(index);
 
             return (
               <label
                 key={name}
-                class={`border border-black p-4 transition-colors duration-100 ${
-                  selected ? "bg-black text-white" : "bg-white text-black"
+                class={`planner-day-card ${
+                  selected ? "planner-day-card--active" : ""
                 }`}
               >
-                <div class="flex items-center gap-3">
+                <div class="planner-day-card__header">
                   <input
                     type="checkbox"
                     checked={selected}
                     onChange={() => toggleDay(index)}
                   />
-                  <div>
-                    <p class="section-eyebrow">Day</p>
-                    <p class="text-2xl leading-none">{name}</p>
+                  <div class="planner-day-card__copy">
+                    <p class="planner-day-card__label">{name}</p>
+                    <p class="planner-day-card__text">
+                      {mode === "uniform"
+                        ? `${uniformHours} hour${uniformHours === 1 ? "" : "s"}`
+                        : "Custom hours"}
+                    </p>
                   </div>
                 </div>
 
@@ -152,7 +148,6 @@ export function AvailabilityForm({ onSubmit }: Props) {
                         ),
                       })
                     }
-                    class="mt-4 bg-white text-black"
                   />
                 )}
               </label>
@@ -161,14 +156,17 @@ export function AvailabilityForm({ onSubmit }: Props) {
         </div>
       </div>
 
-      <Button
-        type="button"
-        onClick={handleSubmit}
-        disabled={selectedDays.size === 0}
-        variant="primary"
-      >
-        Set Availability
-      </Button>
+      <div class="planner-form-actions">
+        <Button
+          type="button"
+          onClick={handleSubmit}
+          disabled={selectedDays.size === 0}
+          variant="primary"
+          size="sm"
+        >
+          Save Availability
+        </Button>
+      </div>
     </section>
   );
 }

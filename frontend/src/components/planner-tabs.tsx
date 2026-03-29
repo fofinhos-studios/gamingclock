@@ -1,5 +1,3 @@
-import { Button } from "./ui";
-
 const PLANNER_TABS = [
   { id: "games", label: "Games" },
   { id: "availability", label: "Availability" },
@@ -27,9 +25,9 @@ export function PlannerTabs({ activeTab, onChange }: Props) {
   const handleKeyDown = (event: KeyboardEvent, index: number) => {
     let nextIndex = index;
 
-    if (event.key === "ArrowRight") {
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
       nextIndex = (index + 1) % PLANNER_TABS.length;
-    } else if (event.key === "ArrowLeft") {
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
       nextIndex = (index - 1 + PLANNER_TABS.length) % PLANNER_TABS.length;
     } else if (event.key === "Home") {
       nextIndex = 0;
@@ -44,29 +42,42 @@ export function PlannerTabs({ activeTab, onChange }: Props) {
   };
 
   return (
-    <div
-      role="tablist"
-      aria-label="Planner steps"
-      aria-orientation="horizontal"
-      class="flex flex-wrap gap-3 border-b-2 border-black pb-6"
-    >
-      {PLANNER_TABS.map((tab, index) => (
-        <Button
-          key={tab.id}
-          id={`planner-tab-${tab.id}`}
-          role="tab"
-          type="button"
-          size="sm"
-          variant={tab.id === activeTab ? "primary" : "outline"}
-          aria-selected={tab.id === activeTab}
-          aria-controls={`planner-panel-${tab.id}`}
-          tabIndex={tab.id === activeTab ? 0 : -1}
-          onClick={() => onChange(tab.id)}
-          onKeyDown={(event) => handleKeyDown(event as KeyboardEvent, index)}
-        >
-          {tab.label}
-        </Button>
-      ))}
-    </div>
+    <nav class="planner-rail" aria-label="Planner workflow">
+      <p class="planner-rail__eyebrow">Workflow</p>
+      <div
+        role="tablist"
+        aria-label="Planner steps"
+        aria-orientation="vertical"
+        class="planner-rail__list"
+      >
+        {PLANNER_TABS.map((tab, index) => {
+          const selected = tab.id === activeTab;
+
+          return (
+            <button
+              key={tab.id}
+              id={`planner-tab-${tab.id}`}
+              role="tab"
+              type="button"
+              class={`planner-rail__tab ${
+                selected ? "planner-rail__tab--active" : ""
+              }`}
+              aria-selected={selected}
+              aria-controls={`planner-panel-${tab.id}`}
+              tabIndex={selected ? 0 : -1}
+              onClick={() => onChange(tab.id)}
+              onKeyDown={(event) =>
+                handleKeyDown(event as KeyboardEvent, index)
+              }
+            >
+              <span class="planner-rail__tab-index">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span class="planner-rail__tab-label">{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
   );
 }

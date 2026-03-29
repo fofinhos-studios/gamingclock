@@ -19,19 +19,21 @@ describe("HomePage", () => {
 
     expect(view.getByRole("link", { name: /skip to planner/i })).toBeTruthy();
     expect(view.getByRole("main")).toBeTruthy();
+    expect(view.getByText(/gaming clock/i)).toBeTruthy();
     expect(
-      view.getByRole("heading", { level: 1, name: /gaming clock/i }),
+      view.getByRole("heading", { level: 1, name: /build backlog/i }),
     ).toBeTruthy();
     expect(view.getByRole("tab", { name: /games/i })).toBeTruthy();
     expect(view.getByRole("tab", { name: /availability/i })).toBeTruthy();
     expect(view.getByRole("tab", { name: /schedule/i })).toBeTruthy();
     expect(view.queryByText(/gaming backlog planner/i)).toBeNull();
-    expect(view.queryByText(/^workflow$/i)).toBeNull();
     expect(view.queryByText(/^overview$/i)).toBeNull();
-    expect(within(activePanel).getByText(/search games/i)).toBeTruthy();
+    expect(within(activePanel).getByText(/find games/i)).toBeTruthy();
     expect(within(activePanel).queryByText(/weekly cadence/i)).toBeNull();
-    expect(within(activePanel).queryByText(/your gaming schedule/i)).toBeNull();
-    expect(view.getByRole("complementary")).toBeTruthy();
+    expect(within(activePanel).queryByText(/generated schedule/i)).toBeNull();
+    expect(
+      view.getByRole("complementary", { name: /planner status/i }),
+    ).toBeTruthy();
   });
 
   test("switches planner steps manually through the top tabs", async () => {
@@ -43,7 +45,7 @@ describe("HomePage", () => {
     let activePanel = view.getByRole("tabpanel");
     expect(activePanel.id).toBe("planner-panel-availability");
     expect(within(activePanel).getByText(/weekly cadence/i)).toBeTruthy();
-    expect(within(activePanel).queryByText(/search games/i)).toBeNull();
+    expect(within(activePanel).queryByText(/find games/i)).toBeNull();
 
     await user.click(view.getByRole("tab", { name: /schedule/i }));
     activePanel = view.getByRole("tabpanel");
@@ -53,7 +55,7 @@ describe("HomePage", () => {
     ).toBeTruthy();
     expect(within(activePanel).queryByText(/weekly cadence/i)).toBeNull();
     expect(within(activePanel).queryByText(/ready to plan/i)).toBeNull();
-    expect(within(activePanel).queryByText(/before you generate/i)).toBeNull();
+    expect(within(activePanel).getByText(/before you generate/i)).toBeTruthy();
   });
 
   test("preserves step-local draft state when switching tabs", async () => {
@@ -170,10 +172,12 @@ describe("HomePage", () => {
   test("shows planner summary status and missing schedule prerequisites", async () => {
     const user = userEvent.setup();
     const view = render(<HomePage path="/" />);
-    const summaryPanel = view.getByRole("complementary");
+    const summaryPanel = view.getByRole("complementary", {
+      name: /planner status/i,
+    });
 
     expect(summaryPanel).toBeTruthy();
-    expect(within(summaryPanel).getByText(/tracked games/i)).toBeTruthy();
+    expect(within(summaryPanel).getByText(/^games$/i)).toBeTruthy();
     expect(within(summaryPanel).getByText(/resolved hours/i)).toBeTruthy();
     expect(within(summaryPanel).getByText(/availability status/i)).toBeTruthy();
 
@@ -456,7 +460,9 @@ describe("HomePage", () => {
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
       await user.click(view.getByLabelText(/monday/i));
-      await user.click(view.getByRole("button", { name: /set availability/i }));
+      await user.click(
+        view.getByRole("button", { name: /save availability/i }),
+      );
 
       await user.click(view.getByRole("tab", { name: /schedule/i }));
       await user.click(
@@ -467,13 +473,15 @@ describe("HomePage", () => {
         expect(
           within(view.getByRole("tabpanel")).getByRole("heading", {
             level: 2,
-            name: /your gaming schedule/i,
+            name: /generated schedule/i,
           }),
         ).toBeTruthy(),
       );
 
       const schedulePanel = view.getByRole("tabpanel");
-      const summaryPanel = view.getByRole("complementary");
+      const summaryPanel = view.getByRole("complementary", {
+        name: /planner status/i,
+      });
       expect(
         within(schedulePanel).getByText(/total planned hours/i),
       ).toBeTruthy();
@@ -484,9 +492,7 @@ describe("HomePage", () => {
       ).toBeTruthy();
       expect(within(schedulePanel).getByText(/^2$/)).toBeTruthy();
       expect(within(schedulePanel).getByText(/3 days/i)).toBeTruthy();
-      expect(
-        within(summaryPanel).getByText(/total elapsed days/i),
-      ).toBeTruthy();
+      expect(within(summaryPanel).getByText(/elapsed days/i)).toBeTruthy();
       expect(within(summaryPanel).getByText(/3 days/i)).toBeTruthy();
     } finally {
       globalThis.fetch = originalFetch;
@@ -579,7 +585,9 @@ describe("HomePage", () => {
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
       await user.click(view.getByLabelText(/monday/i));
-      await user.click(view.getByRole("button", { name: /set availability/i }));
+      await user.click(
+        view.getByRole("button", { name: /save availability/i }),
+      );
 
       await user.click(view.getByRole("tab", { name: /schedule/i }));
 
@@ -595,7 +603,7 @@ describe("HomePage", () => {
           expect(
             within(schedulePanel()).getByRole("heading", {
               level: 2,
-              name: /your gaming schedule/i,
+              name: /generated schedule/i,
             }),
           ).toBeTruthy(),
         );
@@ -617,7 +625,7 @@ describe("HomePage", () => {
         expect(
           within(schedulePanel()).queryByRole("heading", {
             level: 2,
-            name: /your gaming schedule/i,
+            name: /generated schedule/i,
           }),
         ).toBeNull(),
       );
@@ -638,7 +646,7 @@ describe("HomePage", () => {
         expect(
           within(schedulePanel()).queryByRole("heading", {
             level: 2,
-            name: /your gaming schedule/i,
+            name: /generated schedule/i,
           }),
         ).toBeNull(),
       );

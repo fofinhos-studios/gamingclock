@@ -1,5 +1,5 @@
 import type { ScheduleResponse } from "../types";
-import { Button, Card } from "./ui";
+import { Button } from "./ui";
 
 interface Props {
   schedule: ScheduleResponse;
@@ -35,74 +35,72 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
   const totalElapsedDays = calculateElapsedDays(schedule);
 
   return (
-    <section aria-labelledby="schedule-heading" class="space-y-10">
-      <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-        <div class="space-y-3">
+    <section aria-labelledby="schedule-heading" class="space-y-4">
+      <div class="planner-pane__header">
+        <div class="space-y-1">
           <p class="section-eyebrow">Output</p>
-          <h2 id="schedule-heading" class="text-5xl md:text-6xl">
-            Your Gaming Schedule
+          <h2 id="schedule-heading" class="planner-panel__title">
+            Generated schedule
           </h2>
-          <p class="section-copy max-w-none">Session timeline</p>
         </div>
 
-        <Button type="button" variant="primary" onClick={onDownloadIcal}>
+        <Button
+          type="button"
+          variant="primary"
+          size="sm"
+          onClick={onDownloadIcal}
+        >
           Download .ics
         </Button>
       </div>
 
-      <div class="grid gap-8 xl:grid-cols-[20rem_minmax(0,1fr)]">
-        <Card
-          tone="inverted"
-          class="texture-vertical flex flex-col gap-6 self-start"
-        >
-          <div class="space-y-2">
-            <p class="section-eyebrow text-white/70">Summary</p>
-            <p class="text-5xl leading-none">
-              {schedule.total_hours.toFixed(1)}
+      <div class="planner-metric-grid">
+        <div class="planner-metric">
+          <p class="planner-metric__label">Total planned hours</p>
+          <p class="planner-metric__value">{schedule.total_hours.toFixed(1)}</p>
+        </div>
+        <div class="planner-metric">
+          <p class="planner-metric__label">Estimated finish</p>
+          <p class="planner-metric__value">
+            {schedule.estimated_end_date ?? "Not available"}
+          </p>
+        </div>
+        <div class="planner-metric">
+          <p class="planner-metric__label">Sessions</p>
+          <p class="planner-metric__value">{schedule.sessions.length}</p>
+        </div>
+        {totalElapsedDays !== null && (
+          <div class="planner-metric">
+            <p class="planner-metric__label">Total elapsed days</p>
+            <p class="planner-metric__value">
+              {totalElapsedDays} day{totalElapsedDays === 1 ? "" : "s"}
             </p>
-            <p class="timeline-detail text-white/80">Total planned hours</p>
           </div>
+        )}
+      </div>
 
-          <div class="border-t-2 border-white pt-4">
-            <p class="section-eyebrow text-white/70">Estimated finish</p>
-            <p class="mt-3 text-3xl leading-none">
-              {schedule.estimated_end_date ?? "Not available"}
-            </p>
-          </div>
-
-          <div class="border-t-2 border-white pt-4">
-            <p class="section-eyebrow text-white/70">Sessions</p>
-            <p class="mt-3 text-3xl leading-none">{schedule.sessions.length}</p>
-          </div>
-
-          {totalElapsedDays !== null && (
-            <div class="border-t-2 border-white pt-4">
-              <p class="section-eyebrow text-white/70">Total elapsed days</p>
-              <p class="mt-3 text-3xl leading-none">
-                {totalElapsedDays} day{totalElapsedDays === 1 ? "" : "s"}
-              </p>
-            </div>
-          )}
-        </Card>
-
-        <div class="space-y-5">
-          <p class="section-eyebrow">Session timeline</p>
-          <ol class="timeline">
-            {schedule.sessions.map((session, index) => (
-              <li key={`${session.game_name}-${session.date}-${index}`}>
-                <article class="timeline-entry space-y-3">
+      <div class="space-y-3">
+        <p class="section-eyebrow">Session timeline</p>
+        <ol class="timeline">
+          {schedule.sessions.map((session, index) => (
+            <li key={`${session.game_name}-${session.date}-${index}`}>
+              <article class="timeline-entry">
+                <div class="timeline-entry__header">
                   <p class="timeline-meta">
                     {session.date} / starts {session.start_time}
                   </p>
-                  <h3 class="timeline-title">{session.game_name}</h3>
-                  <p class="timeline-detail">
-                    {session.duration_hours.toFixed(1)} planned hours
+                  <p class="timeline-duration">
+                    {session.duration_hours.toFixed(1)}h
                   </p>
-                </article>
-              </li>
-            ))}
-          </ol>
-        </div>
+                </div>
+                <h3 class="timeline-title">{session.game_name}</h3>
+                <p class="timeline-detail">
+                  {session.duration_hours.toFixed(1)} planned hours
+                </p>
+              </article>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   );

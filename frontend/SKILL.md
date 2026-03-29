@@ -35,13 +35,14 @@ bunx @biomejs/biome check --write src/
 ## API and Pages
 
 - `src/services/api.ts` is the single place for backend HTTP calls.
-- `src/pages/home.tsx` owns the centered planner shell, the active tab, the single backlog state, availability, scheduling, and the generated schedule/error state.
+- `src/pages/home.tsx` owns the dense planner app shell, the active workflow step, the single backlog state, availability, scheduling, and the generated schedule/error state.
 - `src/components/` holds raw-element MVP UI pieces for search, lists, availability, and schedule display.
 
 ## Planner Flow And Boundaries
 
 - `src/components/planner-games-step.tsx`, `src/components/planner-availability-step.tsx`, and `src/components/planner-schedule-step.tsx` split the page into focused planner steps.
-- `src/components/planner-tabs.tsx` keeps the accessible tab strip, and `src/components/planner-summary.tsx` keeps the always-visible status column.
+- `src/components/planner-tabs.tsx` is the workflow rail and owns the selected-step interaction behavior.
+- `src/components/planner-summary.tsx` is the compact top status strip that summarizes backlog, availability, and schedule state.
 - The MVP assumes one backlog only. Future multi-list support should re-enter in `src/pages/home.tsx` by lifting the backlog into a collection-level container while keeping the step component props backlog-shaped.
 
 ## Calendar Flow
@@ -55,12 +56,12 @@ bunx @biomejs/biome check --write src/
 - `src/pages/home.tsx` stores resolved and unresolved backlog items, sums only resolved HLTB hours, and blocks schedule generation while unresolved games remain.
 - `src/services/api.ts` is the single integration boundary for `searchGames()`, `resolveGame()`, `generateSchedule()`, and `downloadIcal()`.
 
-## Minimalist Monochrome UI System
+## Dense Planner UI System
 
-- **Design tokens**: `src/index.css` now owns the monochrome palette, font imports, typography scale, textures, sharp-corner reset, and shared semantic classes such as `.section-eyebrow`, `.surface-card`, `.ui-input`, and `.timeline`.
+- **Design tokens**: `src/index.css` owns the dense planner shell, IBM Plex Sans + JetBrains Mono font pairing, control sizing, pane/layout classes, and shared semantic classes such as `.planner-pane`, `.planner-statusbar`, `.planner-rail__tab`, `.ui-input`, and `.timeline`.
 - **Reusable primitives**: `src/components/ui/` contains the shared building blocks for buttons, cards, fields, inputs, selects, rules, sections, stacks, and stats.
 - **Read**: Start with `src/pages/home.tsx` for page composition, then follow the primitives in `src/components/ui/`, then inspect the feature components for how they consume those primitives.
-- **Edit**: Prefer extending tokens or primitives before adding one-off utility strings to feature components. Keep the monochrome rules intact: no radius, no shadows, no accent colors.
+- **Edit**: Prefer extending planner classes or shared primitives before adding one-off utility strings. Keep the app behavior stable first, then tune density and spacing through `src/index.css`.
 
 ## Frontend Smoke Tests
 
