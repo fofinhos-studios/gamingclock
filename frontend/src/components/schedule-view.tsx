@@ -78,7 +78,7 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
 
           {totalElapsedDays !== null && (
             <div class="border-t-2 border-white pt-4">
-              <p class="section-eyebrow text-white/70">Total span</p>
+              <p class="section-eyebrow text-white/70">Total elapsed days</p>
               <p class="mt-3 text-3xl leading-none">
                 {totalElapsedDays} day{totalElapsedDays === 1 ? "" : "s"}
               </p>

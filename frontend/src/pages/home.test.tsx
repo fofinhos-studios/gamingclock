@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { render, waitFor, within } from "@testing-library/preact";
 import userEvent from "@testing-library/user-event";
 
-import type { CatalogGame, ListGame } from "../types";
+import type { CatalogGame, ListGame, ScheduleResponse } from "../types";
 import { HomePage } from "./home";
 
 function createJsonResponse(body: unknown): Response {
@@ -206,6 +206,122 @@ describe("HomePage", () => {
       expect(
         within(schedulePanel).getByText(/resolve hltb time for hollow knight/i),
       ).toBeTruthy();
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test("renders schedule metrics on the home page after generating a schedule", async () => {
+    const user = userEvent.setup();
+    const originalFetch = globalThis.fetch;
+
+    const searchResult: CatalogGame = {
+      igdb_id: 10,
+      name: "Hollow Knight",
+      cover_url: "https://images.igdb.com/igdb/image/upload/t_thumb/test.jpg",
+      summary: "Bug souls.",
+      genres: ["Action"],
+      platforms: ["PC"],
+      release_year: 2017,
+      rating: 95,
+    };
+
+    const resolvedGame: ListGame = {
+      ...searchResult,
+      hltb_status: "resolved",
+      hltb_match_name: "Hollow Knight",
+      main_story_hours: 27.5,
+      main_extra_hours: 40,
+      completionist_hours: 60,
+    };
+
+    const schedule: ScheduleResponse = {
+      sessions: [
+        {
+          game_name: "Hollow Knight",
+          date: "2026-03-30",
+          start_time: "20:00",
+          duration_hours: 2.5,
+        },
+        {
+          game_name: "Hollow Knight",
+          date: "2026-04-01",
+          start_time: "20:00",
+          duration_hours: 2,
+        },
+      ],
+      total_hours: 4.5,
+      estimated_end_date: "2026-04-01",
+    };
+
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+
+      if (url.startsWith("/api/games/search?")) {
+        return createJsonResponse([searchResult]);
+      }
+
+      if (url === "/api/games/resolve") {
+        return createJsonResponse(resolvedGame);
+      }
+
+      if (url === "/api/schedule/generate") {
+        return createJsonResponse(schedule);
+      }
+
+      throw new Error(`Unexpected fetch call: ${url}`);
+    }) as typeof fetch;
+
+    try {
+      const view = render(<HomePage path="/" />);
+      const gamesPanel = view.getByRole("tabpanel");
+      const searchInput = within(gamesPanel).getByRole("textbox", {
+        name: /search by title/i,
+      });
+
+      await user.type(searchInput, "ho");
+
+      await waitFor(() =>
+        expect(
+          view.getByRole("button", { name: /add hollow knight to backlog/i }),
+        ).toBeTruthy(),
+      );
+
+      await user.click(
+        view.getByRole("button", { name: /add hollow knight to backlog/i }),
+      );
+
+      await waitFor(() =>
+        expect(view.getByDisplayValue(/my backlog/i)).toBeTruthy(),
+      );
+
+      await user.click(view.getByRole("tab", { name: /availability/i }));
+      await user.click(view.getByLabelText(/monday/i));
+      await user.click(view.getByRole("button", { name: /set availability/i }));
+
+      await user.click(view.getByRole("tab", { name: /schedule/i }));
+      await user.click(
+        view.getByRole("button", { name: /generate schedule/i }),
+      );
+
+      await waitFor(() =>
+        expect(
+          within(view.getByRole("tabpanel")).getByRole("heading", {
+            level: 2,
+            name: /your gaming schedule/i,
+          }),
+        ).toBeTruthy(),
+      );
+
+      const schedulePanel = view.getByRole("tabpanel");
+      expect(
+        within(schedulePanel).getByText(/total planned hours/i),
+      ).toBeTruthy();
+      expect(within(schedulePanel).getByText(/estimated finish/i)).toBeTruthy();
+      expect(
+        within(schedulePanel).getByText(/total elapsed days/i),
+      ).toBeTruthy();
+      expect(within(schedulePanel).getByText(/3 days/i)).toBeTruthy();
     } finally {
       globalThis.fetch = originalFetch;
     }
