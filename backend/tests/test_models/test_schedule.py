@@ -13,10 +13,14 @@ from gamingclock.models.schedule import (
 def test_weekly_availability_uniform():
     """User plays 2 hours every day they selected."""
     avail = WeeklyAvailability(
-        days=[DayAvailability(day_of_week=0, hours=2.0), DayAvailability(day_of_week=2, hours=2.0)],
+        days=[
+            DayAvailability(day_of_week=0, hours=2.0, start_hour=19),
+            DayAvailability(day_of_week=2, hours=2.0, start_hour=21),
+        ],
     )
     assert len(avail.days) == 2
     assert avail.days[0].hours == 2.0
+    assert avail.days[0].start_hour == 19
 
 
 def test_weekly_availability_total_weekly_hours():
@@ -57,6 +61,7 @@ def test_schedule_request():
         start_date=datetime.date(2026, 4, 1),
     )
     assert req.algorithm == ScheduleAlgorithm.SEQUENTIAL
+    assert req.availability.days[0].start_hour == 20
 
 
 def test_play_session():

@@ -20,7 +20,7 @@ def test_generate_schedule(client):
                     "completionist_hours": 10.0,
                 },
             ],
-            "availability": {"days": [{"day_of_week": 0, "hours": 2.0}]},
+            "availability": {"days": [{"day_of_week": 0, "hours": 2.0, "start_hour": 18}]},
             "algorithm": "sequential",
             "start_date": "2026-03-30",
         },
@@ -32,6 +32,7 @@ def test_generate_schedule(client):
     assert "total_hours" in data
     assert "estimated_end_date" in data
     assert len(data["sessions"]) > 0
+    assert data["sessions"][0]["start_time"] == "18:00:00"
 
 
 def test_generate_schedule_empty_games(client):

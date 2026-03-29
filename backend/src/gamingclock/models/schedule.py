@@ -1,7 +1,7 @@
 import datetime
 from enum import StrEnum
 
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, Field, computed_field
 
 from gamingclock.models.catalog import ScheduleGameInput
 
@@ -14,6 +14,7 @@ class ScheduleAlgorithm(StrEnum):
 class DayAvailability(BaseModel):
     day_of_week: int
     hours: float
+    start_hour: int = Field(default=20, ge=0, le=23)
 
 
 class WeeklyAvailability(BaseModel):

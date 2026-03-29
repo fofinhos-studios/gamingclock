@@ -20,7 +20,7 @@ def test_download_ical(client):
                     "completionist_hours": 8.0,
                 },
             ],
-            "availability": {"days": [{"day_of_week": 0, "hours": 2.0}]},
+            "availability": {"days": [{"day_of_week": 0, "hours": 2.0, "start_hour": 18}]},
             "algorithm": "sequential",
             "start_date": "2026-03-30",
         },
@@ -31,6 +31,7 @@ def test_download_ical(client):
     body = response.text
     assert "BEGIN:VCALENDAR" in body
     assert "FF7" in body
+    assert "T180000" in body
 
 
 def test_download_ical_blocks_unresolved_games(client):

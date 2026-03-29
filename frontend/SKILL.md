@@ -53,15 +53,23 @@ bunx @biomejs/biome check --write src/
 ## Search And Resolution Flow
 
 - `src/components/game-search.tsx` performs debounced IGDB autocomplete after 2 typed characters and resolves a selected game through `POST /games/resolve`.
-- `src/pages/home.tsx` stores resolved and unresolved backlog items, sums only resolved HLTB hours, and blocks schedule generation while unresolved games remain.
+- `src/services/api.ts` rejects unresolved HLTB responses in `resolveGame()`, so games without usable HLTB data stay out of the backlog and surface an inline search error instead.
+- `src/pages/home.tsx` stores one backlog of resolved games, sums `main_story_hours`, and gates schedule generation only on having games plus saved availability.
 - `src/services/api.ts` is the single integration boundary for `searchGames()`, `resolveGame()`, `generateSchedule()`, and `downloadIcal()`.
 
 ## Dense Planner UI System
 
-- **Design tokens**: `src/index.css` owns the dense planner shell, IBM Plex Sans + JetBrains Mono font pairing, control sizing, pane/layout classes, and shared semantic classes such as `.planner-pane`, `.planner-statusbar`, `.planner-rail__tab`, `.ui-input`, and `.timeline`.
+- **Design tokens**: `src/index.css` owns the dense planner shell, Space Grotesk + JetBrains Mono font pairing, control sizing, pane/layout classes, and shared semantic classes such as `.planner-pane`, `.planner-statusbar`, `.planner-rail__tab`, `.ui-input`, and `.timeline`.
 - **Reusable primitives**: `src/components/ui/` contains the shared building blocks for buttons, cards, fields, inputs, selects, rules, sections, stacks, and stats.
 - **Read**: Start with `src/pages/home.tsx` for page composition, then follow the primitives in `src/components/ui/`, then inspect the feature components for how they consume those primitives.
 - **Edit**: Prefer extending planner classes or shared primitives before adding one-off utility strings. Keep the app behavior stable first, then tune density and spacing through `src/index.css`.
+
+## Availability And Interaction Feedback
+
+- `src/components/availability-form.tsx` owns both weekly hours and `start_hour`, using the same uniform/custom card pattern and per-day overrides for each.
+- `src/hooks/use-transient-feedback.ts` is the shared transient state helper for click confirmation across buttons, tabs, cards, and other interactive planner surfaces.
+- `src/index.css` provides the visual feedback layer for those states through classes like `.ui-button[data-feedback]`, `.planner-choice--confirmed`, `.planner-result--success`, and `.planner-rail__tab--confirmed`.
+- **Test**: `src/pages/home.test.tsx` covers the start-hour request payload and the HLTB error flow from search through schedule readiness.
 
 ## Frontend Smoke Tests
 

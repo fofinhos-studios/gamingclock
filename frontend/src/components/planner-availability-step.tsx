@@ -30,7 +30,8 @@ export function PlannerAvailabilityStep({
             </h2>
           </div>
           <p class="planner-panel__copy">
-            Save the days and hours you can realistically play.
+            Save the days, session length, and start hour you can realistically
+            keep.
           </p>
         </div>
 
@@ -46,7 +47,7 @@ export function PlannerAvailabilityStep({
           <p class="planner-note__text">
             {availability
               ? `${configuredDays} day${configuredDays === 1 ? "" : "s"} configured. Saving again will clear any generated schedule.`
-              : "You can configure time now or come back after building the backlog."}
+              : "Set your weekly time and start hour now, or come back after adding games."}
           </p>
         </section>
 
@@ -57,8 +58,8 @@ export function PlannerAvailabilityStep({
           </p>
           <p class="planner-note__text">
             {gameCount === 0
-              ? "The schedule step will stay informational until you add games."
-              : "Availability stays reusable while you add or remove games."}
+              ? "Add at least one game before generating a schedule."
+              : "You can change availability any time before generating a new schedule."}
           </p>
         </section>
       </div>

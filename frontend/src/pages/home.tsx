@@ -1,3 +1,4 @@
+import { Gamepad2 } from "lucide-preact";
 import type { RoutableProps } from "preact-router";
 import { useState } from "preact/hooks";
 
@@ -14,25 +15,17 @@ import type {
   WeeklyAvailability,
 } from "../types";
 
-const TAB_CONTENT: Record<
-  PlannerTab,
-  { title: string; detail: string; eyebrow: string }
-> = {
+const TAB_CONTENT: Record<PlannerTab, { title: string; eyebrow: string }> = {
   games: {
     title: "Build backlog",
-    detail:
-      "Search, inspect, and maintain one working list without leaving the screen.",
     eyebrow: "Step 01",
   },
   availability: {
     title: "Set weekly time",
-    detail: "Define realistic play windows before generating the plan.",
     eyebrow: "Step 02",
   },
   schedule: {
     title: "Generate schedule",
-    detail:
-      "Pick a start date, choose the algorithm, and review the full timeline.",
     eyebrow: "Step 03",
   },
 };
@@ -54,16 +47,11 @@ export function HomePage(_props: RoutableProps) {
     setActionError("");
   };
 
-  const unresolvedGames = games.filter(
-    (game) =>
-      game.hltb_status === "unresolved" || game.main_story_hours === null,
-  );
   const resolvedHours = games.reduce(
     (total, game) => total + (game.main_story_hours ?? 0),
     0,
   );
-  const canGenerateSchedule =
-    availability !== null && games.length > 0 && unresolvedGames.length === 0;
+  const canGenerateSchedule = availability !== null && games.length > 0;
   const schedulePrerequisites = [
     ...(games.length === 0
       ? [
@@ -83,10 +71,6 @@ export function HomePage(_props: RoutableProps) {
           },
         ]
       : []),
-    ...unresolvedGames.map((game, index) => ({
-      id: `unresolved-${game.igdb_id}-${index}`,
-      message: `Resolve HLTB time for ${game.name} before generating a schedule.`,
-    })),
   ];
   const availabilityStatus = availability ? "Set" : "Missing";
   const availabilityDetail = availability
@@ -96,15 +80,14 @@ export function HomePage(_props: RoutableProps) {
   const scheduleStatus = schedule
     ? "Generated"
     : games.length === 0
-      ? "Waiting for games"
+      ? "Add games"
       : !availability
-        ? "Waiting for availability"
-        : unresolvedGames.length > 0
-          ? "Resolve HLTB matches"
-          : "Ready";
+        ? "Set availability"
+        : "Ready to generate";
   const scheduleDetail = schedule
     ? `Finishes ${schedule.estimated_end_date ?? "when sessions complete"}`
-    : (schedulePrerequisites[0]?.message ?? "You can generate a schedule now");
+    : (schedulePrerequisites[0]?.message ??
+      "Generate the schedule when you're ready.");
   const activeStep = TAB_CONTENT[activeTab];
 
   const addGame = (game: ListGame) => {
@@ -119,9 +102,9 @@ export function HomePage(_props: RoutableProps) {
     clearGeneratedSchedule();
   };
 
-  const handleGenerateSchedule = async () => {
-    if (!availability || games.length === 0 || unresolvedGames.length > 0) {
-      return;
+  const handleGenerateSchedule = async (): Promise<boolean> => {
+    if (!availability || games.length === 0) {
+      return false;
     }
     setActionError("");
     try {
@@ -133,16 +116,18 @@ export function HomePage(_props: RoutableProps) {
         startDate,
       );
       setSchedule(result);
+      return true;
     } catch (error) {
       setActionError(
         error instanceof Error ? error.message : "Schedule generation failed",
       );
+      return false;
     }
   };
 
-  const handleDownloadIcal = async () => {
-    if (!availability || games.length === 0 || unresolvedGames.length > 0) {
-      return;
+  const handleDownloadIcal = async (): Promise<boolean> => {
+    if (!availability || games.length === 0) {
+      return false;
     }
     setActionError("");
     try {
@@ -159,10 +144,12 @@ export function HomePage(_props: RoutableProps) {
       anchor.download = "gaming-clock.ics";
       anchor.click();
       URL.revokeObjectURL(url);
+      return true;
     } catch (error) {
       setActionError(
         error instanceof Error ? error.message : "iCal download failed",
       );
+      return false;
     }
   };
 
@@ -191,8 +178,13 @@ export function HomePage(_props: RoutableProps) {
         <div class="planner-app__frame">
           <div class="planner-app__rail">
             <div class="planner-brand">
-              <p class="planner-brand__name">Gaming Clock</p>
-              <p class="planner-brand__detail">Single backlog pipeline</p>
+              <p class="planner-brand__name">
+                <Gamepad2
+                  class="planner-icon planner-brand__icon"
+                  aria-hidden="true"
+                />
+                <span>Gaming Clock</span>
+              </p>
             </div>
 
             <PlannerTabs activeTab={activeTab} onChange={setActiveTab} />
@@ -204,14 +196,12 @@ export function HomePage(_props: RoutableProps) {
                 <p class="planner-toolbar__eyebrow">{activeStep.eyebrow}</p>
                 <h1 class="planner-toolbar__title">{activeStep.title}</h1>
               </div>
-              <p class="planner-toolbar__detail">{activeStep.detail}</p>
             </header>
 
             <PlannerSummary
               backlogName={backlogName}
               trackedGameCount={games.length}
               resolvedHours={resolvedHours}
-              unresolvedGameCount={unresolvedGames.length}
               availabilityStatus={availabilityStatus}
               availabilityDetail={availabilityDetail}
               scheduleStatus={scheduleStatus}
@@ -270,8 +260,8 @@ export function HomePage(_props: RoutableProps) {
                   prerequisiteMessages={schedulePrerequisites}
                   onAlgorithmChange={handleAlgorithmChange}
                   onStartDateChange={handleStartDateChange}
-                  onGenerateSchedule={() => void handleGenerateSchedule()}
-                  onDownloadIcal={() => void handleDownloadIcal()}
+                  onGenerateSchedule={handleGenerateSchedule}
+                  onDownloadIcal={handleDownloadIcal}
                 />
               </section>
             </div>

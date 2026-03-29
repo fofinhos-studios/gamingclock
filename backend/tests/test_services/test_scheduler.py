@@ -13,8 +13,8 @@ def test_sequential_single_game():
     games = [_make_game("Short Game", 4.0)]
     availability = WeeklyAvailability(
         days=[
-            DayAvailability(day_of_week=0, hours=2.0),
-            DayAvailability(day_of_week=2, hours=2.0),
+            DayAvailability(day_of_week=0, hours=2.0, start_hour=18),
+            DayAvailability(day_of_week=2, hours=2.0, start_hour=21),
         ],
     )
     start = datetime.date(2026, 3, 30)
@@ -28,8 +28,10 @@ def test_sequential_single_game():
     assert len(sessions) == 2
     assert sessions[0].game_name == "Short Game"
     assert sessions[0].date == datetime.date(2026, 3, 30)
+    assert sessions[0].start_time == datetime.time(18, 0)
     assert sessions[0].duration_hours == 2.0
     assert sessions[1].date == datetime.date(2026, 4, 1)
+    assert sessions[1].start_time == datetime.time(21, 0)
 
 
 def test_sequential_multiple_games():
@@ -104,3 +106,26 @@ def test_alternating_uneven_games():
     assert sessions[1].game_name == "Long"
     assert sessions[2].game_name == "Long"
     assert sessions[3].game_name == "Long"
+
+
+def test_scheduler_uses_day_specific_start_hours():
+    games = [_make_game("Game A", 4.0)]
+    availability = WeeklyAvailability(
+        days=[
+            DayAvailability(day_of_week=0, hours=2.0, start_hour=17),
+            DayAvailability(day_of_week=2, hours=2.0, start_hour=22),
+        ],
+    )
+    scheduler = SchedulerService()
+
+    sessions = scheduler.generate(
+        games=games,
+        availability=availability,
+        algorithm=ScheduleAlgorithm.SEQUENTIAL,
+        start_date=datetime.date(2026, 3, 30),
+    )
+
+    assert [session.start_time for session in sessions] == [
+        datetime.time(17, 0),
+        datetime.time(22, 0),
+    ]
