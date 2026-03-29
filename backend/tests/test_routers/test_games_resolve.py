@@ -1,0 +1,65 @@
+from unittest.mock import AsyncMock, patch
+
+
+def test_resolve_game_returns_resolved_item(client):
+    with (
+        patch("gamingclock.routers.games.igdb_service") as mock_igdb,
+        patch("gamingclock.routers.games.hltb_service") as mock_hltb,
+    ):
+        mock_igdb.get_by_id = AsyncMock(
+            return_value={
+                "igdb_id": 10,
+                "name": "Final Fantasy VII",
+                "cover_url": "https://example.com/cover.png",
+                "summary": "A classic RPG.",
+                "genres": ["RPG"],
+                "platforms": ["PlayStation"],
+                "release_year": 1997,
+                "rating": 91.2,
+            }
+        )
+        mock_hltb.search = AsyncMock(
+            return_value=[
+                {
+                    "name": "Final Fantasy VII",
+                    "image_url": "https://example.com/hltb.png",
+                    "main_story_hours": 36.5,
+                    "main_extra_hours": 52.0,
+                    "completionist_hours": 82.0,
+                }
+            ]
+        )
+        response = client.post("/games/resolve", json={"igdb_id": 10})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["igdb_id"] == 10
+    assert data["hltb_status"] == "resolved"
+    assert data["main_story_hours"] == 36.5
+
+
+def test_resolve_game_returns_unresolved_item_when_hltb_misses(client):
+    with (
+        patch("gamingclock.routers.games.igdb_service") as mock_igdb,
+        patch("gamingclock.routers.games.hltb_service") as mock_hltb,
+    ):
+        mock_igdb.get_by_id = AsyncMock(
+            return_value={
+                "igdb_id": 11,
+                "name": "Obscure Game",
+                "cover_url": "https://example.com/cover.png",
+                "summary": "A deep cut.",
+                "genres": [],
+                "platforms": [],
+                "release_year": 2001,
+                "rating": None,
+            }
+        )
+        mock_hltb.search = AsyncMock(return_value=[])
+        response = client.post("/games/resolve", json={"igdb_id": 11})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["igdb_id"] == 11
+    assert data["hltb_status"] == "unresolved"
+    assert data["main_story_hours"] is None

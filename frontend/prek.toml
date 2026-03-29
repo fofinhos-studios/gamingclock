@@ -1,0 +1,7 @@
+orphan = true
+
+[[repos]]
+repo = "local"
+hooks = [
+  { id = "biome-check", name = "biome check", language = "system", entry = "bun run biome check --write --files-ignore-unknown=true --no-errors-on-unmatched", files = "\\.(js|jsx|ts|tsx|json|css)$" },
+]

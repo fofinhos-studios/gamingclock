@@ -1,0 +1,70 @@
+import datetime
+
+from gamingclock.models.catalog import HLTBStatus, ScheduleGameInput
+from gamingclock.models.schedule import (
+    DayAvailability,
+    PlaySession,
+    ScheduleAlgorithm,
+    ScheduleRequest,
+    WeeklyAvailability,
+)
+
+
+def test_weekly_availability_uniform():
+    """User plays 2 hours every day they selected."""
+    avail = WeeklyAvailability(
+        days=[DayAvailability(day_of_week=0, hours=2.0), DayAvailability(day_of_week=2, hours=2.0)],
+    )
+    assert len(avail.days) == 2
+    assert avail.days[0].hours == 2.0
+
+
+def test_weekly_availability_total_weekly_hours():
+    avail = WeeklyAvailability(
+        days=[
+            DayAvailability(day_of_week=0, hours=2.0),
+            DayAvailability(day_of_week=5, hours=4.0),
+            DayAvailability(day_of_week=6, hours=4.0),
+        ],
+    )
+    assert avail.total_weekly_hours == 10.0
+
+
+def test_schedule_request():
+    req = ScheduleRequest(
+        game_list_name="My List",
+        games=[
+            ScheduleGameInput(
+                igdb_id=7,
+                name="FF7",
+                cover_url="https://example.com/ff7.png",
+                summary="Classic RPG",
+                genres=["RPG"],
+                platforms=["PlayStation"],
+                release_year=1997,
+                rating=95.0,
+                hltb_status=HLTBStatus.RESOLVED,
+                hltb_match_name="Final Fantasy VII",
+                main_story_hours=36.0,
+                main_extra_hours=52.0,
+                completionist_hours=80.0,
+            )
+        ],
+        availability=WeeklyAvailability(
+            days=[DayAvailability(day_of_week=0, hours=2.0)],
+        ),
+        algorithm=ScheduleAlgorithm.SEQUENTIAL,
+        start_date=datetime.date(2026, 4, 1),
+    )
+    assert req.algorithm == ScheduleAlgorithm.SEQUENTIAL
+
+
+def test_play_session():
+    session = PlaySession(
+        game_name="FF7",
+        date=datetime.date(2026, 4, 1),
+        start_time=datetime.time(20, 0),
+        duration_hours=2.0,
+    )
+    assert session.game_name == "FF7"
+    assert session.duration_hours == 2.0

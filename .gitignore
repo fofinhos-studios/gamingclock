@@ -3,15 +3,24 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .venv/
+backend/.venv/
+backend/.pytest_cache/
+backend/.ruff_cache/
+backend/src/gamingclock.egg-info/
+backend/tests/__pycache__/
 dist/
 build/
 *.egg
 
 # Node
 node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.cache/
 dist/
 .cache/
 
 # Misc
 .DS_Store
 *.env
+.serena/
