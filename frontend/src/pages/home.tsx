@@ -25,9 +25,7 @@ export function HomePage(_props: RoutableProps) {
   const [algorithm, setAlgorithm] = useState<ScheduleAlgorithm>("sequential");
   const [schedule, setSchedule] = useState<ScheduleResponse | null>(null);
   const [actionError, setActionError] = useState("");
-  const [startDate, setStartDate] = useState(
-    new Date().toISOString().split("T")[0] ?? "",
-  );
+  const [startDate, setStartDate] = useState(getLocalCalendarDate());
   const clearGeneratedSchedule = () => {
     setSchedule(null);
     setActionError("");
@@ -275,4 +273,13 @@ function getScheduleElapsedDays(
   );
 
   return differenceInDays >= 0 ? differenceInDays + 1 : null;
+}
+
+function getLocalCalendarDate(): string {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }

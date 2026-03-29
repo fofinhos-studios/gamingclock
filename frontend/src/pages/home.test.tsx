@@ -118,6 +118,55 @@ describe("HomePage", () => {
     expect(view.getByRole("tabpanel").id).toBe("planner-panel-schedule");
   });
 
+  test("initializes start date from the local calendar day instead of UTC ISO date", async () => {
+    const user = userEvent.setup();
+    const RealDate = globalThis.Date;
+
+    class MockDate extends RealDate {
+      constructor(value?: string | number | Date) {
+        super(value ?? "2026-03-29T01:30:00.000Z");
+      }
+
+      getFullYear() {
+        return 2026;
+      }
+
+      getMonth() {
+        return 2;
+      }
+
+      getDate() {
+        return 28;
+      }
+
+      toISOString() {
+        return "2026-03-29T01:30:00.000Z";
+      }
+
+      static now() {
+        return new RealDate("2026-03-29T01:30:00.000Z").valueOf();
+      }
+    }
+
+    globalThis.Date = MockDate as unknown as DateConstructor;
+
+    try {
+      const view = render(<HomePage path="/" />);
+
+      await user.click(view.getByRole("tab", { name: /schedule/i }));
+
+      expect(
+        (
+          within(view.getByRole("tabpanel")).getByLabelText(
+            /start date/i,
+          ) as HTMLInputElement
+        ).value,
+      ).toBe("2026-03-28");
+    } finally {
+      globalThis.Date = RealDate;
+    }
+  });
+
   test("shows planner summary status and missing schedule prerequisites", async () => {
     const user = userEvent.setup();
     const view = render(<HomePage path="/" />);
