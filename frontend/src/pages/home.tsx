@@ -4,6 +4,7 @@ import { useState } from "preact/hooks";
 import { PlannerAvailabilityStep } from "../components/planner-availability-step";
 import { PlannerGamesStep } from "../components/planner-games-step";
 import { PlannerScheduleStep } from "../components/planner-schedule-step";
+import { PlannerSummary } from "../components/planner-summary";
 import { type PlannerTab, PlannerTabs } from "../components/planner-tabs";
 import { Card } from "../components/ui";
 import { downloadIcal, generateSchedule } from "../services/api";
@@ -32,8 +33,41 @@ export function HomePage(_props: RoutableProps) {
     (game) =>
       game.hltb_status === "unresolved" || game.main_story_hours === null,
   );
+  const resolvedHours = games.reduce(
+    (total, game) => total + (game.main_story_hours ?? 0),
+    0,
+  );
   const canGenerateSchedule =
     availability !== null && games.length > 0 && unresolvedGames.length === 0;
+  const schedulePrerequisites = [
+    ...(games.length === 0
+      ? ["Add at least one game to the backlog before generating a schedule."]
+      : []),
+    ...(!availability
+      ? ["Set your weekly availability before generating a schedule."]
+      : []),
+    ...unresolvedGames.map(
+      (game) =>
+        `Resolve HLTB time for ${game.name} before generating a schedule.`,
+    ),
+  ];
+  const availabilityStatus = availability ? "Set" : "Missing";
+  const availabilityDetail = availability
+    ? `${availability.days.length} day${availability.days.length === 1 ? "" : "s"} configured`
+    : "No weekly cadence saved";
+  const totalElapsedDays = getScheduleElapsedDays(schedule);
+  const scheduleStatus = schedule
+    ? "Generated"
+    : games.length === 0
+      ? "Waiting for games"
+      : !availability
+        ? "Waiting for availability"
+        : unresolvedGames.length > 0
+          ? "Resolve HLTB matches"
+          : "Ready";
+  const scheduleDetail = schedule
+    ? `Finishes ${schedule.estimated_end_date ?? "when sessions complete"}`
+    : (schedulePrerequisites[0] ?? "You can generate a schedule now");
 
   const addGame = (game: ListGame) => {
     setGames((currentGames) => [...currentGames, game]);
@@ -123,60 +157,100 @@ export function HomePage(_props: RoutableProps) {
 
               <PlannerTabs activeTab={activeTab} onChange={setActiveTab} />
 
-              <section
-                id="planner-panel-games"
-                role="tabpanel"
-                aria-labelledby="planner-tab-games"
-                hidden={activeTab !== "games"}
-                class="min-w-0"
-              >
-                <PlannerGamesStep
+              <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+                <div class="space-y-6 min-w-0">
+                  <section
+                    id="planner-panel-games"
+                    role="tabpanel"
+                    aria-labelledby="planner-tab-games"
+                    hidden={activeTab !== "games"}
+                    class="min-w-0"
+                  >
+                    <PlannerGamesStep
+                      backlogName={backlogName}
+                      games={games}
+                      onAddGame={addGame}
+                      onRemoveGame={removeGame}
+                      onRenameBacklog={setBacklogName}
+                    />
+                  </section>
+
+                  <section
+                    id="planner-panel-availability"
+                    role="tabpanel"
+                    aria-labelledby="planner-tab-availability"
+                    hidden={activeTab !== "availability"}
+                    class="min-w-0"
+                  >
+                    <PlannerAvailabilityStep
+                      availability={availability}
+                      gameCount={games.length}
+                      onSubmit={handleSetAvailability}
+                    />
+                  </section>
+
+                  <section
+                    id="planner-panel-schedule"
+                    role="tabpanel"
+                    aria-labelledby="planner-tab-schedule"
+                    hidden={activeTab !== "schedule"}
+                    class="min-w-0"
+                  >
+                    <PlannerScheduleStep
+                      availability={availability}
+                      algorithm={algorithm}
+                      startDate={startDate}
+                      schedule={schedule}
+                      actionError={actionError}
+                      canGenerateSchedule={canGenerateSchedule}
+                      prerequisiteMessages={schedulePrerequisites}
+                      onAlgorithmChange={setAlgorithm}
+                      onStartDateChange={setStartDate}
+                      onGenerateSchedule={() => void handleGenerateSchedule()}
+                      onDownloadIcal={() => void handleDownloadIcal()}
+                    />
+                  </section>
+                </div>
+
+                <PlannerSummary
                   backlogName={backlogName}
-                  games={games}
-                  onAddGame={addGame}
-                  onRemoveGame={removeGame}
-                  onRenameBacklog={setBacklogName}
+                  trackedGameCount={games.length}
+                  resolvedHours={resolvedHours}
+                  unresolvedGameCount={unresolvedGames.length}
+                  availabilityStatus={availabilityStatus}
+                  availabilityDetail={availabilityDetail}
+                  scheduleStatus={scheduleStatus}
+                  scheduleDetail={scheduleDetail}
+                  totalPlannedHours={schedule?.total_hours}
+                  totalSessions={schedule?.sessions.length}
+                  estimatedFinishDate={schedule?.estimated_end_date}
+                  totalElapsedDays={totalElapsedDays}
                 />
-              </section>
-
-              <section
-                id="planner-panel-availability"
-                role="tabpanel"
-                aria-labelledby="planner-tab-availability"
-                hidden={activeTab !== "availability"}
-                class="min-w-0"
-              >
-                <PlannerAvailabilityStep
-                  availability={availability}
-                  gameCount={games.length}
-                  onSubmit={handleSetAvailability}
-                />
-              </section>
-
-              <section
-                id="planner-panel-schedule"
-                role="tabpanel"
-                aria-labelledby="planner-tab-schedule"
-                hidden={activeTab !== "schedule"}
-                class="min-w-0"
-              >
-                <PlannerScheduleStep
-                  availability={availability}
-                  algorithm={algorithm}
-                  startDate={startDate}
-                  schedule={schedule}
-                  actionError={actionError}
-                  canGenerateSchedule={canGenerateSchedule}
-                  onAlgorithmChange={setAlgorithm}
-                  onStartDateChange={setStartDate}
-                  onGenerateSchedule={() => void handleGenerateSchedule()}
-                  onDownloadIcal={() => void handleDownloadIcal()}
-                />
-              </section>
+              </div>
             </div>
           </Card>
         </div>
       </main>
     </div>
   );
+}
+
+function getScheduleElapsedDays(
+  schedule: ScheduleResponse | null,
+): number | null {
+  const firstSessionDate = schedule?.sessions[0]?.date;
+  const lastDate =
+    schedule?.estimated_end_date ?? schedule?.sessions.at(-1)?.date;
+
+  if (!firstSessionDate || !lastDate) {
+    return null;
+  }
+
+  const start = new Date(`${firstSessionDate}T00:00:00Z`);
+  const end = new Date(`${lastDate}T00:00:00Z`);
+  const differenceInDays = Math.round(
+    (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
+  );
+
+  return differenceInDays >= 0 ? differenceInDays + 1 : null;
 }

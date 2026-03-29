@@ -31,7 +31,7 @@ describe("HomePage", () => {
     expect(within(activePanel).getByText(/search games/i)).toBeTruthy();
     expect(within(activePanel).queryByText(/weekly cadence/i)).toBeNull();
     expect(within(activePanel).queryByText(/your gaming schedule/i)).toBeNull();
-    expect(view.queryByRole("complementary")).toBeNull();
+    expect(view.getByRole("complementary")).toBeTruthy();
   });
 
   test("switches planner steps manually through the top tabs", async () => {
@@ -121,11 +121,12 @@ describe("HomePage", () => {
   test("shows planner summary status and missing schedule prerequisites", async () => {
     const user = userEvent.setup();
     const view = render(<HomePage path="/" />);
+    const summaryPanel = view.getByRole("complementary");
 
-    expect(view.getByRole("complementary")).toBeTruthy();
-    expect(view.getByText(/tracked games/i)).toBeTruthy();
-    expect(view.getByText(/resolved hours/i)).toBeTruthy();
-    expect(view.getByText(/availability status/i)).toBeTruthy();
+    expect(summaryPanel).toBeTruthy();
+    expect(within(summaryPanel).getByText(/tracked games/i)).toBeTruthy();
+    expect(within(summaryPanel).getByText(/resolved hours/i)).toBeTruthy();
+    expect(within(summaryPanel).getByText(/availability status/i)).toBeTruthy();
 
     await user.click(view.getByRole("tab", { name: /schedule/i }));
 

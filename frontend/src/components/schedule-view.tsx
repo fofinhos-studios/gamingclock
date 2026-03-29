@@ -6,6 +6,24 @@ interface Props {
   onDownloadIcal: () => void;
 }
 
+function calculateElapsedDays(schedule: ScheduleResponse): number | null {
+  const firstSessionDate = schedule.sessions[0]?.date;
+  const lastDate =
+    schedule.estimated_end_date ?? schedule.sessions.at(-1)?.date;
+
+  if (!firstSessionDate || !lastDate) {
+    return null;
+  }
+
+  const start = new Date(`${firstSessionDate}T00:00:00Z`);
+  const end = new Date(`${lastDate}T00:00:00Z`);
+  const differenceInDays = Math.round(
+    (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
+  );
+
+  return differenceInDays >= 0 ? differenceInDays + 1 : null;
+}
+
 export function ScheduleView({ schedule, onDownloadIcal }: Props) {
   if (schedule.sessions.length === 0) {
     return (
@@ -14,6 +32,8 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
       </section>
     );
   }
+
+  const totalElapsedDays = calculateElapsedDays(schedule);
 
   return (
     <section aria-labelledby="schedule-heading" class="space-y-10">
@@ -55,6 +75,15 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
             <p class="section-eyebrow text-white/70">Sessions</p>
             <p class="mt-3 text-3xl leading-none">{schedule.sessions.length}</p>
           </div>
+
+          {totalElapsedDays !== null && (
+            <div class="border-t-2 border-white pt-4">
+              <p class="section-eyebrow text-white/70">Total span</p>
+              <p class="mt-3 text-3xl leading-none">
+                {totalElapsedDays} day{totalElapsedDays === 1 ? "" : "s"}
+              </p>
+            </div>
+          )}
         </Card>
 
         <div class="space-y-5">
