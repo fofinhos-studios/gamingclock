@@ -1,4 +1,5 @@
 import time
+from collections import OrderedDict
 from difflib import SequenceMatcher
 from typing import Any, ClassVar
 
@@ -22,9 +23,11 @@ class HLTBService:
     def __init__(
         self,
         similarity_threshold: float = 0.2,
+        max_cache_entries: int = 256,
         http_client: httpx.AsyncClient | None = None,
     ):
         self._threshold = similarity_threshold
+        self._max_cache_entries = max_cache_entries
         self._http_client = http_client or httpx.AsyncClient(
             base_url=self.BASE_URL,
             headers=self.DEFAULT_HEADERS,
@@ -32,7 +35,7 @@ class HLTBService:
         )
         self._security: dict[str, str] | None = None
         self._security_expires_at = 0.0
-        self._cache: dict[str, list[Game]] = {}
+        self._cache: OrderedDict[str, list[Game]] = OrderedDict()
 
     async def search(self, query: str) -> list[Game]:
         normalized_query = query.strip()
@@ -42,6 +45,7 @@ class HLTBService:
         cache_key = normalized_query.lower()
         cached_results = self._cache.get(cache_key)
         if cached_results is not None:
+            self._cache.move_to_end(cache_key)
             return cached_results
 
         security = await self._get_security()
@@ -66,6 +70,9 @@ class HLTBService:
         scored_results.sort(key=lambda entry: entry[0], reverse=True)
         results = [game for _, game in scored_results]
         self._cache[cache_key] = results
+        self._cache.move_to_end(cache_key)
+        if len(self._cache) > self._max_cache_entries:
+            self._cache.popitem(last=False)
         return results
 
     async def _get_security(self, force_refresh: bool = False) -> dict[str, str]:

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { render, waitFor, within } from "@testing-library/preact";
 import userEvent from "@testing-library/user-event";
 
-import type { CatalogGame, ListGame, ScheduleResponse } from "../types";
+import type { ListGame, ScheduleResponse } from "../types";
 import { HomePage } from "./home";
 
 function createJsonResponse(body: unknown): Response {
@@ -10,6 +10,25 @@ function createJsonResponse(body: unknown): Response {
     ok: true,
     json: async () => body,
   } as Response;
+}
+
+function createSearchResult(overrides: Partial<ListGame> = {}): ListGame {
+  return {
+    igdb_id: 10,
+    name: "Hollow Knight",
+    cover_url: "https://images.igdb.com/igdb/image/upload/t_thumb/test.jpg",
+    summary: "Bug souls.",
+    genres: ["Action"],
+    platforms: ["PC"],
+    release_year: 2017,
+    rating: 95,
+    hltb_status: "resolved",
+    hltb_match_name: "Hollow Knight",
+    main_story_hours: 27.5,
+    main_extra_hours: 40,
+    completionist_hours: 60,
+    ...overrides,
+  };
 }
 
 describe("HomePage", () => {
@@ -169,30 +188,46 @@ describe("HomePage", () => {
     }
   });
 
+  test("shows loading copy while searching games and time to finish", async () => {
+    const user = userEvent.setup();
+    const originalFetch = globalThis.fetch;
+
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+
+      if (url.startsWith("/api/games/search?")) {
+        await new Promise((resolve) => window.setTimeout(resolve, 500));
+        return createJsonResponse([]);
+      }
+
+      throw new Error(`Unexpected fetch call: ${url}`);
+    }) as typeof fetch;
+
+    try {
+      const view = render(<HomePage path="/" />);
+      const activePanel = view.getByRole("tabpanel");
+      const searchInput = within(activePanel).getByRole("textbox", {
+        name: /search by title/i,
+      });
+
+      await user.type(searchInput, "ha");
+
+      await waitFor(() =>
+        expect(
+          view.getByText(/searching games and time to finish/i),
+        ).toBeTruthy(),
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   test("saves the selected weekly start hour and sends it when generating a schedule", async () => {
     const user = userEvent.setup();
     const originalFetch = globalThis.fetch;
     let scheduleRequest: Record<string, unknown> | null = null;
 
-    const searchResult: CatalogGame = {
-      igdb_id: 10,
-      name: "Hollow Knight",
-      cover_url: "https://images.igdb.com/igdb/image/upload/t_thumb/test.jpg",
-      summary: "Bug souls.",
-      genres: ["Action"],
-      platforms: ["PC"],
-      release_year: 2017,
-      rating: 95,
-    };
-
-    const resolvedGame: ListGame = {
-      ...searchResult,
-      hltb_status: "resolved",
-      hltb_match_name: "Hollow Knight",
-      main_story_hours: 27.5,
-      main_extra_hours: 40,
-      completionist_hours: 60,
-    };
+    const searchResult = createSearchResult();
 
     const schedule: ScheduleResponse = {
       sessions: [
@@ -215,10 +250,6 @@ describe("HomePage", () => {
 
       if (url.startsWith("/api/games/search?")) {
         return createJsonResponse([searchResult]);
-      }
-
-      if (url === "/api/games/resolve") {
-        return createJsonResponse(resolvedGame);
       }
 
       if (url === "/api/schedule/generate") {
@@ -332,35 +363,19 @@ describe("HomePage", () => {
     const user = userEvent.setup();
     const originalFetch = globalThis.fetch;
 
-    const searchResult: CatalogGame = {
-      igdb_id: 10,
-      name: "Hollow Knight",
-      cover_url: "https://images.igdb.com/igdb/image/upload/t_thumb/test.jpg",
-      summary: "Bug souls.",
-      genres: ["Action"],
-      platforms: ["PC"],
-      release_year: 2017,
-      rating: 95,
-    };
-
-    const unresolvedGame: ListGame = {
-      ...searchResult,
+    const unresolvedGame = createSearchResult({
       hltb_status: "unresolved",
       hltb_match_name: null,
       main_story_hours: null,
       main_extra_hours: null,
       completionist_hours: null,
-    };
+    });
 
     globalThis.fetch = (async (input: RequestInfo | URL) => {
       const url = String(input);
 
       if (url.startsWith("/api/games/search?")) {
-        return createJsonResponse([searchResult]);
-      }
-
-      if (url === "/api/games/resolve") {
-        return createJsonResponse(unresolvedGame);
+        return createJsonResponse([unresolvedGame]);
       }
 
       throw new Error(`Unexpected fetch call: ${url}`);
@@ -404,25 +419,7 @@ describe("HomePage", () => {
     const originalConsoleError = console.error;
     const consoleErrors: unknown[][] = [];
 
-    const searchResult: CatalogGame = {
-      igdb_id: 10,
-      name: "Hollow Knight",
-      cover_url: "https://images.igdb.com/igdb/image/upload/t_thumb/test.jpg",
-      summary: "Bug souls.",
-      genres: ["Action"],
-      platforms: ["PC"],
-      release_year: 2017,
-      rating: 95,
-    };
-
-    const resolvedGame: ListGame = {
-      ...searchResult,
-      hltb_status: "resolved",
-      hltb_match_name: "Hollow Knight",
-      main_story_hours: 27.5,
-      main_extra_hours: 40,
-      completionist_hours: 60,
-    };
+    const searchResult = createSearchResult();
 
     console.error = (...args: unknown[]) => {
       consoleErrors.push(args);
@@ -433,10 +430,6 @@ describe("HomePage", () => {
 
       if (url.startsWith("/api/games/search?")) {
         return createJsonResponse([searchResult]);
-      }
-
-      if (url === "/api/games/resolve") {
-        return createJsonResponse(resolvedGame);
       }
 
       throw new Error(`Unexpected fetch call: ${url}`);
@@ -494,25 +487,7 @@ describe("HomePage", () => {
     const user = userEvent.setup();
     const originalFetch = globalThis.fetch;
 
-    const searchResult: CatalogGame = {
-      igdb_id: 10,
-      name: "Hollow Knight",
-      cover_url: "https://images.igdb.com/igdb/image/upload/t_thumb/test.jpg",
-      summary: "Bug souls.",
-      genres: ["Action"],
-      platforms: ["PC"],
-      release_year: 2017,
-      rating: 95,
-    };
-
-    const resolvedGame: ListGame = {
-      ...searchResult,
-      hltb_status: "resolved",
-      hltb_match_name: "Hollow Knight",
-      main_story_hours: 27.5,
-      main_extra_hours: 40,
-      completionist_hours: 60,
-    };
+    const searchResult = createSearchResult();
 
     const schedule: ScheduleResponse = {
       sessions: [
@@ -538,10 +513,6 @@ describe("HomePage", () => {
 
       if (url.startsWith("/api/games/search?")) {
         return createJsonResponse([searchResult]);
-      }
-
-      if (url === "/api/games/resolve") {
-        return createJsonResponse(resolvedGame);
       }
 
       if (url === "/api/schedule/generate") {
@@ -619,25 +590,7 @@ describe("HomePage", () => {
     const user = userEvent.setup();
     const originalFetch = globalThis.fetch;
 
-    const searchResult: CatalogGame = {
-      igdb_id: 10,
-      name: "Hollow Knight",
-      cover_url: "https://images.igdb.com/igdb/image/upload/t_thumb/test.jpg",
-      summary: "Bug souls.",
-      genres: ["Action"],
-      platforms: ["PC"],
-      release_year: 2017,
-      rating: 95,
-    };
-
-    const resolvedGame: ListGame = {
-      ...searchResult,
-      hltb_status: "resolved",
-      hltb_match_name: "Hollow Knight",
-      main_story_hours: 27.5,
-      main_extra_hours: 40,
-      completionist_hours: 60,
-    };
+    const searchResult = createSearchResult();
 
     const schedule: ScheduleResponse = {
       sessions: [
@@ -663,10 +616,6 @@ describe("HomePage", () => {
 
       if (url.startsWith("/api/games/search?")) {
         return createJsonResponse([searchResult]);
-      }
-
-      if (url === "/api/games/resolve") {
-        return createJsonResponse(resolvedGame);
       }
 
       if (url === "/api/schedule/generate") {
