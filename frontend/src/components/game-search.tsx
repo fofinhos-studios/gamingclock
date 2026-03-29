@@ -2,22 +2,15 @@ import { useEffect, useRef, useState } from "preact/hooks";
 
 import { resolveGame, searchGames } from "../services/api";
 import type { CatalogGame, ListGame } from "../types";
-import { Button, Field, Input, Select } from "./ui";
-
-type AddTarget =
-  | { kind: "existing"; index: number }
-  | { kind: "new"; name: string };
+import { Button, Field, Input } from "./ui";
 
 interface Props {
-  lists: { name: string }[];
-  activeListIndex: number;
-  onAddGame: (game: ListGame, target: AddTarget) => void;
+  onAddGame: (game: ListGame) => void;
 }
 
-export function GameSearch({ lists, activeListIndex, onAddGame }: Props) {
+export function GameSearch({ onAddGame }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const resultRefs = useRef<Array<HTMLDivElement | null>>([]);
-  const addSelectRefs = useRef<Array<HTMLSelectElement | null>>([]);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CatalogGame[]>([]);
   const [loading, setLoading] = useState(false);
@@ -25,9 +18,6 @@ export function GameSearch({ lists, activeListIndex, onAddGame }: Props) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [error, setError] = useState("");
-  const [selectedTargets, setSelectedTargets] = useState<
-    Record<number, string>
-  >({});
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
@@ -82,18 +72,17 @@ export function GameSearch({ lists, activeListIndex, onAddGame }: Props) {
     });
   }, [highlightedIndex]);
 
-  const handleAddGame = async (game: CatalogGame, target: AddTarget) => {
+  const handleAddGame = async (game: CatalogGame) => {
     setAddingId(game.igdb_id);
     setError("");
 
     try {
       const resolvedGame = await resolveGame(game);
-      onAddGame(resolvedGame, target);
+      onAddGame(resolvedGame);
       setQuery("");
       setResults([]);
       setIsDropdownOpen(false);
       setHighlightedIndex(-1);
-      setSelectedTargets({});
     } catch (resolveError) {
       setError(
         resolveError instanceof Error
@@ -135,7 +124,9 @@ export function GameSearch({ lists, activeListIndex, onAddGame }: Props) {
 
     if (event.key === "Enter" && highlightedIndex >= 0) {
       event.preventDefault();
-      addSelectRefs.current[highlightedIndex]?.focus();
+      if (addingId === null) {
+        void handleAddGame(results[highlightedIndex]);
+      }
       return;
     }
 
@@ -146,30 +137,6 @@ export function GameSearch({ lists, activeListIndex, onAddGame }: Props) {
     }
   };
 
-  const handleAddSelection = async (game: CatalogGame, selection: string) => {
-    if (!selection) {
-      return;
-    }
-
-    if (selection === "new") {
-      const name = window.prompt("New list name", `List ${lists.length + 1}`);
-      setSelectedTargets((current) => ({
-        ...current,
-        [game.igdb_id]: "",
-      }));
-      if (!name) {
-        return;
-      }
-      await handleAddGame(game, { kind: "new", name });
-      return;
-    }
-
-    await handleAddGame(game, {
-      kind: "existing",
-      index: Number(selection),
-    });
-  };
-
   return (
     <section aria-labelledby="search-games-heading" class="space-y-6">
       <div class="space-y-3">
@@ -178,8 +145,8 @@ export function GameSearch({ lists, activeListIndex, onAddGame }: Props) {
           Search Games
         </h3>
         <p class="section-copy max-w-none">
-          Start typing to search IGDB, then add a game directly into one of your
-          lists.
+          Start typing to search IGDB, then add a game straight into your
+          backlog.
         </p>
       </div>
 
@@ -289,55 +256,25 @@ export function GameSearch({ lists, activeListIndex, onAddGame }: Props) {
                           </div>
 
                           <div class="space-y-3">
-                            <Field
-                              label={`Add ${game.name}`}
-                              controlId={`game-search-target-${game.igdb_id}`}
+                            <Button
+                              type="button"
+                              variant={isHighlighted ? "primary" : "outline"}
+                              size="sm"
+                              block
+                              onClick={() => void handleAddGame(game)}
+                              onFocus={() => setHighlightedIndex(index)}
+                              disabled={addingId === game.igdb_id}
+                              aria-label={`Add ${game.name} to backlog`}
+                              class={
+                                isHighlighted
+                                  ? "border-white bg-white text-black hover:border-white hover:bg-black hover:text-white"
+                                  : undefined
+                              }
                             >
-                              <Select
-                                id={`game-search-target-${game.igdb_id}`}
-                                ref={(element) => {
-                                  addSelectRefs.current[index] = element;
-                                }}
-                                value={selectedTargets[game.igdb_id] ?? ""}
-                                onChange={(event) => {
-                                  const target =
-                                    event.target as HTMLSelectElement;
-                                  setSelectedTargets((current) => ({
-                                    ...current,
-                                    [game.igdb_id]: target.value,
-                                  }));
-                                  void handleAddSelection(game, target.value);
-                                }}
-                                onFocus={() => setHighlightedIndex(index)}
-                                disabled={addingId === game.igdb_id}
-                                aria-label={`Add ${game.name} to a list`}
-                                class="bg-white text-black"
-                              >
-                                <option value="" disabled>
-                                  {addingId === game.igdb_id
-                                    ? "Adding..."
-                                    : "Add to..."}
-                                </option>
-                                {lists.map((list, listIndex) => (
-                                  <option
-                                    key={`${list.name}-${listIndex}`}
-                                    value={`${listIndex}`}
-                                  >
-                                    {list.name}
-                                    {listIndex === activeListIndex
-                                      ? " (current)"
-                                      : ""}
-                                  </option>
-                                ))}
-                                <option value="new">Create new list...</option>
-                              </Select>
-                            </Field>
-
-                            {addingId === game.igdb_id && (
-                              <Button variant="ghost" size="sm" disabled>
-                                Resolving
-                              </Button>
-                            )}
+                              {addingId === game.igdb_id
+                                ? "Resolving"
+                                : "Add to backlog"}
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -348,8 +285,8 @@ export function GameSearch({ lists, activeListIndex, onAddGame }: Props) {
           )}
 
         <p class="timeline-meta text-[var(--muted-foreground)]">
-          Results appear in a dropdown and stay tied to the game card you are
-          adding.
+          Results stay in the dropdown until you add a game or change the
+          search.
         </p>
       </div>
     </section>
