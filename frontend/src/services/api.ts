@@ -1,5 +1,4 @@
 import type {
-  CatalogGame,
   ListGame,
   ScheduleAlgorithm,
   ScheduleErrorResponse,
@@ -29,32 +28,13 @@ async function parseError(
   return new Error(fallbackMessage);
 }
 
-export async function searchGames(query: string): Promise<CatalogGame[]> {
+export async function searchGames(query: string): Promise<ListGame[]> {
   const params = new URLSearchParams({ query });
   const response = await fetch(`${API_BASE}/games/search?${params.toString()}`);
   if (!response.ok) {
     throw await parseError(response, "Search failed");
   }
   return response.json();
-}
-
-export async function resolveGame(game: CatalogGame): Promise<ListGame> {
-  const response = await fetch(`${API_BASE}/games/resolve`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(game),
-  });
-  if (!response.ok) {
-    throw await parseError(response, "Game resolution failed");
-  }
-  const resolvedGame = (await response.json()) as ListGame;
-  if (
-    resolvedGame.hltb_status !== "resolved" ||
-    resolvedGame.main_story_hours === null
-  ) {
-    throw new Error(`No HLTB data found for ${game.name}.`);
-  }
-  return resolvedGame;
 }
 
 export async function generateSchedule(

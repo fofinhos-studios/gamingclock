@@ -134,3 +134,49 @@ async def test_search_refreshes_security_after_403():
     assert len(results) == 1
     assert results[0].name == "Halo"
     assert init_calls == 2
+
+
+@pytest.mark.asyncio
+async def test_search_uses_runtime_cache_for_repeated_queries():
+    init_calls = 0
+    search_calls = 0
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal init_calls, search_calls
+        if request.url.path == "/api/find/init":
+            init_calls += 1
+            return httpx.Response(
+                200,
+                json={"token": "token", "hpKey": "hp_key", "hpVal": "hp_val"},
+            )
+        if request.url.path == "/api/find":
+            search_calls += 1
+            return httpx.Response(
+                200,
+                json={
+                    "data": [
+                        {
+                            "game_name": "Final Fantasy VII",
+                            "game_alias": "",
+                            "game_image": "ff7.jpg",
+                            "comp_main": 131400,
+                        }
+                    ]
+                },
+            )
+        raise AssertionError(f"Unexpected request: {request.url}")
+
+    service = HLTBService(
+        http_client=httpx.AsyncClient(
+            transport=httpx.MockTransport(handler),
+            base_url="https://howlongtobeat.com",
+        )
+    )
+
+    first_results = await service.search("Final Fantasy VII")
+    second_results = await service.search("Final Fantasy VII")
+
+    assert len(first_results) == 1
+    assert len(second_results) == 1
+    assert search_calls == 1
+    assert init_calls == 1
