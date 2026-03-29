@@ -251,7 +251,7 @@ describe("HomePage", () => {
         },
       ],
       total_hours: 4.5,
-      estimated_end_date: "2026-04-01",
+      estimated_end_date: "2026-04-03",
     };
 
     globalThis.fetch = (async (input: RequestInfo | URL) => {
@@ -314,6 +314,7 @@ describe("HomePage", () => {
       );
 
       const schedulePanel = view.getByRole("tabpanel");
+      const summaryPanel = view.getByRole("complementary");
       expect(
         within(schedulePanel).getByText(/total planned hours/i),
       ).toBeTruthy();
@@ -324,6 +325,10 @@ describe("HomePage", () => {
       ).toBeTruthy();
       expect(within(schedulePanel).getByText(/^2$/)).toBeTruthy();
       expect(within(schedulePanel).getByText(/3 days/i)).toBeTruthy();
+      expect(
+        within(summaryPanel).getByText(/total elapsed days/i),
+      ).toBeTruthy();
+      expect(within(summaryPanel).getByText(/3 days/i)).toBeTruthy();
     } finally {
       globalThis.fetch = originalFetch;
     }

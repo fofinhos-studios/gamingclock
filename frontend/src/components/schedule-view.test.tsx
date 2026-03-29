@@ -20,7 +20,7 @@ const schedule: ScheduleResponse = {
     },
   ],
   total_hours: 4,
-  estimated_end_date: "2026-04-01",
+  estimated_end_date: "2026-04-03",
 };
 
 describe("ScheduleView", () => {
@@ -34,7 +34,7 @@ describe("ScheduleView", () => {
     expect(view.getAllByRole("article")).toHaveLength(2);
   });
 
-  test("shows the total elapsed days from first session to estimated finish", () => {
+  test("shows the total elapsed days from the first and last session dates", () => {
     const view = render(
       <ScheduleView schedule={schedule} onDownloadIcal={() => {}} />,
     );
