@@ -29,7 +29,7 @@ export function GameListView({
   return (
     <section aria-labelledby="current-list-heading" class="space-y-6">
       <div class="space-y-3">
-        <p class="section-eyebrow">Current list</p>
+        <p class="section-eyebrow">Current backlog</p>
         <h3 id="current-list-heading" class="text-4xl md:text-5xl">
           Active backlog
         </h3>
@@ -39,7 +39,7 @@ export function GameListView({
         </p>
       </div>
 
-      <Field label="List name" controlId="active-list-name">
+      <Field label="Backlog name" controlId="active-list-name">
         <input
           id="active-list-name"
           type="text"
@@ -53,9 +53,9 @@ export function GameListView({
 
       {games.length === 0 ? (
         <div class="empty-state space-y-3">
-          <p class="text-3xl">No games in this list yet.</p>
+          <p class="text-3xl">No games in this backlog yet.</p>
           <p class="text-[var(--muted-foreground)]">
-            Use the search section to add a few titles and start planning.
+            Use search to add a few titles and start planning.
           </p>
         </div>
       ) : (
