@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from fastapi import APIRouter
 
@@ -11,6 +12,7 @@ router = APIRouter(prefix="/games", tags=["games"])
 hltb_service = HLTBService()
 igdb_service = IGDBService()
 SEARCH_ENRICHMENT_LIMIT = 8
+logger = logging.getLogger(__name__)
 
 
 @router.get("/search", response_model=list[ListGame])
@@ -19,7 +21,7 @@ async def search_games(query: str) -> list[ListGame]:
         game if isinstance(game, CatalogGame) else CatalogGame.model_validate(game)
         for game in await igdb_service.search(query, limit=SEARCH_ENRICHMENT_LIMIT)
     ]
-    enriched_games = await asyncio.gather(*[_enrich_catalog_game(game) for game in catalog_games])
+    enriched_games = await asyncio.gather(*[_enrich_search_result(game) for game in catalog_games])
     return sorted(
         enriched_games,
         key=lambda game: game.hltb_status != HLTBStatus.RESOLVED,
@@ -49,17 +51,7 @@ async def resolve_game(request: ResolveGameRequest) -> ListGame:
 async def _enrich_catalog_game(catalog_game: CatalogGame) -> ListGame:
     hltb_results = await hltb_service.search(catalog_game.name)
     if not hltb_results:
-        return ListGame(
-            igdb_id=catalog_game.igdb_id,
-            name=catalog_game.name,
-            cover_url=catalog_game.cover_url,
-            summary=catalog_game.summary,
-            genres=catalog_game.genres,
-            platforms=catalog_game.platforms,
-            release_year=catalog_game.release_year,
-            rating=catalog_game.rating,
-            hltb_status=HLTBStatus.UNRESOLVED,
-        )
+        return _unresolved_game(catalog_game)
 
     match = hltb_results[0]
     if isinstance(match, dict):
@@ -87,4 +79,26 @@ async def _enrich_catalog_game(catalog_game: CatalogGame) -> ListGame:
         main_story_hours=main_story_hours,
         main_extra_hours=main_extra_hours,
         completionist_hours=completionist_hours,
+    )
+
+
+async def _enrich_search_result(catalog_game: CatalogGame) -> ListGame:
+    try:
+        return await _enrich_catalog_game(catalog_game)
+    except Exception:
+        logger.exception("HLTB enrichment failed for IGDB game %s", catalog_game.igdb_id)
+        return _unresolved_game(catalog_game)
+
+
+def _unresolved_game(catalog_game: CatalogGame) -> ListGame:
+    return ListGame(
+        igdb_id=catalog_game.igdb_id,
+        name=catalog_game.name,
+        cover_url=catalog_game.cover_url,
+        summary=catalog_game.summary,
+        genres=catalog_game.genres,
+        platforms=catalog_game.platforms,
+        release_year=catalog_game.release_year,
+        rating=catalog_game.rating,
+        hltb_status=HLTBStatus.UNRESOLVED,
     )

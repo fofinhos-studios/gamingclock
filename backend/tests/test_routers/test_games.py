@@ -96,3 +96,29 @@ def test_search_games_enriches_and_sorts_hltb_matches_first(client):
     assert data[0]["main_story_hours"] == 24.0
     assert data[1]["hltb_status"] == "unresolved"
     assert data[1]["main_story_hours"] is None
+
+
+def test_search_games_returns_unresolved_results_when_hltb_errors(client):
+    mock_games = [
+        {
+            "igdb_id": 1,
+            "name": "Final Fantasy VII",
+            "cover_url": "https://example.com/ff7.png",
+            "summary": "A classic RPG.",
+            "genres": ["RPG"],
+            "platforms": ["PlayStation"],
+            "release_year": 1997,
+            "rating": 91.2,
+        }
+    ]
+    with (
+        patch("gamingclock.routers.games.igdb_service") as mock_igdb,
+        patch("gamingclock.routers.games.hltb_service") as mock_hltb,
+    ):
+        mock_igdb.search = AsyncMock(return_value=mock_games)
+        mock_hltb.search = AsyncMock(side_effect=RuntimeError("HLTB unavailable"))
+
+        response = client.get("/games/search", params={"query": "Final Fantasy VII"})
+
+    assert response.status_code == 200
+    assert response.json()[0]["hltb_status"] == "unresolved"

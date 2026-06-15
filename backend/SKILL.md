@@ -47,10 +47,10 @@ uv sync --group dev
 
 ## HLTB Service (`src/gamingclock/services/hltb.py`)
 
-- **Library**: `howlongtobeatpy`
-- **Read**: `HLTBService.search()` is the wrapper around the library and always returns `Game` models.
-- **Edit**: Keep the external library boundary inside the service and convert all results through `_to_game()`.
-- **Test**: Mock `howlongtobeatpy.HowLongToBeat` in `tests/test_services/test_hltb.py` instead of hitting the network.
+- **Library**: `howlongtobeatpy>=1.0.21`
+- **Read**: `HLTBService.search()` wraps HLTB and always returns `Game` models. Game search treats HLTB enrichment as optional and returns unresolved IGDB results when HLTB fails.
+- **Edit**: Keep `HowLongToBeat.async_search()` inside the service and convert all library entries through `_to_game()`.
+- **Test**: Inject a mock API into `HLTBService` in `tests/test_services/test_hltb.py`; cover search fallback behavior in `tests/test_routers/test_games.py`.
 
 ## IGDB Service (`src/gamingclock/services/igdb.py`)
 
