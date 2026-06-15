@@ -40,10 +40,13 @@ uv run ty check
 cd backend
 uv lock
 uv sync --group dev
+uv audit --locked
 ```
 
 - Keep Python dependencies in `pyproject.toml`.
 - Commit `uv.lock` whenever backend dependencies change.
+- Run `uv audit --locked` locally; CI rejects known vulnerabilities.
+- Production services use `httpx`; FastAPI/Starlette tests use test-only `httpx2`.
 
 ## HLTB Service (`src/gamingclock/services/hltb.py`)
 

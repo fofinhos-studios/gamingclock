@@ -32,6 +32,17 @@ bunx @biomejs/biome check src/
 bunx @biomejs/biome check --write src/
 ```
 
+## Dependency Management
+
+```bash
+cd frontend
+bun update
+bun audit
+```
+
+- Commit `bun.lock` whenever frontend dependencies change.
+- Run `bun audit` locally; CI rejects known vulnerabilities.
+
 ## API and Pages
 
 - `src/services/api.ts` is the single place for backend HTTP calls.

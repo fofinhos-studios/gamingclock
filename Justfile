@@ -19,6 +19,9 @@ backend-lint:
 backend-format:
     cd backend && uv run ruff format src/ tests/
 
+backend-audit:
+    cd backend && uv audit --locked
+
 # Frontend
 frontend-install:
     cd frontend && bun install
@@ -35,6 +38,9 @@ frontend-lint:
 frontend-format:
     cd frontend && bunx @biomejs/biome check --write src/
 
+frontend-audit:
+    cd frontend && bun audit
+
 # Both
 install: backend-install frontend-install
 
@@ -46,6 +52,8 @@ test: backend-test
 lint: backend-lint frontend-lint
 
 format: backend-format frontend-format
+
+audit: backend-audit frontend-audit
 
 # Docker
 up:

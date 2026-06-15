@@ -23,6 +23,9 @@ jobs:
       - name: Install dependencies
         run: cd backend && uv sync --group dev
 
+      - name: Audit dependencies
+        run: cd backend && uv audit --locked
+
       - name: Lint
         run: cd backend && uv run ruff check src/ tests/ && uv run ty check
 
@@ -38,6 +41,9 @@ jobs:
 
       - name: Install dependencies
         run: cd frontend && bun install
+
+      - name: Audit dependencies
+        run: cd frontend && bun audit
 
       - name: Lint
         run: cd frontend && bunx @biomejs/biome check src/
