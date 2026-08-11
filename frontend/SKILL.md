@@ -46,7 +46,7 @@ bun audit
 ## API and Pages
 
 - `src/services/api.ts` is the single place for backend HTTP calls.
-- `src/pages/home.tsx` owns the dense planner app shell, the active workflow step, the single backlog state, availability, scheduling, and the generated schedule/error state.
+- `src/pages/home.tsx` owns the dense planner app shell, active workflow step, multiple local backlogs, availability, scheduling, and generated schedule/error state.
 - `src/components/` holds raw-element MVP UI pieces for search, lists, availability, and schedule display.
 
 ## Planner Flow And Boundaries
@@ -54,7 +54,7 @@ bun audit
 - `src/components/planner-games-step.tsx`, `src/components/planner-availability-step.tsx`, and `src/components/planner-schedule-step.tsx` split the page into focused planner steps.
 - `src/components/planner-tabs.tsx` is the workflow rail and owns the selected-step interaction behavior.
 - `src/components/planner-summary.tsx` is the compact top status strip that summarizes backlog, availability, and schedule state.
-- The MVP assumes one backlog only. Future multi-list support should re-enter in `src/pages/home.tsx` by lifting the backlog into a collection-level container while keeping the step component props backlog-shaped.
+- The MVP keeps a collection of local backlogs in `src/pages/home.tsx`; the selected backlog flows into the step components while the toolbar reports total games and resolved hours across all backlogs.
 
 ## Calendar Flow
 

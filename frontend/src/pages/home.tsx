@@ -9,6 +9,7 @@ import { PlannerSummary } from "../components/planner-summary";
 import { type PlannerTab, PlannerTabs } from "../components/planner-tabs";
 import { downloadIcal, generateSchedule } from "../services/api";
 import type {
+  GameList,
   ListGame,
   ScheduleAlgorithm,
   ScheduleResponse,
@@ -32,8 +33,10 @@ const TAB_CONTENT: Record<PlannerTab, { title: string; eyebrow: string }> = {
 
 export function HomePage(_props: RoutableProps) {
   const [activeTab, setActiveTab] = useState<PlannerTab>("games");
-  const [backlogName, setBacklogName] = useState("My Backlog");
-  const [games, setGames] = useState<ListGame[]>([]);
+  const [backlogs, setBacklogs] = useState<GameList[]>([
+    { name: "My Backlog", games: [] },
+  ]);
+  const [activeBacklogIndex, setActiveBacklogIndex] = useState(0);
   const [availability, setAvailability] = useState<WeeklyAvailability | null>(
     null,
   );
@@ -41,6 +44,14 @@ export function HomePage(_props: RoutableProps) {
   const [schedule, setSchedule] = useState<ScheduleResponse | null>(null);
   const [actionError, setActionError] = useState("");
   const [startDate, setStartDate] = useState(getLocalCalendarDate());
+  const activeBacklog = backlogs[activeBacklogIndex];
+  const backlogName = activeBacklog.name;
+  const games = activeBacklog.games;
+  const allBacklogGames = backlogs.flatMap((backlog) => backlog.games);
+  const totalAllBacklogsHours = allBacklogGames.reduce(
+    (total, game) => total + (game.main_story_hours ?? 0),
+    0,
+  );
 
   const clearGeneratedSchedule = () => {
     setSchedule(null);
@@ -91,14 +102,46 @@ export function HomePage(_props: RoutableProps) {
   const activeStep = TAB_CONTENT[activeTab];
 
   const addGame = (game: ListGame) => {
-    setGames((currentGames) => [...currentGames, game]);
+    setBacklogs((currentBacklogs) =>
+      currentBacklogs.map((backlog, index) =>
+        index === activeBacklogIndex
+          ? { ...backlog, games: [...backlog.games, game] }
+          : backlog,
+      ),
+    );
     clearGeneratedSchedule();
   };
 
   const removeGame = (index: number) => {
-    setGames((currentGames) =>
-      currentGames.filter((_, gameIndex) => gameIndex !== index),
+    setBacklogs((currentBacklogs) =>
+      currentBacklogs.map((backlog, backlogIndex) =>
+        backlogIndex === activeBacklogIndex
+          ? {
+              ...backlog,
+              games: backlog.games.filter(
+                (_, gameIndex) => gameIndex !== index,
+              ),
+            }
+          : backlog,
+      ),
     );
+    clearGeneratedSchedule();
+  };
+
+  const renameBacklog = (name: string) => {
+    setBacklogs((currentBacklogs) =>
+      currentBacklogs.map((backlog, index) =>
+        index === activeBacklogIndex ? { ...backlog, name } : backlog,
+      ),
+    );
+  };
+
+  const addBacklog = () => {
+    setBacklogs((currentBacklogs) => [
+      ...currentBacklogs,
+      { name: `Backlog ${currentBacklogs.length + 1}`, games: [] },
+    ]);
+    setActiveBacklogIndex(backlogs.length);
     clearGeneratedSchedule();
   };
 
@@ -196,6 +239,28 @@ export function HomePage(_props: RoutableProps) {
                 <p class="planner-toolbar__eyebrow">{activeStep.eyebrow}</p>
                 <h1 class="planner-toolbar__title">{activeStep.title}</h1>
               </div>
+              <div aria-label="Backlogs">
+                {backlogs.map((backlog, index) => (
+                  <button
+                    key={`${backlog.name}-${index}`}
+                    type="button"
+                    aria-pressed={index === activeBacklogIndex}
+                    onClick={() => {
+                      setActiveBacklogIndex(index);
+                      clearGeneratedSchedule();
+                    }}
+                  >
+                    {backlog.name}
+                  </button>
+                ))}
+                <button type="button" onClick={addBacklog}>
+                  New backlog
+                </button>
+                <p>
+                  All backlogs: {allBacklogGames.length} games,{" "}
+                  {totalAllBacklogsHours.toFixed(1)}h
+                </p>
+              </div>
             </header>
 
             <PlannerSummary
@@ -225,7 +290,7 @@ export function HomePage(_props: RoutableProps) {
                   games={games}
                   onAddGame={addGame}
                   onRemoveGame={removeGame}
-                  onRenameBacklog={setBacklogName}
+                  onRenameBacklog={renameBacklog}
                 />
               </section>
 

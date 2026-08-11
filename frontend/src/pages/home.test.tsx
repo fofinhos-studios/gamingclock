@@ -77,6 +77,16 @@ describe("HomePage", () => {
     expect(within(activePanel).getByText(/before you generate/i)).toBeTruthy();
   });
 
+  test("creates a second backlog and switches between backlogs", async () => {
+    const user = userEvent.setup();
+    const view = render(<HomePage path="/" />);
+
+    await user.click(view.getByRole("button", { name: /new backlog/i }));
+
+    expect(view.getByRole("button", { name: /my backlog/i })).toBeTruthy();
+    expect(view.getByRole("button", { name: /backlog 2/i })).toBeTruthy();
+  });
+
   test("preserves step-local draft state when switching tabs", async () => {
     const user = userEvent.setup();
 
