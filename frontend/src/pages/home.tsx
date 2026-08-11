@@ -258,7 +258,7 @@ export function HomePage(_props: RoutableProps) {
                 <p class="planner-toolbar__eyebrow">{activeStep.eyebrow}</p>
                 <h1 class="planner-toolbar__title">{activeStep.title}</h1>
               </div>
-              <div aria-label="Backlogs">
+              <div aria-label="Backlogs" class="planner-toolbar__backlogs">
                 {backlogs.map((backlog, index) => (
                   <button
                     key={`${backlog.name}-${index}`}
