@@ -38,12 +38,37 @@ def test_search_games_empty(client):
     assert response.json() == []
 
 
+def test_search_games_returns_catalog_results_without_hltb_enrichment(client):
+    catalog_game = {
+        "igdb_id": 1,
+        "name": "Final Fantasy VII",
+        "cover_url": "https://example.com/ff7.png",
+        "summary": "A classic RPG.",
+        "genres": ["RPG"],
+        "platforms": ["PlayStation"],
+        "release_year": 1997,
+        "rating": 91.2,
+    }
+    with (
+        patch("gamingclock.routers.games.igdb_service") as mock_igdb,
+        patch("gamingclock.routers.games.hltb_service") as mock_hltb,
+    ):
+        mock_igdb.search = AsyncMock(return_value=[catalog_game])
+
+        response = client.get("/games/search", params={"query": "Final Fantasy VII"})
+
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "public, s-maxage=300, stale-while-revalidate=86400"
+    assert response.json() == [catalog_game]
+    mock_hltb.search.assert_not_called()
+
+
 def test_search_games_missing_query(client):
     response = client.get("/games/search")
     assert response.status_code == 422
 
 
-def test_search_games_enriches_and_sorts_hltb_matches_first(client):
+def test_search_games_preserves_catalog_order_without_hltb_enrichment(client):
     with (
         patch("gamingclock.routers.games.igdb_service") as mock_igdb,
         patch("gamingclock.routers.games.hltb_service") as mock_hltb,
@@ -72,33 +97,16 @@ def test_search_games_enriches_and_sorts_hltb_matches_first(client):
                 },
             ]
         )
-        mock_hltb.search = AsyncMock(
-            side_effect=[
-                [],
-                [
-                    {
-                        "name": "Game",
-                        "image_url": "https://example.com/hltb.png",
-                        "main_story_hours": 24.0,
-                        "main_extra_hours": 35.0,
-                        "completionist_hours": 50.0,
-                    }
-                ],
-            ]
-        )
-
         response = client.get("/games/search", params={"query": "Game"})
 
     assert response.status_code == 200
     data = response.json()
-    assert [item["name"] for item in data] == ["Game", "Game Deluxe Edition"]
-    assert data[0]["hltb_status"] == "resolved"
-    assert data[0]["main_story_hours"] == 24.0
-    assert data[1]["hltb_status"] == "unresolved"
-    assert data[1]["main_story_hours"] is None
+    assert [item["name"] for item in data] == ["Game Deluxe Edition", "Game"]
+    assert all("hltb_status" not in item for item in data)
+    mock_hltb.search.assert_not_called()
 
 
-def test_search_games_returns_unresolved_results_when_hltb_errors(client):
+def test_search_games_is_available_when_hltb_is_unavailable(client):
     mock_games = [
         {
             "igdb_id": 1,
@@ -116,9 +124,8 @@ def test_search_games_returns_unresolved_results_when_hltb_errors(client):
         patch("gamingclock.routers.games.hltb_service") as mock_hltb,
     ):
         mock_igdb.search = AsyncMock(return_value=mock_games)
-        mock_hltb.search = AsyncMock(side_effect=RuntimeError("HLTB unavailable"))
-
         response = client.get("/games/search", params={"query": "Final Fantasy VII"})
 
     assert response.status_code == 200
-    assert response.json()[0]["hltb_status"] == "unresolved"
+    assert response.json() == mock_games
+    mock_hltb.search.assert_not_called()

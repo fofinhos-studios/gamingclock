@@ -7,6 +7,20 @@ from gamingclock.models.game import Game
 from gamingclock.services.hltb import HLTBService
 
 
+class SharedCacheFake:
+    def __init__(self, result: list[Game] | None) -> None:
+        self.result = result
+        self.get_calls: list[str] = []
+        self.set_calls: list[tuple[str, list[Game]]] = []
+
+    async def get(self, normalized_query: str) -> list[Game] | None:
+        self.get_calls.append(normalized_query)
+        return self.result
+
+    async def set(self, normalized_query: str, results: list[Game]) -> None:
+        self.set_calls.append((normalized_query, results))
+
+
 def _result(
     name: str,
     similarity: float,
@@ -64,6 +78,24 @@ async def test_search_uses_runtime_cache_for_repeated_queries():
 
     assert first_results == second_results
     api.async_search.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_search_uses_shared_cache_before_calling_hltb():
+    cached_game = Game(
+        name="Final Fantasy VII",
+        image_url="https://howlongtobeat.com/games/ff7.jpg",
+        main_story_hours=36.03,
+    )
+    shared_cache = SharedCacheFake([cached_game])
+    api = SimpleNamespace(async_search=AsyncMock())
+
+    results = await HLTBService(api=api, shared_cache=shared_cache).search("Final Fantasy VII")
+
+    assert results == [cached_game]
+    assert shared_cache.get_calls == ["final fantasy vii"]
+    assert shared_cache.set_calls == []
+    api.async_search.assert_not_awaited()
 
 
 @pytest.mark.asyncio

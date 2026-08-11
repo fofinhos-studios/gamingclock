@@ -27,6 +27,10 @@ uv sync --group dev
 
 The MVP uses a deterministic local game catalog, so no API credentials are required. A live IGDB integration can replace it later without changing the frontend API.
 
+### Vercel HLTB cache
+
+Search responses are edge-cached for five minutes. To share resolved HLTB matches between Vercel function instances, install **Upstash Redis** from the Vercel Marketplace and expose its injected `KV_REST_API_URL` and `KV_REST_API_TOKEN` variables to the Production environment. The backend also accepts the standard `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` names. Resolved matches are cached for seven days; if Redis is unavailable, the app safely falls back to a live HLTB lookup.
+
 Run the backend locally:
 
 ```bash
