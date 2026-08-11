@@ -2,13 +2,13 @@ import { Check, LoaderCircle, Search } from "lucide-preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
-import { resolveGame, searchGames } from "../services/api";
+import { searchGames } from "../services/api";
 import type { CatalogGame, ListGame } from "../types";
 import { Field, Input } from "./ui";
 
 interface Props {
   games: ListGame[];
-  onAddGame: (game: ListGame) => void;
+  onAddGame: (game: CatalogGame) => void;
 }
 
 export function GameSearch({ games, onAddGame }: Props) {
@@ -80,7 +80,7 @@ export function GameSearch({ games, onAddGame }: Props) {
     });
   }, [highlightedIndex]);
 
-  const handleAddGame = async (game: CatalogGame) => {
+  const handleAddGame = (game: CatalogGame) => {
     if (games.some((backlogGame) => backlogGame.igdb_id === game.igdb_id)) {
       setInfoMessage(`${game.name} is already in your backlog.`);
       setError("");
@@ -91,38 +91,13 @@ export function GameSearch({ games, onAddGame }: Props) {
     setError("");
     setInfoMessage("");
 
-    try {
-      const legacyResult = game as CatalogGame & Partial<ListGame>;
-      if (legacyResult.hltb_status === "unresolved") {
-        setError(`No HLTB data found for ${game.name}.`);
-        return;
-      }
-      const resolvedGame =
-        legacyResult.hltb_status === "resolved"
-          ? (legacyResult as ListGame)
-          : await resolveGame(game);
-      if (
-        resolvedGame.hltb_status !== "resolved" ||
-        resolvedGame.main_story_hours === null
-      ) {
-        setError(`No HLTB data found for ${game.name}.`);
-        return;
-      }
-      addFeedback.trigger(game.igdb_id, 1700);
-      onAddGame({ ...resolvedGame, selected_hltb_category: "main" });
-      setQuery("");
-      setResults([]);
-      setIsDropdownOpen(false);
-      setHighlightedIndex(-1);
-    } catch (resolveError) {
-      setError(
-        resolveError instanceof Error
-          ? resolveError.message
-          : "Game resolution failed",
-      );
-    } finally {
-      setAddingId(null);
-    }
+    onAddGame(game);
+    addFeedback.trigger(game.igdb_id, 1700);
+    setQuery("");
+    setResults([]);
+    setIsDropdownOpen(false);
+    setHighlightedIndex(-1);
+    setAddingId(null);
   };
 
   const previewCoverUrl = (coverUrl: string) =>
@@ -156,7 +131,7 @@ export function GameSearch({ games, onAddGame }: Props) {
     if (event.key === "Enter" && highlightedIndex >= 0) {
       event.preventDefault();
       if (addingId === null) {
-        void handleAddGame(results[highlightedIndex]);
+        handleAddGame(results[highlightedIndex]);
       }
       return;
     }
@@ -230,7 +205,7 @@ export function GameSearch({ games, onAddGame }: Props) {
                     class="planner-icon planner-icon--spin"
                     aria-hidden="true"
                   />
-                  <span>Finding games and play times...</span>
+                  <span>Finding games...</span>
                 </p>
               )}
               {error && (
@@ -266,7 +241,7 @@ export function GameSearch({ games, onAddGame }: Props) {
                       }`}
                       onMouseEnter={() => setHighlightedIndex(index)}
                       onFocus={() => setHighlightedIndex(index)}
-                      onClick={() => void handleAddGame(game)}
+                      onClick={() => handleAddGame(game)}
                       disabled={addingId === game.igdb_id}
                       aria-label={`Add ${game.name} to backlog`}
                     >
@@ -297,9 +272,6 @@ export function GameSearch({ games, onAddGame }: Props) {
                               {game.rating === null
                                 ? ""
                                 : ` / ${game.rating.toFixed(1)}`}
-                            </p>
-                            <p class="planner-result__status planner-result__status--unmatched">
-                              Get playtime estimate
                             </p>
                           </div>
                         </div>
@@ -343,9 +315,7 @@ export function GameSearch({ games, onAddGame }: Props) {
             </div>
           )}
 
-        <p class="planner-search-attribution">
-          Data from IGDB and HowLongToBeat.
-        </p>
+        <p class="planner-search-attribution">Data from IGDB.</p>
       </div>
     </section>
   );

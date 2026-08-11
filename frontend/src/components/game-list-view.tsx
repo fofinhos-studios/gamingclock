@@ -1,4 +1,4 @@
-import { Check, List, Trash2, Trophy } from "lucide-preact";
+import { Check, List, LoaderCircle, Trash2, Trophy } from "lucide-preact";
 import { useState } from "preact/hooks";
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
 import {
@@ -111,37 +111,54 @@ export function GameListView({
                   <h3 class="planner-backlog-row__title">{game.name}</h3>
                   <div
                     class="planner-chip-group"
-                    aria-label={`${game.name} HLTB times`}
+                    aria-label={`${game.name} playtime options`}
                   >
-                    {[
-                      ["main", "Main", game.main_story_hours],
-                      ["extras", "Extras", game.main_extra_hours],
+                    {game.hltb_status === "loading" ? (
+                      <span
+                        class="planner-chip planner-chip--loading"
+                        aria-live="polite"
+                      >
+                        <LoaderCircle
+                          class="planner-icon planner-icon--spin"
+                          aria-hidden="true"
+                        />
+                        Retrieving playtime
+                      </span>
+                    ) : game.hltb_status === "unresolved" ? (
+                      <span class="planner-chip">Playtime unavailable</span>
+                    ) : (
                       [
-                        "completionist",
-                        "Completionist",
-                        game.completionist_hours,
-                      ],
-                    ].map(([category, label, hours]) =>
-                      typeof hours === "number" ? (
-                        <button
-                          key={category}
-                          type="button"
-                          class={`planner-hltb-option ${
-                            (game.selected_hltb_category ?? "main") === category
-                              ? "planner-hltb-option--active"
-                              : ""
-                          }`}
-                          aria-pressed={
-                            (game.selected_hltb_category ?? "main") === category
-                          }
-                          aria-label={`Use ${label} time: ${hours} hours`}
-                          onClick={() =>
-                            onSelectGameTime(index, category as HLTBCategory)
-                          }
-                        >
-                          {`${hours}h ${label.toLowerCase()}`}
-                        </button>
-                      ) : null,
+                        ["main", "Main", game.main_story_hours],
+                        ["extras", "Extras", game.main_extra_hours],
+                        [
+                          "completionist",
+                          "Completionist",
+                          game.completionist_hours,
+                        ],
+                      ].map(([category, label, hours]) =>
+                        typeof hours === "number" ? (
+                          <button
+                            key={category}
+                            type="button"
+                            class={`planner-hltb-option ${
+                              (game.selected_hltb_category ?? "main") ===
+                              category
+                                ? "planner-hltb-option--active"
+                                : ""
+                            }`}
+                            aria-pressed={
+                              (game.selected_hltb_category ?? "main") ===
+                              category
+                            }
+                            aria-label={`Use ${label} time: ${hours} hours`}
+                            onClick={() =>
+                              onSelectGameTime(index, category as HLTBCategory)
+                            }
+                          >
+                            {`${hours}h ${String(label).toLowerCase()}`}
+                          </button>
+                        ) : null,
+                      )
                     )}
                     {game.release_year !== null && (
                       <span class="planner-chip">{game.release_year}</span>

@@ -1,11 +1,11 @@
-import type { HLTBCategory, ListGame } from "../types";
+import type { CatalogGame, HLTBCategory, ListGame } from "../types";
 import { GameListView } from "./game-list-view";
 import { GameSearch } from "./game-search";
 
 interface Props {
   backlogName: string;
   games: ListGame[];
-  onAddGame: (game: ListGame) => void;
+  onAddGame: (game: CatalogGame) => void;
   onSelectGameTime: (index: number, category: HLTBCategory) => void;
   onRemoveGame: (index: number) => void;
   onRenameBacklog: (name: string) => void;
