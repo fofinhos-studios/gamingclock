@@ -69,8 +69,8 @@ uv audit --locked
 
 ## IGDB Service (`src/gamingclock/services/igdb.py`)
 
-- **Read**: `IGDBService` provides a deterministic local catalog while the MVP has no IGDB credentials or live integration.
-- **Edit**: Add representative `CatalogGame` entries to `_catalog`; keep `search()` case-insensitive and `get_by_id()` stable by `igdb_id`.
+- **Read**: `IGDBService` uses IGDB's OAuth client-credentials flow when `IGDB_CLIENT_ID` and `IGDB_CLIENT_SECRET` are configured. The deterministic local catalog is only a credentials-free development and test fallback.
+- **Edit**: Keep the production IGDB request path and its injected `httpx.AsyncClient` seams. Do not route a configured deployment through the local catalog.
 - **Test**: `uv run pytest tests/test_services/test_igdb.py -v`
 
 ## Scheduler Service (`src/gamingclock/services/scheduler.py`)
