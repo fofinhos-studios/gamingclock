@@ -183,9 +183,6 @@ export function GameSearch({ games, onAddGame }: Props) {
             <span>Find games</span>
           </h2>
         </div>
-        <p class="planner-panel__copy">
-          Type at least 2 characters. Arrow keys move through the live results.
-        </p>
       </div>
 
       <div ref={containerRef} class="space-y-3">
@@ -233,7 +230,7 @@ export function GameSearch({ games, onAddGame }: Props) {
                     class="planner-icon planner-icon--spin"
                     aria-hidden="true"
                   />
-                  <span>Searching games and time to finish...</span>
+                  <span>Finding games and play times...</span>
                 </p>
               )}
               {error && (

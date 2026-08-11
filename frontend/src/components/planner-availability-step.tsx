@@ -26,12 +26,11 @@ export function PlannerAvailabilityStep({
                 class="planner-icon planner-heading__icon"
                 aria-hidden="true"
               />
-              <span>Weekly cadence</span>
+              <span>Weekly play time</span>
             </h2>
           </div>
           <p class="planner-panel__copy">
-            Save the days, session length, and start hour you can realistically
-            keep.
+            Set the days, session length, and start time that suit your week.
           </p>
         </div>
 
@@ -52,14 +51,14 @@ export function PlannerAvailabilityStep({
         </section>
 
         <section class="planner-note">
-          <p class="planner-note__label">Backlog context</p>
+          <p class="planner-note__label">Current backlog</p>
           <p class="planner-note__value">
-            {gameCount} title{gameCount === 1 ? "" : "s"} in backlog
+            {gameCount} game{gameCount === 1 ? "" : "s"} in this backlog
           </p>
           <p class="planner-note__text">
             {gameCount === 0
-              ? "Add at least one game before generating a schedule."
-              : "You can change availability any time before generating a new schedule."}
+              ? "Add a game before you create a schedule."
+              : "Change your play time before you create a new schedule."}
           </p>
         </section>
       </div>
