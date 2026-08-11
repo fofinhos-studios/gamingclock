@@ -261,6 +261,8 @@
   .planner-toolbar {
     display: flex;
     align-items: end;
+    justify-content: space-between;
+    gap: 0.9rem;
     padding-bottom: 0.75rem;
   }
 
@@ -282,6 +284,36 @@
     font-weight: 600;
     letter-spacing: -0.03em;
     line-height: 1.05;
+  }
+
+  .planner-toolbar__backlogs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: end;
+    gap: 0.45rem 0.6rem;
+    align-items: center;
+    max-width: 100%;
+  }
+
+  .planner-toolbar__backlogs button {
+    border: 1px solid var(--foreground);
+    background: var(--surface);
+    padding: 0.4rem 0.55rem;
+    color: var(--foreground);
+    cursor: pointer;
+  }
+
+  .planner-toolbar__backlogs button[aria-pressed="true"] {
+    background: var(--foreground);
+    color: var(--surface);
+  }
+
+  .planner-toolbar__backlogs p {
+    flex-basis: 100%;
+    color: var(--muted-foreground);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    text-align: end;
   }
 
   .planner-statusbar {
@@ -1232,6 +1264,14 @@
   .timeline-entry__header {
     flex-direction: column;
     align-items: start;
+  }
+
+  .planner-toolbar__backlogs {
+    justify-content: start;
+  }
+
+  .planner-toolbar__backlogs p {
+    text-align: start;
   }
 
   .planner-games-workspace,

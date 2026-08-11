@@ -200,6 +200,11 @@ describe("HomePage", () => {
     expect(
       view.getByRole("heading", { level: 1, name: /build backlog/i }),
     ).toBeTruthy();
+    expect(
+      view
+        .getByLabelText(/backlogs/i)
+        .classList.contains("planner-toolbar__backlogs"),
+    ).toBe(true);
     expect(view.getByRole("tab", { name: /games/i })).toBeTruthy();
     expect(view.getByRole("tab", { name: /availability/i })).toBeTruthy();
     expect(view.getByRole("tab", { name: /schedule/i })).toBeTruthy();
