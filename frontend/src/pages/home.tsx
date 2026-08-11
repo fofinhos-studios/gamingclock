@@ -6,8 +6,9 @@ import { PlannerAvailabilityStep } from "../components/planner-availability-step
 import { PlannerGamesStep } from "../components/planner-games-step";
 import { PlannerScheduleStep } from "../components/planner-schedule-step";
 import { type PlannerTab, PlannerTabs } from "../components/planner-tabs";
-import { downloadIcal, generateSchedule } from "../services/api";
+import { downloadIcal, generateSchedule, resolveGame } from "../services/api";
 import {
+  type CatalogGame,
   type GameList,
   type HLTBCategory,
   type ListGame,
@@ -58,7 +59,15 @@ export function HomePage(_props: RoutableProps) {
     setActionError("");
   };
 
-  const canGenerateSchedule = availability !== null && games.length > 0;
+  const hasLoadingGames = games.some((game) => game.hltb_status === "loading");
+  const hasUnresolvedGames = games.some(
+    (game) => game.hltb_status === "unresolved",
+  );
+  const canGenerateSchedule =
+    availability !== null &&
+    games.length > 0 &&
+    !hasLoadingGames &&
+    !hasUnresolvedGames;
   const schedulePrerequisites = [
     ...(games.length === 0
       ? [
@@ -78,18 +87,86 @@ export function HomePage(_props: RoutableProps) {
           },
         ]
       : []),
+    ...(hasLoadingGames
+      ? [
+          {
+            id: "game-times-loading",
+            message: "We're retrieving playtime estimates for your games.",
+          },
+        ]
+      : []),
+    ...(hasUnresolvedGames
+      ? [
+          {
+            id: "game-times-unavailable",
+            message:
+              "A playtime estimate is unavailable for one or more games.",
+          },
+        ]
+      : []),
   ];
   const activeStep = TAB_CONTENT[activeTab];
 
-  const addGame = (game: ListGame) => {
+  const addGame = (game: CatalogGame) => {
+    const pendingGame: ListGame = {
+      ...game,
+      hltb_status: "loading",
+      hltb_match_name: null,
+      main_story_hours: null,
+      main_extra_hours: null,
+      completionist_hours: null,
+      selected_hltb_category: "main",
+    };
+
     setBacklogs((currentBacklogs) =>
       currentBacklogs.map((backlog, index) =>
         index === activeBacklogIndex
-          ? { ...backlog, games: [...backlog.games, game] }
+          ? { ...backlog, games: [...backlog.games, pendingGame] }
           : backlog,
       ),
     );
     clearGeneratedSchedule();
+
+    void resolveGame(game)
+      .then((resolvedGame) => {
+        const nextGame: ListGame = {
+          ...resolvedGame,
+          selected_hltb_category: "main",
+        };
+        setBacklogs((currentBacklogs) =>
+          currentBacklogs.map((backlog, index) =>
+            index === activeBacklogIndex
+              ? {
+                  ...backlog,
+                  games: backlog.games.map((backlogGame) =>
+                    backlogGame.igdb_id === game.igdb_id
+                      ? nextGame
+                      : backlogGame,
+                  ),
+                }
+              : backlog,
+          ),
+        );
+      })
+      .catch(() => {
+        setBacklogs((currentBacklogs) =>
+          currentBacklogs.map((backlog, index) =>
+            index === activeBacklogIndex
+              ? {
+                  ...backlog,
+                  games: backlog.games.map((backlogGame) =>
+                    backlogGame.igdb_id === game.igdb_id
+                      ? {
+                          ...backlogGame,
+                          hltb_status: "unresolved",
+                        }
+                      : backlogGame,
+                  ),
+                }
+              : backlog,
+          ),
+        );
+      });
   };
 
   const removeGame = (index: number) => {

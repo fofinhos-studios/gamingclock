@@ -46,12 +46,16 @@ function createCatalogResult(
 }
 
 describe("HomePage", () => {
-  test("resolves only the selected catalogue game before adding it", async () => {
+  test("adds the selected IGDB game immediately while its playtime resolves", async () => {
     const user = userEvent.setup();
     const originalFetch = globalThis.fetch;
     const catalogResult = createCatalogResult();
     const resolvedResult = createSearchResult();
     const requests: string[] = [];
+    let resolvePlaytime: ((response: Response) => void) | undefined;
+    const playtimeResponse = new Promise<Response>((resolve) => {
+      resolvePlaytime = resolve;
+    });
 
     globalThis.fetch = (async (input: RequestInfo | URL) => {
       const url = String(input);
@@ -60,7 +64,7 @@ describe("HomePage", () => {
         return createJsonResponse([catalogResult]);
       }
       if (url === "/api/games/resolve") {
-        return createJsonResponse(resolvedResult);
+        return playtimeResponse;
       }
       throw new Error(`Unexpected fetch call: ${url}`);
     }) as typeof fetch;
@@ -86,6 +90,42 @@ describe("HomePage", () => {
       );
 
       await waitFor(() => expect(requests).toContain("/api/games/resolve"));
+      expect(
+        within(view.getByRole("tabpanel")).getByText(/retrieving playtime/i),
+      ).toBeTruthy();
+      expect(
+        within(view.getByRole("tabpanel")).getByText(/^0\.0h$/i),
+      ).toBeTruthy();
+
+      await user.click(view.getByRole("tab", { name: /availability/i }));
+      await user.click(view.getByLabelText(/monday/i));
+      await user.click(
+        view.getByRole("button", { name: /save availability/i }),
+      );
+      await user.click(view.getByRole("tab", { name: /schedule/i }));
+
+      const generateButton = within(view.getByRole("tabpanel")).getByRole(
+        "button",
+        { name: /generate schedule/i },
+      );
+      expect(generateButton.hasAttribute("disabled")).toBe(true);
+      expect(
+        within(view.getByRole("tabpanel")).getByText(
+          /retrieving playtime estimates/i,
+        ),
+      ).toBeTruthy();
+
+      resolvePlaytime?.(createJsonResponse(resolvedResult));
+
+      await waitFor(() =>
+        expect(generateButton.hasAttribute("disabled")).toBe(false),
+      );
+      await user.click(view.getByRole("tab", { name: /games/i }));
+      await waitFor(() =>
+        expect(
+          within(view.getByRole("tabpanel")).getByText(/^27\.5h$/i),
+        ).toBeTruthy(),
+      );
       expect(
         within(view.getByRole("tabpanel")).getByText(/^27\.5h$/i),
       ).toBeTruthy();
@@ -369,7 +409,7 @@ describe("HomePage", () => {
     }
   });
 
-  test("shows loading copy while searching games and time to finish", async () => {
+  test("shows loading copy while searching games", async () => {
     const user = userEvent.setup();
     const originalFetch = globalThis.fetch;
 
@@ -394,7 +434,7 @@ describe("HomePage", () => {
       await user.type(searchInput, "ha");
 
       await waitFor(() =>
-        expect(view.getByText(/finding games and play times/i)).toBeTruthy(),
+        expect(view.getByText(/finding games/i)).toBeTruthy(),
       );
     } finally {
       globalThis.fetch = originalFetch;
@@ -428,7 +468,11 @@ describe("HomePage", () => {
       const url = String(input);
 
       if (url.startsWith("/api/games/search?")) {
-        return createJsonResponse([searchResult]);
+        return createJsonResponse([createCatalogResult()]);
+      }
+
+      if (url === "/api/games/resolve") {
+        return createJsonResponse(searchResult);
       }
 
       if (url === "/api/schedule/generate") {
@@ -459,6 +503,12 @@ describe("HomePage", () => {
 
       await user.click(
         view.getByRole("button", { name: /add hollow knight to backlog/i }),
+      );
+
+      await waitFor(() =>
+        expect(
+          view.getByRole("button", { name: /use main time: 27\.5 hours/i }),
+        ).toBeTruthy(),
       );
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
@@ -537,7 +587,7 @@ describe("HomePage", () => {
     ).toMatch(/add at least one game to the backlog/i);
   });
 
-  test("shows an error and does not add a game when HLTB data is unavailable", async () => {
+  test("keeps a game in the list when its HLTB playtime is unavailable", async () => {
     const user = userEvent.setup();
     const originalFetch = globalThis.fetch;
 
@@ -553,7 +603,11 @@ describe("HomePage", () => {
       const url = String(input);
 
       if (url.startsWith("/api/games/search?")) {
-        return createJsonResponse([unresolvedGame]);
+        return createJsonResponse([createCatalogResult()]);
+      }
+
+      if (url === "/api/games/resolve") {
+        return createJsonResponse(unresolvedGame);
       }
 
       throw new Error(`Unexpected fetch call: ${url}`);
@@ -580,12 +634,10 @@ describe("HomePage", () => {
 
       await waitFor(() =>
         expect(
-          within(activePanel).getByText(
-            /no hltb data found for hollow knight/i,
-          ),
+          within(activePanel).getByText(/playtime unavailable/i),
         ).toBeTruthy(),
       );
-      expect(view.getByText(/no games in this backlog yet/i)).toBeTruthy();
+      expect(within(activePanel).getByText(/hollow knight/i)).toBeTruthy();
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -607,7 +659,11 @@ describe("HomePage", () => {
       const url = String(input);
 
       if (url.startsWith("/api/games/search?")) {
-        return createJsonResponse([searchResult]);
+        return createJsonResponse([createCatalogResult()]);
+      }
+
+      if (url === "/api/games/resolve") {
+        return createJsonResponse(searchResult);
       }
 
       throw new Error(`Unexpected fetch call: ${url}`);
@@ -690,7 +746,11 @@ describe("HomePage", () => {
       const url = String(input);
 
       if (url.startsWith("/api/games/search?")) {
-        return createJsonResponse([searchResult]);
+        return createJsonResponse([createCatalogResult()]);
+      }
+
+      if (url === "/api/games/resolve") {
+        return createJsonResponse(searchResult);
       }
 
       if (url === "/api/schedule/generate") {
@@ -717,6 +777,12 @@ describe("HomePage", () => {
 
       await user.click(
         view.getByRole("button", { name: /add hollow knight to backlog/i }),
+      );
+
+      await waitFor(() =>
+        expect(
+          view.getByRole("button", { name: /use main time: 27\.5 hours/i }),
+        ).toBeTruthy(),
       );
 
       await waitFor(() =>
@@ -788,7 +854,11 @@ describe("HomePage", () => {
       const url = String(input);
 
       if (url.startsWith("/api/games/search?")) {
-        return createJsonResponse([searchResult]);
+        return createJsonResponse([createCatalogResult()]);
+      }
+
+      if (url === "/api/games/resolve") {
+        return createJsonResponse(searchResult);
       }
 
       if (url === "/api/schedule/generate") {
@@ -815,6 +885,12 @@ describe("HomePage", () => {
 
       await user.click(
         view.getByRole("button", { name: /add hollow knight to backlog/i }),
+      );
+
+      await waitFor(() =>
+        expect(
+          view.getByRole("button", { name: /use main time: 27\.5 hours/i }),
+        ).toBeTruthy(),
       );
 
       await waitFor(() =>

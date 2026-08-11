@@ -1,4 +1,4 @@
-export type HLTBStatus = "resolved" | "unresolved";
+export type HLTBStatus = "loading" | "resolved" | "unresolved";
 export type HLTBCategory = "main" | "extras" | "completionist";
 
 export interface CatalogGame {

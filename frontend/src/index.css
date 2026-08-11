@@ -668,6 +668,10 @@
     color: var(--foreground);
   }
 
+  .planner-chip--loading {
+    gap: 0.3rem;
+  }
+
   .planner-hltb-option {
     display: inline-flex;
     align-items: center;
