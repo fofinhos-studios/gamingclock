@@ -1,5 +1,7 @@
 import datetime
 
+import pytest
+
 from gamingclock.models.catalog import HLTBStatus, ScheduleGameInput
 from gamingclock.models.schedule import (
     DayAvailability,
@@ -32,6 +34,15 @@ def test_weekly_availability_total_weekly_hours():
         ],
     )
     assert avail.total_weekly_hours == 10.0
+
+
+@pytest.mark.parametrize(
+    ("days", "error_field"),
+    [([], "days"), ([{"day_of_week": 7, "hours": 2}], "day_of_week"), ([{"day_of_week": 0, "hours": 0}], "hours")],
+)
+def test_weekly_availability_rejects_unschedulable_days(days, error_field):
+    with pytest.raises(ValueError, match=error_field):
+        WeeklyAvailability(days=days)
 
 
 def test_schedule_request():

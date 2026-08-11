@@ -12,13 +12,13 @@ class ScheduleAlgorithm(StrEnum):
 
 
 class DayAvailability(BaseModel):
-    day_of_week: int
-    hours: float
+    day_of_week: int = Field(ge=0, le=6)
+    hours: float = Field(gt=0)
     start_hour: int = Field(default=20, ge=0, le=23)
 
 
 class WeeklyAvailability(BaseModel):
-    days: list[DayAvailability]
+    days: list[DayAvailability] = Field(min_length=1)
 
     @computed_field
     @property
