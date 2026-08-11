@@ -63,6 +63,8 @@ gamingclock/
 
 Use **conventional commits** with pure git CLI. Stage specific files, never `git add -A`.
 
+Push each successful commit to the tracked remote unless the user explicitly says not to push.
+
 ```bash
 # Feature
 git add backend/src/gamingclock/models/game.py backend/tests/test_models/test_game.py
