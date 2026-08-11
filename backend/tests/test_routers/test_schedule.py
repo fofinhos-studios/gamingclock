@@ -35,6 +35,39 @@ def test_generate_schedule(client):
     assert data["sessions"][0]["start_time"] == "18:00:00"
 
 
+def test_generate_schedule_uses_selected_hltb_category(client):
+    response = client.post(
+        "/schedule/generate",
+        json={
+            "game_list_name": "Test",
+            "games": [
+                {
+                    "igdb_id": 10,
+                    "name": "FF7",
+                    "cover_url": "https://example.com/ff7.png",
+                    "summary": "Classic RPG",
+                    "genres": ["RPG"],
+                    "platforms": ["PlayStation"],
+                    "release_year": 1997,
+                    "rating": 95.0,
+                    "hltb_status": "resolved",
+                    "hltb_match_name": "Final Fantasy VII",
+                    "main_story_hours": 4.0,
+                    "main_extra_hours": 6.0,
+                    "completionist_hours": 10.0,
+                    "selected_hltb_category": "completionist",
+                },
+            ],
+            "availability": {"days": [{"day_of_week": 0, "hours": 2.0, "start_hour": 18}]},
+            "algorithm": "sequential",
+            "start_date": "2026-03-30",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["total_hours"] == 10.0
+
+
 def test_generate_schedule_empty_games(client):
     response = client.post(
         "/schedule/generate",

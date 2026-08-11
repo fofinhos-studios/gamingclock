@@ -21,6 +21,7 @@ def test_full_flow(client):
         "main_story_hours": 36.5,
         "main_extra_hours": 52.0,
         "completionist_hours": 83.0,
+        "selected_hltb_category": "main",
     }
     hltb_match = {
         "name": "Final Fantasy VII",

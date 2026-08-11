@@ -8,14 +8,15 @@ import { PlannerScheduleStep } from "../components/planner-schedule-step";
 import { PlannerSummary } from "../components/planner-summary";
 import { type PlannerTab, PlannerTabs } from "../components/planner-tabs";
 import { downloadIcal, generateSchedule } from "../services/api";
-import type {
-  GameList,
-  ListGame,
-  ScheduleAlgorithm,
-  ScheduleResponse,
-  WeeklyAvailability,
+import {
+  type GameList,
+  type HLTBCategory,
+  type ListGame,
+  type ScheduleAlgorithm,
+  type ScheduleResponse,
+  type WeeklyAvailability,
+  getSelectedGameHours,
 } from "../types";
-
 const TAB_CONTENT: Record<PlannerTab, { title: string; eyebrow: string }> = {
   games: {
     title: "Build backlog",
@@ -49,7 +50,7 @@ export function HomePage(_props: RoutableProps) {
   const games = activeBacklog.games;
   const allBacklogGames = backlogs.flatMap((backlog) => backlog.games);
   const totalAllBacklogsHours = allBacklogGames.reduce(
-    (total, game) => total + (game.main_story_hours ?? 0),
+    (total, game) => total + getSelectedGameHours(game),
     0,
   );
 
@@ -59,7 +60,7 @@ export function HomePage(_props: RoutableProps) {
   };
 
   const resolvedHours = games.reduce(
-    (total, game) => total + (game.main_story_hours ?? 0),
+    (total, game) => total + getSelectedGameHours(game),
     0,
   );
   const canGenerateSchedule = availability !== null && games.length > 0;
@@ -120,6 +121,24 @@ export function HomePage(_props: RoutableProps) {
               ...backlog,
               games: backlog.games.filter(
                 (_, gameIndex) => gameIndex !== index,
+              ),
+            }
+          : backlog,
+      ),
+    );
+    clearGeneratedSchedule();
+  };
+
+  const selectGameTime = (index: number, category: HLTBCategory) => {
+    setBacklogs((currentBacklogs) =>
+      currentBacklogs.map((backlog, backlogIndex) =>
+        backlogIndex === activeBacklogIndex
+          ? {
+              ...backlog,
+              games: backlog.games.map((game, gameIndex) =>
+                gameIndex === index
+                  ? { ...game, selected_hltb_category: category }
+                  : game,
               ),
             }
           : backlog,
@@ -289,6 +308,7 @@ export function HomePage(_props: RoutableProps) {
                   backlogName={backlogName}
                   games={games}
                   onAddGame={addGame}
+                  onSelectGameTime={selectGameTime}
                   onRemoveGame={removeGame}
                   onRenameBacklog={renameBacklog}
                 />

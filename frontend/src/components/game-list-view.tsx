@@ -1,13 +1,18 @@
 import { Check, List, Trash2, Trophy } from "lucide-preact";
 import { useState } from "preact/hooks";
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
-import type { ListGame } from "../types";
+import {
+  type HLTBCategory,
+  type ListGame,
+  getSelectedGameHours,
+} from "../types";
 import { Button, Field } from "./ui";
 
 interface Props {
   name: string;
   games: ListGame[];
   onRemoveGame: (index: number) => void;
+  onSelectGameTime: (index: number, category: HLTBCategory) => void;
   onRenameList: (name: string) => void;
 }
 
@@ -15,6 +20,7 @@ export function GameListView({
   name,
   games,
   onRemoveGame,
+  onSelectGameTime,
   onRenameList,
 }: Props) {
   const [removingIndex, setRemovingIndex] = useState<number | null>(null);
@@ -23,7 +29,7 @@ export function GameListView({
     coverUrl.replace("/t_thumb/", "/t_cover_small/");
 
   const totalHours = games.reduce(
-    (sum, game) => sum + (game.main_story_hours ?? 0),
+    (sum, game) => sum + getSelectedGameHours(game),
     0,
   );
 
@@ -105,22 +111,45 @@ export function GameListView({
               <div class="planner-backlog-row__body">
                 <div class="planner-backlog-row__header">
                   <h3 class="planner-backlog-row__title">{game.name}</h3>
-                  <div class="planner-chip-group">
-                    <span class="planner-chip">{`${game.main_story_hours ?? 0}h main`}</span>
+                  <div
+                    class="planner-chip-group"
+                    aria-label={`${game.name} HLTB times`}
+                  >
+                    {[
+                      ["main", "Main", game.main_story_hours],
+                      ["extras", "Extras", game.main_extra_hours],
+                      [
+                        "completionist",
+                        "Completionist",
+                        game.completionist_hours,
+                      ],
+                    ].map(([category, label, hours]) =>
+                      typeof hours === "number" ? (
+                        <button
+                          key={category}
+                          type="button"
+                          class={`planner-hltb-option ${
+                            (game.selected_hltb_category ?? "main") === category
+                              ? "planner-hltb-option--active"
+                              : ""
+                          }`}
+                          aria-pressed={
+                            (game.selected_hltb_category ?? "main") === category
+                          }
+                          aria-label={`Use ${label} time: ${hours} hours`}
+                          onClick={() =>
+                            onSelectGameTime(index, category as HLTBCategory)
+                          }
+                        >
+                          {`${hours}h ${label.toLowerCase()}`}
+                        </button>
+                      ) : null,
+                    )}
                     {game.release_year !== null && (
                       <span class="planner-chip">{game.release_year}</span>
                     )}
                   </div>
                 </div>
-
-                <p class="planner-backlog-row__detail">
-                  {game.platforms.length > 0
-                    ? game.platforms.join(", ")
-                    : "Platforms unavailable"}
-                </p>
-                <p class="planner-backlog-row__detail">
-                  {`Resolved from ${game.hltb_match_name ?? game.name}`}
-                </p>
               </div>
 
               <div class="planner-backlog-row__actions">

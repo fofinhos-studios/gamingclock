@@ -649,6 +649,30 @@
     color: var(--foreground);
   }
 
+  .planner-hltb-option {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid rgb(17 17 17 / 0.12);
+    padding: 0.2rem 0.45rem;
+    background: rgb(255 255 255 / 0.8);
+    color: var(--foreground);
+    cursor: pointer;
+    font: inherit;
+    transition: background-color 120ms linear, color 120ms linear, box-shadow
+      180ms ease;
+  }
+
+  .planner-hltb-option:hover,
+  .planner-hltb-option--active {
+    background: rgb(17 17 17 / 0.92);
+    color: var(--surface);
+  }
+
+  .planner-hltb-option:focus-visible {
+    outline: 2px solid var(--foreground);
+    outline-offset: 2px;
+  }
+
   .planner-note-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
