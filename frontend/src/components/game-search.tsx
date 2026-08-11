@@ -93,10 +93,6 @@ export function GameSearch({ games, onAddGame }: Props) {
 
     onAddGame(game);
     addFeedback.trigger(game.igdb_id, 1700);
-    setQuery("");
-    setResults([]);
-    setIsDropdownOpen(false);
-    setHighlightedIndex(-1);
     setAddingId(null);
   };
 

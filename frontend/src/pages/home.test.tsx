@@ -57,7 +57,10 @@ describe("HomePage", () => {
       resolvePlaytime = resolve;
     });
 
-    globalThis.fetch = (async (input: RequestInfo | URL) => {
+    globalThis.fetch = (async (
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ) => {
       const url = String(input);
       requests.push(url);
       if (url.startsWith("/api/games/search?")) {
@@ -129,6 +132,78 @@ describe("HomePage", () => {
       expect(
         within(view.getByRole("tabpanel")).getByText(/^27\.5h$/i),
       ).toBeTruthy();
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test("keeps search results open to add multiple matching games", async () => {
+    const user = userEvent.setup();
+    const originalFetch = globalThis.fetch;
+    const firstGame = createCatalogResult();
+    const secondGame = createCatalogResult({
+      igdb_id: 11,
+      name: "Hollow Knight: Silksong",
+    });
+
+    globalThis.fetch = (async (
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ) => {
+      const url = String(input);
+      if (url.startsWith("/api/games/search?")) {
+        return createJsonResponse([firstGame, secondGame]);
+      }
+      if (url === "/api/games/resolve") {
+        const game = JSON.parse(String(init?.body ?? "{}")) as CatalogGame;
+        return createJsonResponse(
+          createSearchResult({
+            igdb_id: game.igdb_id,
+            name: game.name,
+          }),
+        );
+      }
+      throw new Error(`Unexpected fetch call: ${url}`);
+    }) as typeof fetch;
+
+    try {
+      const view = render(<HomePage path="/" />);
+      const activePanel = view.getByRole("tabpanel");
+      const searchInput = within(activePanel).getByRole("textbox", {
+        name: /search by title/i,
+      });
+
+      await user.type(searchInput, "ho");
+      await waitFor(() =>
+        expect(
+          view.getByRole("button", {
+            name: /add hollow knight: silksong to backlog/i,
+          }),
+        ).toBeTruthy(),
+      );
+
+      await user.click(
+        view.getByRole("button", { name: /add hollow knight to backlog/i }),
+      );
+
+      expect((searchInput as HTMLInputElement).value).toBe("ho");
+      expect(
+        view.getByRole("button", {
+          name: /add hollow knight: silksong to backlog/i,
+        }),
+      ).toBeTruthy();
+
+      await user.click(
+        view.getByRole("button", {
+          name: /add hollow knight: silksong to backlog/i,
+        }),
+      );
+
+      await waitFor(() =>
+        expect(
+          activePanel.querySelectorAll(".planner-backlog-row__title"),
+        ).toHaveLength(2),
+      );
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -637,7 +712,9 @@ describe("HomePage", () => {
           within(activePanel).getByText(/playtime unavailable/i),
         ).toBeTruthy(),
       );
-      expect(within(activePanel).getByText(/hollow knight/i)).toBeTruthy();
+      expect(
+        activePanel.querySelector(".planner-backlog-row__title")?.textContent,
+      ).toBe("Hollow Knight");
     } finally {
       globalThis.fetch = originalFetch;
     }
