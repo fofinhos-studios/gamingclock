@@ -2,51 +2,51 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #f3f4f6;
-  --color-surface: #ffffff;
-  --color-foreground: #111111;
-  --color-muted: #f7f7f8;
-  --color-muted-foreground: #5f6368;
-  --color-border-light: #d8dbe0;
+  --color-background: #eef1f4;
+  --color-surface: #fafbfc;
+  --color-foreground: #16191d;
+  --color-muted: #f4f5f7;
+  --color-muted-foreground: #5c6470;
+  --color-border-light: #cfd4da;
   --font-body: "Space Grotesk", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 }
 
 :root {
-  --background: #f3f4f6;
-  --surface: #ffffff;
-  --foreground: #111111;
-  --muted: #f7f7f8;
-  --muted-foreground: #5f6368;
-  --border-light: #d8dbe0;
+  --background: #eef1f4;
+  --surface: #fafbfc;
+  --foreground: #16191d;
+  --muted: #f4f5f7;
+  --muted-foreground: #5c6470;
+  --border-light: #cfd4da;
   --canvas-start: #eef1f4;
   --canvas-end: #f4f5f7;
   --surface-hover: #eceef1;
   --cover-fallback: #e5e7eb;
-  --error: #8b0000;
-  --placeholder: #8a8f98;
-  --foreground-0: rgb(17 17 17 / 0);
-  --foreground-035: rgb(17 17 17 / 0.035);
-  --foreground-04: rgb(17 17 17 / 0.04);
-  --foreground-05: rgb(17 17 17 / 0.05);
-  --foreground-06: rgb(17 17 17 / 0.06);
-  --foreground-08: rgb(17 17 17 / 0.08);
-  --foreground-1: rgb(17 17 17 / 0.1);
-  --foreground-12: rgb(17 17 17 / 0.12);
-  --foreground-16: rgb(17 17 17 / 0.16);
-  --foreground-18: rgb(17 17 17 / 0.18);
-  --foreground-22: rgb(17 17 17 / 0.22);
-  --foreground-32: rgb(17 17 17 / 0.32);
-  --foreground-85: rgb(17 17 17 / 0.85);
-  --foreground-92: rgb(17 17 17 / 0.92);
-  --surface-08: rgb(255 255 255 / 0.08);
-  --surface-12: rgb(255 255 255 / 0.12);
-  --surface-62: rgb(255 255 255 / 0.62);
-  --surface-68: rgb(255 255 255 / 0.68);
-  --surface-72: rgb(255 255 255 / 0.72);
-  --surface-8: rgb(255 255 255 / 0.8);
-  --surface-82: rgb(255 255 255 / 0.82);
-  --surface-92: rgb(255 255 255 / 0.92);
+  --error: #9f2b2b;
+  --placeholder: #77808b;
+  --foreground-0: rgb(22 25 29 / 0);
+  --foreground-035: rgb(22 25 29 / 0.035);
+  --foreground-04: rgb(22 25 29 / 0.04);
+  --foreground-05: rgb(22 25 29 / 0.05);
+  --foreground-06: rgb(22 25 29 / 0.06);
+  --foreground-08: rgb(22 25 29 / 0.08);
+  --foreground-1: rgb(22 25 29 / 0.1);
+  --foreground-12: rgb(22 25 29 / 0.12);
+  --foreground-16: rgb(22 25 29 / 0.16);
+  --foreground-18: rgb(22 25 29 / 0.18);
+  --foreground-22: rgb(22 25 29 / 0.22);
+  --foreground-32: rgb(22 25 29 / 0.32);
+  --foreground-85: rgb(22 25 29 / 0.85);
+  --foreground-92: rgb(22 25 29 / 0.92);
+  --surface-08: rgb(250 251 252 / 0.08);
+  --surface-12: rgb(250 251 252 / 0.12);
+  --surface-62: rgb(250 251 252 / 0.62);
+  --surface-68: rgb(250 251 252 / 0.68);
+  --surface-72: rgb(250 251 252 / 0.72);
+  --surface-8: rgb(250 251 252 / 0.8);
+  --surface-82: rgb(250 251 252 / 0.82);
+  --surface-92: rgb(250 251 252 / 0.92);
   --font-body: "Space Grotesk", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 }
@@ -332,6 +332,7 @@
     padding: 0.4rem 0.55rem;
     color: var(--foreground);
     cursor: pointer;
+    white-space: nowrap;
   }
 
   .planner-toolbar__backlogs button[aria-pressed="true"] {
