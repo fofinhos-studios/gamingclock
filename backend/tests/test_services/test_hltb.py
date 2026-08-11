@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, call
 
 import pytest
 
@@ -62,10 +62,29 @@ async def test_search_maps_and_sorts_library_results():
 @pytest.mark.asyncio
 async def test_search_returns_empty_list_when_library_request_fails():
     api = SimpleNamespace(async_search=AsyncMock(return_value=None))
+    sleep = AsyncMock()
 
-    results = await HLTBService(api=api).search("Unknown")
+    results = await HLTBService(api=api, retry_attempts=3, sleep=sleep).search("Unknown")
 
     assert results == []
+    assert api.async_search.await_count == 3
+    sleep.assert_has_awaits([call(0.5), call(1.0)])
+
+
+@pytest.mark.asyncio
+async def test_search_retries_transient_errors_with_exponential_backoff():
+    api = SimpleNamespace(
+        async_search=AsyncMock(
+            side_effect=[RuntimeError("temporary failure"), [_result("Final Fantasy VII", 1.0, 36.03)]]
+        )
+    )
+    sleep = AsyncMock()
+
+    results = await HLTBService(api=api, sleep=sleep).search("Final Fantasy VII")
+
+    assert [result.name for result in results] == ["Final Fantasy VII"]
+    assert api.async_search.await_count == 2
+    sleep.assert_awaited_once_with(0.5)
 
 
 @pytest.mark.asyncio
