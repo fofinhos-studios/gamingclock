@@ -57,10 +57,9 @@ uv audit --locked
 
 ## IGDB Service (`src/gamingclock/services/igdb.py`)
 
-- **Library**: `httpx`
-- **Read**: `IGDBService` owns Twitch token exchange, in-memory token caching, autocomplete search, and single-game lookup.
-- **Edit**: Keep credentials in `IGDB_CLIENT_ID` and `IGDB_CLIENT_SECRET` env vars only. The FastAPI app auto-loads the repo-root `.env` file on startup. Use IGDB filter queries like `where name ~ "query"*;` for autocomplete instead of the IGDB `search` operator.
-- **Test**: Mock Twitch and IGDB with `httpx.MockTransport` in `tests/test_services/test_igdb.py` and `tests/test_services/test_igdb_real.py`.
+- **Read**: `IGDBService` provides a deterministic local catalog while the MVP has no IGDB credentials or live integration.
+- **Edit**: Add representative `CatalogGame` entries to `_catalog`; keep `search()` case-insensitive and `get_by_id()` stable by `igdb_id`.
+- **Test**: `uv run pytest tests/test_services/test_igdb.py -v`
 
 ## Scheduler Service (`src/gamingclock/services/scheduler.py`)
 
