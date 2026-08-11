@@ -61,6 +61,7 @@ async def test_igdb_search_returns_mocked_metadata_without_credentials(monkeypat
     assert results[0].igdb_id == 7
     assert results[0].name == "Final Fantasy VII"
     assert results[0].summary
+    assert results[0].cover_url == ""
 
 
 @pytest.mark.asyncio

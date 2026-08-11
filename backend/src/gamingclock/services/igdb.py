@@ -14,7 +14,7 @@ class IGDBService:
         CatalogGame(
             igdb_id=7,
             name="Final Fantasy VII",
-            cover_url="https://images.igdb.com/igdb/image/upload/t_thumb/cover.jpg",
+            cover_url="",
             summary="A mercenary joins a group fighting to save the planet.",
             genres=["RPG"],
             platforms=["PlayStation"],
@@ -24,7 +24,7 @@ class IGDBService:
         CatalogGame(
             igdb_id=22,
             name="Chrono Trigger",
-            cover_url="https://images.igdb.com/igdb/image/upload/t_thumb/chrono.jpg",
+            cover_url="",
             summary="A time-travelling role-playing adventure.",
             genres=["RPG"],
             platforms=["Super Nintendo"],
