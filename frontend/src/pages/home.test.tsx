@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { render, waitFor, within } from "@testing-library/preact";
 import userEvent from "@testing-library/user-event";
 
-import type { ListGame, ScheduleResponse } from "../types";
+import type { CatalogGame, ListGame, ScheduleResponse } from "../types";
 import { HomePage } from "./home";
 
 function createJsonResponse(body: unknown): Response {
@@ -31,7 +31,66 @@ function createSearchResult(overrides: Partial<ListGame> = {}): ListGame {
   };
 }
 
+function createCatalogResult(
+  overrides: Partial<CatalogGame> = {},
+): CatalogGame {
+  const {
+    hltb_status,
+    hltb_match_name,
+    main_story_hours,
+    main_extra_hours,
+    completionist_hours,
+    ...catalog
+  } = createSearchResult(overrides);
+  return catalog;
+}
+
 describe("HomePage", () => {
+  test("resolves only the selected catalogue game before adding it", async () => {
+    const user = userEvent.setup();
+    const originalFetch = globalThis.fetch;
+    const catalogResult = createCatalogResult();
+    const resolvedResult = createSearchResult();
+    const requests: string[] = [];
+
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      requests.push(url);
+      if (url.startsWith("/api/games/search?")) {
+        return createJsonResponse([catalogResult]);
+      }
+      if (url === "/api/games/resolve") {
+        return createJsonResponse(resolvedResult);
+      }
+      throw new Error(`Unexpected fetch call: ${url}`);
+    }) as typeof fetch;
+
+    try {
+      const view = render(<HomePage path="/" />);
+      const searchInput = within(view.getByRole("tabpanel")).getByRole(
+        "textbox",
+        {
+          name: /search by title/i,
+        },
+      );
+      await user.type(searchInput, "ho");
+      await waitFor(() =>
+        expect(
+          view.getByRole("button", { name: /add hollow knight to backlog/i }),
+        ).toBeTruthy(),
+      );
+      expect(requests).toHaveLength(1);
+
+      await user.click(
+        view.getByRole("button", { name: /add hollow knight to backlog/i }),
+      );
+
+      await waitFor(() => expect(requests).toContain("/api/games/resolve"));
+      expect(view.getByText(/27\.5h resolved/i)).toBeTruthy();
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
   test("renders the tabbed planner shell without the removed landing sections", () => {
     const view = render(<HomePage path="/" />);
     const activePanel = view.getByRole("tabpanel");

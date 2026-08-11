@@ -2,8 +2,8 @@ import { Check, LoaderCircle, Search } from "lucide-preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
-import { searchGames } from "../services/api";
-import type { ListGame } from "../types";
+import { resolveGame, searchGames } from "../services/api";
+import type { CatalogGame, ListGame } from "../types";
 import { Field, Input } from "./ui";
 
 interface Props {
@@ -15,7 +15,7 @@ export function GameSearch({ games, onAddGame }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const resultRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<ListGame[]>([]);
+  const [results, setResults] = useState<CatalogGame[]>([]);
   const [loading, setLoading] = useState(false);
   const [addingId, setAddingId] = useState<number | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -80,16 +80,10 @@ export function GameSearch({ games, onAddGame }: Props) {
     });
   }, [highlightedIndex]);
 
-  const handleAddGame = async (game: ListGame) => {
+  const handleAddGame = async (game: CatalogGame) => {
     if (games.some((backlogGame) => backlogGame.igdb_id === game.igdb_id)) {
       setInfoMessage(`${game.name} is already in your backlog.`);
       setError("");
-      return;
-    }
-
-    if (game.hltb_status !== "resolved" || game.main_story_hours === null) {
-      setError(`No HLTB data found for ${game.name}.`);
-      setInfoMessage("");
       return;
     }
 
@@ -98,9 +92,24 @@ export function GameSearch({ games, onAddGame }: Props) {
     setInfoMessage("");
 
     try {
+      const legacyResult = game as CatalogGame & Partial<ListGame>;
+      if (legacyResult.hltb_status === "unresolved") {
+        setError(`No HLTB data found for ${game.name}.`);
+        return;
+      }
+      const resolvedGame =
+        legacyResult.hltb_status === "resolved"
+          ? (legacyResult as ListGame)
+          : await resolveGame(game);
+      if (
+        resolvedGame.hltb_status !== "resolved" ||
+        resolvedGame.main_story_hours === null
+      ) {
+        setError(`No HLTB data found for ${game.name}.`);
+        return;
+      }
       addFeedback.trigger(game.igdb_id, 1700);
-      onAddGame(game);
-      await new Promise((resolve) => window.setTimeout(resolve, 900));
+      onAddGame(resolvedGame);
       setQuery("");
       setResults([]);
       setIsDropdownOpen(false);
@@ -258,10 +267,6 @@ export function GameSearch({ games, onAddGame }: Props) {
                         addFeedback.active === game.igdb_id
                           ? "planner-result--success"
                           : ""
-                      } ${
-                        game.hltb_status !== "resolved"
-                          ? "planner-result--muted"
-                          : ""
                       }`}
                       onMouseEnter={() => setHighlightedIndex(index)}
                       onFocus={() => setHighlightedIndex(index)}
@@ -297,16 +302,8 @@ export function GameSearch({ games, onAddGame }: Props) {
                                 ? ""
                                 : ` / ${game.rating.toFixed(1)}`}
                             </p>
-                            <p
-                              class={`planner-result__status ${
-                                game.hltb_status === "resolved"
-                                  ? "planner-result__status--matched"
-                                  : "planner-result__status--unmatched"
-                              }`}
-                            >
-                              {game.hltb_status === "resolved"
-                                ? `${game.main_story_hours?.toFixed(1)}h main`
-                                : "No HLTB data"}
+                            <p class="planner-result__status planner-result__status--unmatched">
+                              Get playtime estimate
                             </p>
                           </div>
                         </div>

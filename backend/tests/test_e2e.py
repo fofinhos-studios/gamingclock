@@ -38,7 +38,7 @@ def test_full_flow(client):
         mock_hltb.search = AsyncMock(return_value=[hltb_match])
         search_resp = client.get("/games/search", params={"query": "Final Fantasy"})
     assert search_resp.status_code == 200
-    assert search_resp.json() == [resolved_game]
+    assert search_resp.json() == [catalog_game]
 
     with (
         patch("gamingclock.routers.games.igdb_service") as mock_igdb,

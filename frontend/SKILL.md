@@ -63,7 +63,7 @@ bun audit
 
 ## Search And Resolution Flow
 
-- `src/components/game-search.tsx` performs debounced IGDB autocomplete after 2 typed characters and resolves a selected game through `POST /games/resolve`.
+- `src/components/game-search.tsx` performs debounced catalogue autocomplete after 2 typed characters and resolves HLTB playtime only after a selected game is added through `POST /games/resolve`.
 - `src/services/api.ts` rejects unresolved HLTB responses in `resolveGame()`, so games without usable HLTB data stay out of the backlog and surface an inline search error instead.
 - `src/pages/home.tsx` stores one backlog of resolved games, sums `main_story_hours`, and gates schedule generation only on having games plus saved availability.
 - `src/services/api.ts` is the single integration boundary for `searchGames()`, `resolveGame()`, `generateSchedule()`, and `downloadIcal()`.

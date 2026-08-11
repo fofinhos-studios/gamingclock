@@ -1,4 +1,5 @@
 import type {
+  CatalogGame,
   ListGame,
   ScheduleAlgorithm,
   ScheduleErrorResponse,
@@ -28,11 +29,23 @@ async function parseError(
   return new Error(fallbackMessage);
 }
 
-export async function searchGames(query: string): Promise<ListGame[]> {
+export async function searchGames(query: string): Promise<CatalogGame[]> {
   const params = new URLSearchParams({ query });
   const response = await fetch(`${API_BASE}/games/search?${params.toString()}`);
   if (!response.ok) {
     throw await parseError(response, "Search failed");
+  }
+  return response.json();
+}
+
+export async function resolveGame(game: CatalogGame): Promise<ListGame> {
+  const response = await fetch(`${API_BASE}/games/resolve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(game),
+  });
+  if (!response.ok) {
+    throw await parseError(response, "Could not find a playtime estimate");
   }
   return response.json();
 }

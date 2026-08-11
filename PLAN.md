@@ -2958,6 +2958,9 @@ git commit -m "chore: remove legacy v0.1 files replaced by monorepo structure"
 
 ## Task Summary Checklist
 
+### Phase 8: Search responsiveness
+- [x] Split fast catalogue search from on-demand HLTB resolution and add Vercel/Upstash caching
+
 ### Phase 1: Scaffolding
 - [x] Task 1.1: Backend project structure
 - [x] Task 1.2: Frontend project structure

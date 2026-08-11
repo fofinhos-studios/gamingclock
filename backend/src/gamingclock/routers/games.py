@@ -1,7 +1,6 @@
-import asyncio
 import logging
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 
 from gamingclock.models.catalog import CatalogGame, HLTBStatus, ListGame, ResolveGameRequest
 from gamingclock.services.hltb import HLTBService
@@ -15,17 +14,14 @@ SEARCH_ENRICHMENT_LIMIT = 8
 logger = logging.getLogger(__name__)
 
 
-@router.get("/search", response_model=list[ListGame])
-async def search_games(query: str) -> list[ListGame]:
+@router.get("/search", response_model=list[CatalogGame])
+async def search_games(response: Response, query: str) -> list[CatalogGame]:
+    response.headers["Cache-Control"] = "public, s-maxage=300, stale-while-revalidate=86400"
     catalog_games = [
         game if isinstance(game, CatalogGame) else CatalogGame.model_validate(game)
         for game in await igdb_service.search(query, limit=SEARCH_ENRICHMENT_LIMIT)
     ]
-    enriched_games = await asyncio.gather(*[_enrich_search_result(game) for game in catalog_games])
-    return sorted(
-        enriched_games,
-        key=lambda game: game.hltb_status != HLTBStatus.RESOLVED,
-    )
+    return catalog_games
 
 
 @router.post("/resolve", response_model=ListGame)

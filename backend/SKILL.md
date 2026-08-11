@@ -51,9 +51,15 @@ uv audit --locked
 ## HLTB Service (`src/gamingclock/services/hltb.py`)
 
 - **Library**: `howlongtobeatpy>=1.0.21`
-- **Read**: `HLTBService.search()` wraps HLTB and always returns `Game` models. Game search treats HLTB enrichment as optional and returns unresolved IGDB results when HLTB fails.
-- **Edit**: Keep `HowLongToBeat.async_search()` inside the service and convert all library entries through `_to_game()`.
-- **Test**: Inject a mock API into `HLTBService` in `tests/test_services/test_hltb.py`; cover search fallback behavior in `tests/test_routers/test_games.py`.
+- **Read**: `HLTBService.search()` wraps HLTB and always returns `Game` models. `UpstashHLTBCache` uses Vercel/Upstash REST credentials to retain resolved matches across serverless instances.
+- **Edit**: Keep `HowLongToBeat.async_search()` inside the service and convert all library entries through `_to_game()`. Cache failures must remain non-fatal.
+- **Test**: Inject a mock API and shared cache into `HLTBService` in `tests/test_services/test_hltb.py`; cover catalogue search and resolution separately in `tests/test_routers/`.
+
+## Search cache and resolution (`src/gamingclock/routers/games.py`)
+
+- **Read**: `GET /games/search` returns only catalogue metadata and sets Vercel's five-minute shared cache policy. `POST /games/resolve` performs the selected title's HLTB lookup.
+- **Edit**: Do not add HLTB work back into the autocomplete endpoint. Use `KV_REST_API_URL`/`KV_REST_API_TOKEN` (or Upstash equivalents) for the optional shared result cache.
+- **Test**: `uv run pytest tests/test_routers/test_games.py tests/test_routers/test_games_resolve.py tests/test_services/test_hltb.py -v`
 
 ## IGDB Service (`src/gamingclock/services/igdb.py`)
 

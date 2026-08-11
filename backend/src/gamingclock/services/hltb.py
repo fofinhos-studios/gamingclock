@@ -1,9 +1,20 @@
+import logging
 from collections import OrderedDict
-from typing import Any
+from typing import Any, Protocol
 
 from howlongtobeatpy import HowLongToBeat
 
 from gamingclock.models.game import Game
+from gamingclock.services.hltb_cache import UpstashHLTBCache
+
+
+class HLTBResultCache(Protocol):
+    async def get(self, normalized_query: str) -> list[Game] | None: ...
+
+    async def set(self, normalized_query: str, results: list[Game]) -> None: ...
+
+
+logger = logging.getLogger(__name__)
 
 
 class HLTBService:
@@ -12,10 +23,12 @@ class HLTBService:
         similarity_threshold: float = 0.2,
         max_cache_entries: int = 256,
         api: Any | None = None,
+        shared_cache: HLTBResultCache | None = None,
     ):
         self._max_cache_entries = max_cache_entries
         self._api = api or HowLongToBeat(input_minimum_similarity=similarity_threshold)
         self._cache: OrderedDict[str, list[Game]] = OrderedDict()
+        self._shared_cache = shared_cache if shared_cache is not None else UpstashHLTBCache.from_environment()
 
     async def search(self, query: str) -> list[Game]:
         normalized_query = query.strip()
@@ -28,15 +41,33 @@ class HLTBService:
             self._cache.move_to_end(cache_key)
             return cached_results
 
+        if self._shared_cache is not None:
+            try:
+                shared_results = await self._shared_cache.get(cache_key)
+            except Exception:
+                logger.warning("Shared HLTB cache lookup failed", exc_info=True)
+            else:
+                if shared_results is not None:
+                    self._remember(cache_key, shared_results)
+                    return shared_results
+
         matches = await self._api.async_search(normalized_query, similarity_case_sensitive=False)
         sorted_matches = sorted(matches or [], key=lambda match: match.similarity, reverse=True)
         results = [self._to_game(match) for match in sorted_matches]
 
+        self._remember(cache_key, results)
+        if self._shared_cache is not None:
+            try:
+                await self._shared_cache.set(cache_key, results)
+            except Exception:
+                logger.warning("Shared HLTB cache write failed", exc_info=True)
+        return results
+
+    def _remember(self, cache_key: str, results: list[Game]) -> None:
         self._cache[cache_key] = results
         self._cache.move_to_end(cache_key)
         if len(self._cache) > self._max_cache_entries:
             self._cache.popitem(last=False)
-        return results
 
     @staticmethod
     def _to_game(result: Any) -> Game:
