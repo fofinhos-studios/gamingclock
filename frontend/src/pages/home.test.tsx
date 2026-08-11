@@ -91,6 +91,105 @@ describe("HomePage", () => {
       globalThis.fetch = originalFetch;
     }
   });
+
+  test("lets each backlog game activate an HLTB time and removes extra card metadata", async () => {
+    const user = userEvent.setup();
+    const originalFetch = globalThis.fetch;
+    const catalogResult = createCatalogResult();
+    const resolvedResult = createSearchResult();
+    let scheduleRequest: Record<string, unknown> | null = null;
+
+    globalThis.fetch = (async (
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ) => {
+      const url = String(input);
+      if (url.startsWith("/api/games/search?")) {
+        return createJsonResponse([catalogResult]);
+      }
+      if (url === "/api/games/resolve") {
+        return createJsonResponse(resolvedResult);
+      }
+      if (url === "/api/schedule/generate") {
+        scheduleRequest = JSON.parse(String(init?.body ?? "{}")) as Record<
+          string,
+          unknown
+        >;
+        return createJsonResponse({
+          sessions: [],
+          total_hours: 60,
+          estimated_end_date: null,
+        });
+      }
+      throw new Error(`Unexpected fetch call: ${url}`);
+    }) as typeof fetch;
+
+    try {
+      const view = render(<HomePage path="/" />);
+      const gamesPanel = view.getByRole("tabpanel");
+      const searchInput = within(gamesPanel).getByRole("textbox", {
+        name: /search by title/i,
+      });
+
+      await user.type(searchInput, "ho");
+      await waitFor(() =>
+        expect(
+          view.getByRole("button", { name: /add hollow knight to backlog/i }),
+        ).toBeTruthy(),
+      );
+      await user.click(
+        view.getByRole("button", { name: /add hollow knight to backlog/i }),
+      );
+
+      await waitFor(() =>
+        expect(
+          view.getByRole("button", { name: /use main time: 27\.5 hours/i }),
+        ).toBeTruthy(),
+      );
+      expect(
+        view
+          .getByRole("button", { name: /use main time: 27\.5 hours/i })
+          .getAttribute("aria-pressed"),
+      ).toBe("true");
+      expect(view.queryByText(/playstation/i)).toBeNull();
+      expect(view.queryByText(/resolved from/i)).toBeNull();
+      expect(view.getByText(/27\.5h resolved/i)).toBeTruthy();
+
+      await user.click(
+        view.getByRole("button", {
+          name: /use completionist time: 60 hours/i,
+        }),
+      );
+      expect(
+        view
+          .getByRole("button", {
+            name: /use completionist time: 60 hours/i,
+          })
+          .getAttribute("aria-pressed"),
+      ).toBe("true");
+      expect(view.getByText(/60\.0h resolved/i)).toBeTruthy();
+
+      await user.click(view.getByRole("tab", { name: /availability/i }));
+      await user.click(view.getByLabelText(/monday/i));
+      await user.click(
+        view.getByRole("button", { name: /save availability/i }),
+      );
+      await user.click(view.getByRole("tab", { name: /schedule/i }));
+      await user.click(
+        within(view.getByRole("tabpanel")).getByRole("button", {
+          name: /generate schedule/i,
+        }),
+      );
+
+      await waitFor(() => expect(scheduleRequest).not.toBeNull());
+      const requestGames = scheduleRequest?.games as Array<{
+        selected_hltb_category?: string;
+      }>;
+      expect(requestGames[0]?.selected_hltb_category).toBe("completionist");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
   test("renders the tabbed planner shell without the removed landing sections", () => {
     const view = render(<HomePage path="/" />);
     const activePanel = view.getByRole("tabpanel");

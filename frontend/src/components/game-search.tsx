@@ -109,7 +109,7 @@ export function GameSearch({ games, onAddGame }: Props) {
         return;
       }
       addFeedback.trigger(game.igdb_id, 1700);
-      onAddGame(resolvedGame);
+      onAddGame({ ...resolvedGame, selected_hltb_category: "main" });
       setQuery("");
       setResults([]);
       setIsDropdownOpen(false);

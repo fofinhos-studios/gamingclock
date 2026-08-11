@@ -2958,6 +2958,9 @@ git commit -m "chore: remove legacy v0.1 files replaced by monorepo structure"
 
 ## Task Summary Checklist
 
+### Phase 9: HLTB category selection
+- [x] Add selectable main, extras, and completionist times to backlog cards, default new games to main, and use the active category in schedules
+
 ### Phase 8: Search responsiveness
 - [x] Split fast catalogue search from on-demand HLTB resolution and add Vercel/Upstash caching
 

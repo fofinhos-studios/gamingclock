@@ -65,8 +65,14 @@ bun audit
 
 - `src/components/game-search.tsx` performs debounced catalogue autocomplete after 2 typed characters and resolves HLTB playtime only after a selected game is added through `POST /games/resolve`.
 - `src/services/api.ts` rejects unresolved HLTB responses in `resolveGame()`, so games without usable HLTB data stay out of the backlog and surface an inline search error instead.
-- `src/pages/home.tsx` stores one backlog of resolved games, sums `main_story_hours`, and gates schedule generation only on having games plus saved availability.
+- `src/pages/home.tsx` stores one backlog of resolved games, sums the active HLTB category, and gates schedule generation only on having games plus saved availability.
 - `src/services/api.ts` is the single integration boundary for `searchGames()`, `resolveGame()`, `generateSchedule()`, and `downloadIcal()`.
+
+## HLTB time selection
+
+- **Read**: `src/components/game-list-view.tsx` renders available main, extras, and completionist estimates as pressed buttons. `src/types.ts` contains `getSelectedGameHours()` for the shared main-by-default fallback.
+- **Edit**: New games must be added with `selected_hltb_category: "main"`. Update the selection through `PlannerGamesStep` and `HomePage` so summary totals and schedule requests stay synchronized; do not display IGDB platforms or the HLTB match attribution on backlog cards.
+- **Test**: `bun test --preload ./src/test/setup.ts src/pages/home.test.tsx -t "lets each backlog game activate"` verifies default activation, metadata removal, totals, and the schedule payload.
 
 ## Dense Planner UI System
 

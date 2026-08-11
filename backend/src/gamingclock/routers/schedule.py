@@ -3,7 +3,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 
 from gamingclock.calendar.ical import generate_ical
-from gamingclock.models.catalog import HLTBStatus, ScheduleErrorDetail
+from gamingclock.models.catalog import HLTBCategory, HLTBStatus, ScheduleErrorDetail
 from gamingclock.models.game import Game
 from gamingclock.models.schedule import PlaySession, ScheduleRequest
 from gamingclock.services.scheduler import SchedulerService
@@ -43,11 +43,16 @@ def _build_schedule_games(request: ScheduleRequest) -> list[Game]:
     for game in request.games:
         if game.main_story_hours is None:
             continue
+        selected_hours = {
+            HLTBCategory.MAIN: game.main_story_hours,
+            HLTBCategory.EXTRAS: game.main_extra_hours,
+            HLTBCategory.COMPLETIONIST: game.completionist_hours,
+        }[game.selected_hltb_category]
         schedule_games.append(
             Game(
                 name=game.name,
                 image_url=game.cover_url,
-                main_story_hours=game.main_story_hours,
+                main_story_hours=selected_hours if selected_hours is not None else game.main_story_hours,
                 main_extra_hours=game.main_extra_hours,
                 completionist_hours=game.completionist_hours,
             )

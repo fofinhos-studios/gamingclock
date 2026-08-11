@@ -61,6 +61,12 @@ uv audit --locked
 - **Edit**: Do not add HLTB work back into the autocomplete endpoint. Use `KV_REST_API_URL`/`KV_REST_API_TOKEN` (or Upstash equivalents) for the optional shared result cache.
 - **Test**: `uv run pytest tests/test_routers/test_games.py tests/test_routers/test_games_resolve.py tests/test_services/test_hltb.py -v`
 
+## HLTB category selection (`src/gamingclock/models/catalog.py`)
+
+- **Read**: `ListGame.selected_hltb_category` stores the active HLTB estimate as `main`, `extras`, or `completionist`; it defaults to `main`.
+- **Edit**: Keep all HLTB estimates on the request model. `routers/schedule.py` maps the selected category to the scheduler's `main_story_hours` input and falls back to main if an optional estimate is missing.
+- **Test**: `uv run pytest tests/test_routers/test_schedule.py -v` covers the default and selected-category schedule paths.
+
 ## IGDB Service (`src/gamingclock/services/igdb.py`)
 
 - **Read**: `IGDBService` provides a deterministic local catalog while the MVP has no IGDB credentials or live integration.

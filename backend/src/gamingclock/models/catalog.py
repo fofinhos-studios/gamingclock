@@ -9,6 +9,12 @@ class HLTBStatus(StrEnum):
     UNRESOLVED = "unresolved"
 
 
+class HLTBCategory(StrEnum):
+    MAIN = "main"
+    EXTRAS = "extras"
+    COMPLETIONIST = "completionist"
+
+
 class CatalogGame(BaseModel):
     igdb_id: int
     name: str
@@ -34,6 +40,7 @@ class ListGame(BaseModel):
     main_story_hours: float | None = None
     main_extra_hours: float | None = None
     completionist_hours: float | None = None
+    selected_hltb_category: HLTBCategory = HLTBCategory.MAIN
 
 
 class ResolveGameRequest(BaseModel):

@@ -1,4 +1,5 @@
 export type HLTBStatus = "resolved" | "unresolved";
+export type HLTBCategory = "main" | "extras" | "completionist";
 
 export interface CatalogGame {
   igdb_id: number;
@@ -17,6 +18,7 @@ export interface ListGame extends CatalogGame {
   main_story_hours: number | null;
   main_extra_hours: number | null;
   completionist_hours: number | null;
+  selected_hltb_category?: HLTBCategory;
 }
 
 export interface GameList {
@@ -57,4 +59,15 @@ export interface ScheduleErrorDetail {
 export interface ScheduleErrorResponse {
   message: string;
   unresolved_games: ScheduleErrorDetail[];
+}
+
+export function getSelectedGameHours(game: ListGame): number {
+  const category = game.selected_hltb_category ?? "main";
+  const selectedHours = {
+    main: game.main_story_hours,
+    extras: game.main_extra_hours,
+    completionist: game.completionist_hours,
+  }[category];
+
+  return selectedHours ?? game.main_story_hours ?? 0;
 }
