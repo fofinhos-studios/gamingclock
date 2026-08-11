@@ -14,11 +14,11 @@ interface ButtonProps extends JSX.HTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "border border-black bg-black text-white hover:bg-neutral-800 hover:text-white",
+    "border border-[var(--foreground)] bg-[var(--foreground)] text-[var(--surface)] hover:bg-[var(--muted-foreground)] hover:text-[var(--surface)]",
   outline:
-    "border border-black bg-white text-black hover:bg-neutral-100 hover:text-black",
+    "border border-[var(--foreground)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]",
   ghost:
-    "border border-transparent bg-transparent px-0 py-1 text-black hover:bg-neutral-100",
+    "border border-transparent bg-transparent px-0 py-1 text-[var(--foreground)] hover:bg-[var(--muted)]",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -40,7 +40,7 @@ export function Button({
       type={type}
       data-feedback={feedbackState}
       class={cx(
-        "ui-button inline-flex items-center justify-center gap-2 font-[var(--font-mono)] uppercase transition-colors duration-100 disabled:cursor-not-allowed disabled:opacity-40",
+        "ui-button inline-flex items-center justify-center gap-2 whitespace-nowrap font-[var(--font-mono)] uppercase transition-colors duration-100 disabled:cursor-not-allowed disabled:opacity-40",
         sizeClasses[size],
         variantClasses[variant],
         block && "w-full",
