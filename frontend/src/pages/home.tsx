@@ -5,7 +5,6 @@ import { useState } from "preact/hooks";
 import { PlannerAvailabilityStep } from "../components/planner-availability-step";
 import { PlannerGamesStep } from "../components/planner-games-step";
 import { PlannerScheduleStep } from "../components/planner-schedule-step";
-import { PlannerSummary } from "../components/planner-summary";
 import { type PlannerTab, PlannerTabs } from "../components/planner-tabs";
 import { downloadIcal, generateSchedule } from "../services/api";
 import {
@@ -59,10 +58,6 @@ export function HomePage(_props: RoutableProps) {
     setActionError("");
   };
 
-  const resolvedHours = games.reduce(
-    (total, game) => total + getSelectedGameHours(game),
-    0,
-  );
   const canGenerateSchedule = availability !== null && games.length > 0;
   const schedulePrerequisites = [
     ...(games.length === 0
@@ -84,22 +79,6 @@ export function HomePage(_props: RoutableProps) {
         ]
       : []),
   ];
-  const availabilityStatus = availability ? "Set" : "Missing";
-  const availabilityDetail = availability
-    ? `${availability.days.length} day${availability.days.length === 1 ? "" : "s"} configured`
-    : "No weekly cadence saved";
-  const totalElapsedDays = getScheduleElapsedDays(schedule);
-  const scheduleStatus = schedule
-    ? "Generated"
-    : games.length === 0
-      ? "Add games"
-      : !availability
-        ? "Set availability"
-        : "Ready to generate";
-  const scheduleDetail = schedule
-    ? `Finishes ${schedule.estimated_end_date ?? "when sessions complete"}`
-    : (schedulePrerequisites[0]?.message ??
-      "Generate the schedule when you're ready.");
   const activeStep = TAB_CONTENT[activeTab];
 
   const addGame = (game: ListGame) => {
@@ -282,20 +261,6 @@ export function HomePage(_props: RoutableProps) {
               </div>
             </header>
 
-            <PlannerSummary
-              backlogName={backlogName}
-              trackedGameCount={games.length}
-              resolvedHours={resolvedHours}
-              availabilityStatus={availabilityStatus}
-              availabilityDetail={availabilityDetail}
-              scheduleStatus={scheduleStatus}
-              scheduleDetail={scheduleDetail}
-              totalPlannedHours={schedule?.total_hours}
-              totalSessions={schedule?.sessions.length}
-              estimatedFinishDate={schedule?.estimated_end_date}
-              totalElapsedDays={totalElapsedDays}
-            />
-
             <div class="planner-workspace__body">
               <section
                 id="planner-panel-games"
@@ -355,25 +320,6 @@ export function HomePage(_props: RoutableProps) {
       </main>
     </div>
   );
-}
-
-function getScheduleElapsedDays(
-  schedule: ScheduleResponse | null,
-): number | null {
-  const firstSessionDate = schedule?.sessions[0]?.date;
-  const lastDate = schedule?.sessions.at(-1)?.date;
-
-  if (!firstSessionDate || !lastDate) {
-    return null;
-  }
-
-  const start = new Date(`${firstSessionDate}T00:00:00Z`);
-  const end = new Date(`${lastDate}T00:00:00Z`);
-  const differenceInDays = Math.round(
-    (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
-  );
-
-  return differenceInDays >= 0 ? differenceInDays + 1 : null;
 }
 
 function getLocalCalendarDate(): string {
