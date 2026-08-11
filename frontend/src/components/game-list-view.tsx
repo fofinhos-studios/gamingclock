@@ -57,8 +57,7 @@ export function GameListView({
           </h2>
         </div>
         <div class="planner-inline-stats">
-          <span>{games.length} games</span>
-          <span>{totalHours.toFixed(1)}h resolved</span>
+          <span>{totalHours.toFixed(1)}h</span>
         </div>
       </div>
 

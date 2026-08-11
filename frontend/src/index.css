@@ -140,8 +140,7 @@
   }
 
   .planner-app__rail,
-  .planner-app__workspace,
-  .planner-statusbar {
+  .planner-app__workspace {
     border: 1px solid var(--foreground);
     background: var(--surface);
   }
@@ -314,51 +313,6 @@
     font-family: var(--font-mono);
     font-size: 0.72rem;
     text-align: end;
-  }
-
-  .planner-statusbar {
-    padding: 0.65rem 0.75rem;
-  }
-
-  .planner-statusbar__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
-    gap: 0.6rem;
-    margin: 0;
-  }
-
-  .planner-statusbar__item {
-    display: grid;
-    gap: 0.18rem;
-    align-content: start;
-    min-width: 0;
-  }
-
-  .planner-statusbar__label {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    color: var(--muted-foreground);
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-
-  .planner-statusbar__value {
-    margin: 0;
-    overflow-wrap: anywhere;
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    font-weight: 500;
-    letter-spacing: -0.02em;
-    line-height: 1.3;
-  }
-
-  .planner-statusbar__detail {
-    color: var(--muted-foreground);
-    font-size: 0.74rem;
-    line-height: 1.3;
   }
 
   .planner-workspace__body,
@@ -1285,22 +1239,14 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .planner-statusbar__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 767px) {
   .planner-app__workspace,
   .planner-app__rail,
   .planner-pane,
-  .planner-statusbar,
   .planner-note {
     padding: 0.75rem;
-  }
-
-  .planner-statusbar__grid {
-    grid-template-columns: minmax(0, 1fr);
   }
 
   .planner-result,
