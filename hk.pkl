@@ -1,0 +1,53 @@
+amends "package://github.com/jdx/hk/releases/download/v1.54.1/hk@1.54.1#/Config.pkl"
+
+min_hk_version = "1.54.1"
+default_branch = "main"
+fail_fast = true
+
+local ci_steps = new Mapping<String, Step> {
+  ["backend-audit"] {
+    check = "cd backend && uv audit --locked"
+    fix = "cd backend && uv audit --locked"
+    exclusive = true
+  }
+  ["backend-lint"] {
+    check = "cd backend && uv run ruff check src/ tests/ && uv run ty check"
+    fix = "cd backend && uv run ruff check src/ tests/ && uv run ty check"
+    exclusive = true
+  }
+  ["backend-test"] {
+    check = "cd backend && uv run pytest -n auto -v"
+    fix = "cd backend && uv run pytest -n auto -v"
+    exclusive = true
+  }
+  ["frontend-audit"] {
+    check = "cd frontend && bun audit"
+    fix = "cd frontend && bun audit"
+    exclusive = true
+  }
+  ["frontend-lint"] {
+    check = "cd frontend && bunx @biomejs/biome check src/"
+    fix = "cd frontend && bunx @biomejs/biome check src/"
+    exclusive = true
+  }
+  ["frontend-build"] {
+    check = "cd frontend && bun run build"
+    fix = "cd frontend && bun run build"
+    exclusive = true
+  }
+}
+
+hooks {
+  ["pre-commit"] {
+    fix = false
+    steps = ci_steps
+  }
+  ["pre-push"] {
+    fix = false
+    steps = ci_steps
+  }
+  ["check"] {
+    fix = false
+    steps = ci_steps
+  }
+}
