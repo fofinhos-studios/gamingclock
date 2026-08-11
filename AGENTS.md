@@ -9,7 +9,7 @@
 1. **MVP**: Search games, add to lists, see total time, set weekly availability, generate play schedule, export to calendar
 2. **No accounts for MVP** — but architecture must support adding auth/persistence later
 3. **Two scheduling algorithms**: sequential (one game at a time) and alternating (rotate between games)
-4. **IGDB**: mocked for MVP using Polyfactory; real integration comes later
+4. **IGDB**: use the live IGDB API in configured deployments; use the deterministic fallback catalog only without credentials, for local development and tests
 
 ## Tech Stack
 
@@ -31,8 +31,7 @@ gamingclock/
 │   │       ├── routers/         # API route modules
 │   │       └── calendar/        # iCal generation
 │   ├── tests/
-│   ├── pyproject.toml
-│   └── SKILL.md
+│   └── pyproject.toml
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
@@ -44,25 +43,21 @@ gamingclock/
 │   ├── index.html
 │   ├── package.json
 │   ├── vite.config.ts
-│   ├── tailwind.config.ts
-│   └── SKILL.md
+│   └── tailwind.config.ts
 ├── docker-compose.yml
 ├── Justfile
 ├── prek.toml
 ├── .github/workflows/ci.yml
 ├── AGENTS.md
-├── PLAN.md
-└── spec.md
+└── README.md
 ```
 
 ## Instructions for AI Agents
 
 ### Working on Tasks
 
-1. **Read the plan** (`PLAN.md`) to find your assigned task
-2. **Follow TDD**: write the failing test first, verify it fails, implement, verify it passes
-3. **One task at a time**: complete it fully before moving on
-4. **Update PLAN.md** when you complete a task: change `[ ]` to `[x]` on the task checkbox
+1. **Follow TDD**: write the failing test first, verify it fails, implement, verify it passes
+2. **One task at a time**: complete it fully before moving on
 
 ### Committing Changes
 
@@ -90,29 +85,6 @@ git commit -m "docs: update backend SKILL.md with service layer patterns"
 
 **Scope** (optional, in parentheses): the module or area, e.g. `models`, `hltb`, `scheduling`, `calendar`, `frontend`, `ci`
 
-### Updating SKILL.md Files
-
-Each major directory (`backend/`, `frontend/`) has a `SKILL.md` file. When you add a new library, pattern, or feature to that directory:
-
-1. Open `SKILL.md` in that directory
-2. Add a section explaining:
-   - **What** was added (library, pattern, feature)
-   - **How to read** the code (where to look, key files)
-   - **How to edit** the code (patterns to follow, conventions)
-   - **How to test** the code (commands, what to verify)
-3. Commit the SKILL.md update alongside your feature commit
-
-Example entry:
-
-```markdown
-## HLTB Service (`services/hltb.py`)
-
-**Library**: `howlongtobeatpy`
-**Read**: The `HLTBService` class wraps the library. `search()` returns `list[GameSearchResult]`.
-**Edit**: Add new methods to the class. Always return Pydantic models, never raw library objects.
-**Test**: `pytest backend/tests/test_services/test_hltb.py -v`
-```
-
 ### General Rules
 
 - **DRY, YAGNI**: Don't over-abstract. Don't build for hypothetical futures.
@@ -122,3 +94,4 @@ Example entry:
 - **Pydantic everywhere** on the backend: all data shapes are Pydantic models.
 - **httpx** for HTTP requests (not requests).
 - **Minimal frontend styling**: Raw HTML elements with basic Tailwind layout classes. No design system, no fancy components. Functionality first.
+- **IGDB credentials**: never commit `IGDB_CLIENT_ID` or `IGDB_CLIENT_SECRET`. Preserve the live production path when credentials are available; do not substitute the fallback catalog in configured deployments.
