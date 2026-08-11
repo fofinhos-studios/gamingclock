@@ -6,13 +6,14 @@ Gaming Clock is a monorepo MVP for planning video game backlogs. It lets you sea
 
 - Backend: FastAPI, Pydantic, pytest, Ruff, Ty
 - Frontend: Preact, Vite, Tailwind CSS, Biome
-- Tooling: Bun, Docker Compose, Just, Prek
+- Tooling: Bun, Docker Compose, Just, hk
 
 ## Prerequisites
 
 - Python 3.14
 - `uv`
 - Bun
+- [hk](https://hk.jdx.dev/) 1.54.1 or later
 - Docker with Docker Compose
 - `just` if you want to use the task runner
 
@@ -53,6 +54,21 @@ bun run dev
 ```
 
 The Vite dev server runs on `http://localhost:5173` and proxies `/api` to the backend on `http://localhost:8000`.
+
+## Git hooks
+
+Install hk once, then enable this repository's hooks:
+
+```bash
+mise use -g hk@1.54.1
+hk install
+```
+
+Both `pre-commit` and `pre-push` run the same dependency audits, linting, backend tests, and frontend build checks as GitHub Actions. Run the complete gate without creating a commit with:
+
+```bash
+hk run pre-commit
+```
 
 ## Build
 
