@@ -25,7 +25,7 @@ cd backend
 uv sync --group dev
 ```
 
-Production search uses IGDB when `IGDB_CLIENT_ID` and `IGDB_CLIENT_SECRET` are configured. Without both credentials (for local development and tests), it uses a small deterministic catalog instead.
+Production search uses IGDB when `IGDB_CLIENT_ID` and `IGDB_CLIENT_SECRET` are configured. Set both variables in Vercel's Production environment. Without both credentials (for local development and tests), it uses a small deterministic catalog instead.
 
 ### Vercel HLTB cache
 
