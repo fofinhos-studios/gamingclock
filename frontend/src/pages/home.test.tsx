@@ -214,6 +214,9 @@ describe("HomePage", () => {
     expect(view.queryByText(/^overview$/i)).toBeNull();
     expect(within(activePanel).getByText(/find games/i)).toBeTruthy();
     expect(within(activePanel).queryByText(/^search$/i)).toBeNull();
+    expect(
+      within(activePanel).queryByText(/enter at least 2 characters/i),
+    ).toBeNull();
     expect(within(activePanel).getByText(/current list/i)).toBeTruthy();
     expect(within(activePanel).queryByText(/^backlog$/i)).toBeNull();
     expect(within(activePanel).queryByText(/weekly cadence/i)).toBeNull();
@@ -231,7 +234,7 @@ describe("HomePage", () => {
     await user.click(view.getByRole("tab", { name: /availability/i }));
     let activePanel = view.getByRole("tabpanel");
     expect(activePanel.id).toBe("planner-panel-availability");
-    expect(within(activePanel).getByText(/weekly cadence/i)).toBeTruthy();
+    expect(within(activePanel).getByText(/weekly play time/i)).toBeTruthy();
     expect(within(activePanel).queryByText(/find games/i)).toBeNull();
 
     await user.click(view.getByRole("tab", { name: /schedule/i }));
@@ -391,9 +394,7 @@ describe("HomePage", () => {
       await user.type(searchInput, "ha");
 
       await waitFor(() =>
-        expect(
-          view.getByText(/searching games and time to finish/i),
-        ).toBeTruthy(),
+        expect(view.getByText(/finding games and play times/i)).toBeTruthy(),
       );
     } finally {
       globalThis.fetch = originalFetch;
