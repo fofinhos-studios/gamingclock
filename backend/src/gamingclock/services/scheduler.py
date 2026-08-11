@@ -79,33 +79,32 @@ class SchedulerService:
         sessions: list[PlaySession] = []
         available_days = self._get_available_days_map(availability)
         date_iter = self._iter_play_dates(start_date, available_days)
-        remaining = {game.name: game.main_story_hours for game in games}
-        game_order = [game.name for game in games]
+        remaining = [game.main_story_hours for game in games]
         game_idx = 0
 
-        while any(hours > 0 for hours in remaining.values()):
+        while any(hours > 0 for hours in remaining):
             attempts = 0
-            while remaining[game_order[game_idx]] <= 0:
-                game_idx = (game_idx + 1) % len(game_order)
+            while remaining[game_idx] <= 0:
+                game_idx = (game_idx + 1) % len(games)
                 attempts += 1
-                if attempts > len(game_order):
+                if attempts > len(games):
                     break
 
-            if attempts > len(game_order):
+            if attempts > len(games):
                 break
 
-            current_game = game_order[game_idx]
+            current_game = games[game_idx]
             date, day_availability = next(date_iter)
-            session_hours = min(day_availability.hours, remaining[current_game])
+            session_hours = min(day_availability.hours, remaining[game_idx])
             sessions.append(
                 PlaySession(
-                    game_name=current_game,
+                    game_name=current_game.name,
                     date=date,
                     start_time=datetime.time(day_availability.start_hour, 0),
                     duration_hours=session_hours,
                 )
             )
-            remaining[current_game] -= session_hours
-            game_idx = (game_idx + 1) % len(game_order)
+            remaining[game_idx] -= session_hours
+            game_idx = (game_idx + 1) % len(games)
 
         return sessions
