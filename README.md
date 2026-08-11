@@ -25,7 +25,7 @@ cd backend
 uv sync --group dev
 ```
 
-The MVP uses a deterministic local game catalog, so no API credentials are required. A live IGDB integration can replace it later without changing the frontend API.
+Production search uses IGDB when `IGDB_CLIENT_ID` and `IGDB_CLIENT_SECRET` are configured. Without both credentials (for local development and tests), it uses a small deterministic catalog instead.
 
 ### Vercel HLTB cache
 
