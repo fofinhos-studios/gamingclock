@@ -211,6 +211,9 @@ describe("HomePage", () => {
     expect(view.queryByText(/gaming backlog planner/i)).toBeNull();
     expect(view.queryByText(/^overview$/i)).toBeNull();
     expect(within(activePanel).getByText(/find games/i)).toBeTruthy();
+    expect(within(activePanel).queryByText(/^search$/i)).toBeNull();
+    expect(within(activePanel).getByText(/current list/i)).toBeTruthy();
+    expect(within(activePanel).queryByText(/^backlog$/i)).toBeNull();
     expect(within(activePanel).queryByText(/weekly cadence/i)).toBeNull();
     expect(within(activePanel).queryByText(/generated schedule/i)).toBeNull();
     expect(
