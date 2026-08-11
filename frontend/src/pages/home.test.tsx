@@ -86,7 +86,9 @@ describe("HomePage", () => {
       );
 
       await waitFor(() => expect(requests).toContain("/api/games/resolve"));
-      expect(view.getByText(/27\.5h resolved/i)).toBeTruthy();
+      expect(
+        within(view.getByRole("tabpanel")).getByText(/^27\.5h$/i),
+      ).toBeTruthy();
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -153,7 +155,7 @@ describe("HomePage", () => {
       ).toBe("true");
       expect(view.queryByText(/playstation/i)).toBeNull();
       expect(view.queryByText(/resolved from/i)).toBeNull();
-      expect(view.getByText(/27\.5h resolved/i)).toBeTruthy();
+      expect(within(gamesPanel).getByText(/^27\.5h$/i)).toBeTruthy();
 
       await user.click(
         view.getByRole("button", {
@@ -167,7 +169,7 @@ describe("HomePage", () => {
           })
           .getAttribute("aria-pressed"),
       ).toBe("true");
-      expect(view.getByText(/60\.0h resolved/i)).toBeTruthy();
+      expect(within(gamesPanel).getByText(/^60\.0h$/i)).toBeTruthy();
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
       await user.click(view.getByLabelText(/monday/i));
@@ -503,8 +505,12 @@ describe("HomePage", () => {
     const user = userEvent.setup();
     const view = render(<HomePage path="/" />);
 
-    expect(view.queryByRole("complementary", { name: /planner status/i })).toBeNull();
-    expect(within(view.getByRole("tabpanel")).getByText(/^0\.0h$/i)).toBeTruthy();
+    expect(
+      view.queryByRole("complementary", { name: /planner status/i }),
+    ).toBeNull();
+    expect(
+      within(view.getByRole("tabpanel")).getByText(/^0\.0h$/i),
+    ).toBeTruthy();
     expect(view.queryByText(/availability status/i)).toBeNull();
 
     await user.click(view.getByRole("tab", { name: /schedule/i }));
@@ -737,9 +743,6 @@ describe("HomePage", () => {
       );
 
       const schedulePanel = view.getByRole("tabpanel");
-      const summaryPanel = view.getByRole("complementary", {
-        name: /planner status/i,
-      });
       expect(
         within(schedulePanel).getByText(/total planned hours/i),
       ).toBeTruthy();
@@ -750,8 +753,6 @@ describe("HomePage", () => {
       ).toBeTruthy();
       expect(within(schedulePanel).getByText(/^2$/)).toBeTruthy();
       expect(within(schedulePanel).getByText(/3 days/i)).toBeTruthy();
-      expect(within(summaryPanel).getByText(/elapsed days/i)).toBeTruthy();
-      expect(within(summaryPanel).getByText(/3 days/i)).toBeTruthy();
     } finally {
       globalThis.fetch = originalFetch;
     }

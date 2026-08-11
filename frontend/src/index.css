@@ -1238,7 +1238,6 @@
   .planner-hour-grid--compact {
     grid-template-columns: minmax(0, 1fr);
   }
-
 }
 
 @media (max-width: 767px) {
