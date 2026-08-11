@@ -172,7 +172,6 @@ export function GameSearch({ games, onAddGame }: Props) {
     <section aria-labelledby="search-games-heading" class="space-y-4">
       <div class="planner-pane__header">
         <div class="space-y-1">
-          <p class="section-eyebrow">Search</p>
           <h2
             id="search-games-heading"
             class="planner-panel__title planner-heading"

@@ -45,7 +45,6 @@ export function GameListView({
     <section aria-labelledby="current-list-heading" class="space-y-4">
       <div class="planner-pane__header">
         <div class="space-y-1">
-          <p class="section-eyebrow">Backlog</p>
           <h2
             id="current-list-heading"
             class="planner-panel__title planner-heading"
