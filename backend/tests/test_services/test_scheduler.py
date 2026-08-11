@@ -108,6 +108,20 @@ def test_alternating_uneven_games():
     assert sessions[3].game_name == "Long"
 
 
+def test_alternating_duplicate_game_names_preserves_each_entry():
+    games = [_make_game("Edition", 1.0), _make_game("Edition", 2.0)]
+    availability = WeeklyAvailability(days=[DayAvailability(day_of_week=0, hours=1.0)])
+
+    sessions = SchedulerService().generate(
+        games=games,
+        availability=availability,
+        algorithm=ScheduleAlgorithm.ALTERNATING,
+        start_date=datetime.date(2026, 3, 30),
+    )
+
+    assert [session.duration_hours for session in sessions] == [1.0, 1.0, 1.0]
+
+
 def test_scheduler_uses_day_specific_start_hours():
     games = [_make_game("Game A", 4.0)]
     availability = WeeklyAvailability(
