@@ -1,10 +1,12 @@
+from typing import ClassVar
+
 from gamingclock.models.catalog import CatalogGame
 
 
 class IGDBService:
     """Local catalog substitute for IGDB during the MVP."""
 
-    _catalog = [
+    _catalog: ClassVar[list[CatalogGame]] = [
         CatalogGame(
             igdb_id=7,
             name="Final Fantasy VII",

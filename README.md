@@ -25,14 +25,7 @@ cd backend
 uv sync --group dev
 ```
 
-Set IGDB credentials before starting the backend:
-
-```bash
-cp .env.example .env
-# then fill in your real IGDB values
-```
-
-The backend auto-loads the repo-root `.env` file in local development, and Docker Compose uses the same file for variable substitution. Do not commit real credentials.
+The MVP uses a deterministic local game catalog, so no API credentials are required. A live IGDB integration can replace it later without changing the frontend API.
 
 Run the backend locally:
 
@@ -102,7 +95,6 @@ just down
 Build and start the full stack:
 
 ```bash
-cp .env.example .env  # then fill in your real IGDB values
 docker compose build
 docker compose up -d
 ```
