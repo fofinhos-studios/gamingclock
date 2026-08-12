@@ -30,6 +30,19 @@ test("gives native select options an explicit themed surface", async () => {
   );
 });
 
+test("uses spacious, prominent stepper connectors", async () => {
+  const stylesheet = await Bun.file(
+    new URL("./index.css", import.meta.url),
+  ).text();
+
+  expect(stylesheet).toMatch(
+    /\.planner-stepper__connector\s*\{[\s\S]*?min-height:\s*3\.25rem;/,
+  );
+  expect(stylesheet).toMatch(
+    /\.planner-stepper__connector \.planner-icon\s*\{[\s\S]*?width:\s*1\.5rem;[\s\S]*?height:\s*1\.5rem;/,
+  );
+});
+
 test("uses larger shared icons and an accessible animated brand title", async () => {
   const stylesheet = await Bun.file(
     new URL("./index.css", import.meta.url),
