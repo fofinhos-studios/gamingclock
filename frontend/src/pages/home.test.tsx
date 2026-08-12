@@ -81,23 +81,23 @@ describe("HomePage", () => {
     const view = render(<HomePage path="/" />);
 
     expect(
-      view.getByText(/build your game schedule step by step/i),
+      view.getByRole("navigation", {
+        name: /plan your game time step by step/i,
+      }),
     ).toBeTruthy();
     expect(
       view.getByRole("tab", { name: /add games.*current step/i }),
     ).toBeTruthy();
     expect(
       view.getByRole("tab", {
-        name: /choose your weekly play time.*not started/i,
+        name: /set weekly play time.*not started/i,
       }),
     ).toBeTruthy();
 
-    await user.click(
-      view.getByRole("tab", { name: /choose your weekly play time/i }),
-    );
+    await user.click(view.getByRole("tab", { name: /set weekly play time/i }));
 
     expect(
-      view.getByRole("heading", { name: /choose your weekly play time/i }),
+      view.getByRole("heading", { name: /set your weekly play time/i }),
     ).toBeTruthy();
   });
 
@@ -154,12 +154,13 @@ describe("HomePage", () => {
       );
       await user.click(firstView.getByRole("tab", { name: /schedule/i }));
       await user.selectOptions(
-        firstView.getByLabelText(/algorithm/i),
+        firstView.getByLabelText(/schedule method/i),
         "alternating",
       );
       await waitFor(() =>
         expect(
-          (firstView.getByLabelText(/algorithm/i) as HTMLSelectElement).value,
+          (firstView.getByLabelText(/schedule method/i) as HTMLSelectElement)
+            .value,
         ).toBe("alternating"),
       );
 
@@ -186,7 +187,8 @@ describe("HomePage", () => {
       ).toBe(true);
       await user.click(reloadedView.getByRole("tab", { name: /schedule/i }));
       expect(
-        (reloadedView.getByLabelText(/algorithm/i) as HTMLSelectElement).value,
+        (reloadedView.getByLabelText(/schedule method/i) as HTMLSelectElement)
+          .value,
       ).toBe("alternating");
       expect(
         reloadedView
@@ -266,7 +268,7 @@ describe("HomePage", () => {
       expect(generateButton.hasAttribute("disabled")).toBe(true);
       expect(
         within(view.getByRole("tabpanel")).getByText(
-          /retrieving playtime estimates/i,
+          /getting playtime estimates/i,
         ),
       ).toBeTruthy();
 
@@ -358,7 +360,7 @@ describe("HomePage", () => {
       );
       expect(
         within(activePanel).queryByText(
-          /choose a playtime for each game: click main, main \+ extras, or completionist/i,
+          /choose a playtime for each game\. select main, main \+ extras, or completionist/i,
         ),
       ).toBeNull();
 
@@ -437,7 +439,7 @@ describe("HomePage", () => {
       );
       expect(
         view.getByText(
-          /choose a playtime for each game: click main, main \+ extras, or completionist/i,
+          /choose a playtime for each game\. select main, main \+ extras, or completionist/i,
         ),
       ).toBeTruthy();
       expect(
@@ -492,7 +494,7 @@ describe("HomePage", () => {
     expect(view.getByRole("main")).toBeTruthy();
     expect(view.getByText(/gaming clock/i)).toBeTruthy();
     expect(
-      view.getByRole("heading", { level: 1, name: /build backlog/i }),
+      view.getByRole("heading", { level: 1, name: /add games/i }),
     ).toBeTruthy();
     expect(
       view
@@ -512,7 +514,7 @@ describe("HomePage", () => {
     expect(within(activePanel).getByText(/current list/i)).toBeTruthy();
     expect(within(activePanel).queryByText(/^backlog$/i)).toBeNull();
     expect(within(activePanel).queryByText(/weekly cadence/i)).toBeNull();
-    expect(within(activePanel).queryByText(/generated schedule/i)).toBeNull();
+    expect(within(activePanel).queryByText(/your schedule/i)).toBeNull();
     expect(
       view.queryByRole("complementary", { name: /planner status/i }),
     ).toBeNull();
@@ -801,7 +803,7 @@ describe("HomePage", () => {
         },
       ]);
       expect(
-        within(view.getByRole("tabpanel")).getByText(/starts 18:00:00/i),
+        within(view.getByRole("tabpanel")).getByText(/at 18:00:00/i),
       ).toBeTruthy();
     } finally {
       globalThis.fetch = originalFetch;
@@ -1062,7 +1064,7 @@ describe("HomePage", () => {
         expect(
           within(view.getByRole("tabpanel")).getByRole("heading", {
             level: 2,
-            name: /generated schedule/i,
+            name: /your schedule/i,
           }),
         ).toBeTruthy(),
       );
@@ -1073,9 +1075,7 @@ describe("HomePage", () => {
       ).toBeTruthy();
       expect(within(schedulePanel).getByText(/estimated finish/i)).toBeTruthy();
       expect(within(schedulePanel).getByText(/^sessions$/i)).toBeTruthy();
-      expect(
-        within(schedulePanel).getByText(/total elapsed days/i),
-      ).toBeTruthy();
+      expect(within(schedulePanel).getByText(/days to finish/i)).toBeTruthy();
       expect(within(schedulePanel).getByText(/^2$/)).toBeTruthy();
       expect(within(schedulePanel).getByText(/3 days/i)).toBeTruthy();
     } finally {
@@ -1175,7 +1175,7 @@ describe("HomePage", () => {
           expect(
             within(schedulePanel()).getByRole("heading", {
               level: 2,
-              name: /generated schedule/i,
+              name: /your schedule/i,
             }),
           ).toBeTruthy(),
         );
@@ -1197,7 +1197,7 @@ describe("HomePage", () => {
         expect(
           within(schedulePanel()).queryByRole("heading", {
             level: 2,
-            name: /generated schedule/i,
+            name: /your schedule/i,
           }),
         ).toBeNull(),
       );
@@ -1210,7 +1210,7 @@ describe("HomePage", () => {
       await generateSchedule();
 
       await user.selectOptions(
-        within(schedulePanel()).getByLabelText(/algorithm/i),
+        within(schedulePanel()).getByLabelText(/schedule method/i),
         "alternating",
       );
 
@@ -1218,7 +1218,7 @@ describe("HomePage", () => {
         expect(
           within(schedulePanel()).queryByRole("heading", {
             level: 2,
-            name: /generated schedule/i,
+            name: /your schedule/i,
           }),
         ).toBeNull(),
       );
