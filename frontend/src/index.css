@@ -364,7 +364,7 @@
     align-items: center;
     width: 100%;
     min-height: 4.5rem;
-    border: 1px solid transparent;
+    border: 1px solid var(--foreground-16);
     background: transparent;
     padding: 0.5rem 0.65rem;
     color: var(--foreground);

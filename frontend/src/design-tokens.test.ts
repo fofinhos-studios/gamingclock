@@ -43,6 +43,16 @@ test("uses spacious, prominent stepper connectors", async () => {
   );
 });
 
+test("frames inactive planner stages with a subtle border", async () => {
+  const stylesheet = await Bun.file(
+    new URL("./index.css", import.meta.url),
+  ).text();
+
+  expect(stylesheet).toMatch(
+    /\.planner-stepper__tab\s*\{[^}]*?border:\s*1px solid var\(--foreground-16\);/,
+  );
+});
+
 test("uses larger shared icons and an accessible animated brand title", async () => {
   const stylesheet = await Bun.file(
     new URL("./index.css", import.meta.url),
