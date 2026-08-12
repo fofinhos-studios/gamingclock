@@ -181,7 +181,7 @@ describe("HomePage", () => {
 
     globalThis.fetch = (async (
       input: RequestInfo | URL,
-      init?: RequestInit,
+      _init?: RequestInit,
     ) => {
       const url = String(input);
       requests.push(url);

@@ -9,5 +9,8 @@
     "formatter": {
       "quoteStyle": "double"
     }
+  },
+  "files": {
+    "ignore": ["src/index.css"]
   }
 }

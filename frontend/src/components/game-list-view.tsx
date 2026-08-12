@@ -97,10 +97,10 @@ export function GameListView({
               <div class="planner-backlog-row__body">
                 <div class="planner-backlog-row__header">
                   <h3 class="planner-backlog-row__title">{game.name}</h3>
-                  <div
-                    class="planner-chip-group"
-                    aria-label={`${game.name} playtime options`}
-                  >
+                  <fieldset class="planner-chip-group">
+                    <legend class="sr-only">
+                      {game.name} playtime options
+                    </legend>
                     {game.hltb_status === "loading" ? (
                       <span
                         class="planner-chip planner-chip--loading"
@@ -162,7 +162,7 @@ export function GameListView({
                     {game.release_year !== null && (
                       <span class="planner-chip">{game.release_year}</span>
                     )}
-                  </div>
+                  </fieldset>
                 </div>
               </div>
 
