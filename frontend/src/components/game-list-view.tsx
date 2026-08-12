@@ -115,38 +115,49 @@ export function GameListView({
                     ) : game.hltb_status === "unresolved" ? (
                       <span class="planner-chip">Playtime unavailable</span>
                     ) : (
-                      [
-                        ["main", "Main", game.main_story_hours],
-                        ["extras", "Extras", game.main_extra_hours],
-                        [
-                          "completionist",
-                          "Completionist",
-                          game.completionist_hours,
-                        ],
-                      ].map(([category, label, hours]) =>
-                        typeof hours === "number" ? (
-                          <button
-                            key={category}
-                            type="button"
-                            class={`planner-hltb-option ${
-                              (game.selected_hltb_category ?? "main") ===
-                              category
-                                ? "planner-hltb-option--active"
-                                : ""
-                            }`}
-                            aria-pressed={
-                              (game.selected_hltb_category ?? "main") ===
-                              category
-                            }
-                            aria-label={`Use ${label} time: ${hours} hours`}
-                            onClick={() =>
-                              onSelectGameTime(index, category as HLTBCategory)
-                            }
-                          >
-                            {`${hours}h ${String(label).toLowerCase()}`}
-                          </button>
-                        ) : null,
-                      )
+                      <>
+                        {games.length === 1 && index === 0 && (
+                          <span class="planner-hltb-onboarding">
+                            Choose a playtime for each game: click Main, Main +
+                            Extras, or Completionist.
+                          </span>
+                        )}
+                        {[
+                          ["main", "Main", game.main_story_hours],
+                          ["extras", "Main + Extras", game.main_extra_hours],
+                          [
+                            "completionist",
+                            "Completionist",
+                            game.completionist_hours,
+                          ],
+                        ].map(([category, label, hours]) =>
+                          typeof hours === "number" ? (
+                            <button
+                              key={category}
+                              type="button"
+                              class={`planner-hltb-option ${
+                                (game.selected_hltb_category ?? "main") ===
+                                category
+                                  ? "planner-hltb-option--active"
+                                  : ""
+                              }`}
+                              aria-pressed={
+                                (game.selected_hltb_category ?? "main") ===
+                                category
+                              }
+                              aria-label={`Use ${label} time: ${hours} hours`}
+                              onClick={() =>
+                                onSelectGameTime(
+                                  index,
+                                  category as HLTBCategory,
+                                )
+                              }
+                            >
+                              {`${hours}h ${String(label).toLowerCase()}`}
+                            </button>
+                          ) : null,
+                        )}
+                      </>
                     )}
                     {game.release_year !== null && (
                       <span class="planner-chip">{game.release_year}</span>

@@ -672,6 +672,14 @@
     gap: 0.3rem;
   }
 
+  .planner-hltb-onboarding {
+    flex-basis: 100%;
+    color: var(--foreground-muted);
+    font-size: 0.75rem;
+    line-height: 1.35;
+    text-align: right;
+  }
+
   .planner-hltb-option {
     display: inline-flex;
     align-items: center;

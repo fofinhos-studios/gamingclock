@@ -204,6 +204,11 @@ describe("HomePage", () => {
           activePanel.querySelectorAll(".planner-backlog-row__title"),
         ).toHaveLength(2),
       );
+      expect(
+        within(activePanel).queryByText(
+          /choose a playtime for each game: click main, main \+ extras, or completionist/i,
+        ),
+      ).toBeNull();
 
       await user.click(
         within(activePanel).getAllByRole("button", { name: /^remove$/i })[0],
@@ -278,6 +283,11 @@ describe("HomePage", () => {
           view.getByRole("button", { name: /use main time: 27\.5 hours/i }),
         ).toBeTruthy(),
       );
+      expect(
+        view.getByText(
+          /choose a playtime for each game: click main, main \+ extras, or completionist/i,
+        ),
+      ).toBeTruthy();
       expect(
         view
           .getByRole("button", { name: /use main time: 27\.5 hours/i })
