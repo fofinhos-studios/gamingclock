@@ -204,6 +204,21 @@ describe("HomePage", () => {
           activePanel.querySelectorAll(".planner-backlog-row__title"),
         ).toHaveLength(2),
       );
+
+      await user.click(
+        within(activePanel).getAllByRole("button", { name: /^remove$/i })[0],
+      );
+
+      expect(
+        activePanel.querySelectorAll(".planner-backlog-row__title"),
+      ).toHaveLength(1);
+      expect(
+        activePanel.querySelector(".planner-backlog-row__title")?.textContent,
+      ).toBe("Hollow Knight: Silksong");
+      expect(
+        within(activePanel).getByRole("button", { name: /^remove$/i }),
+      ).toBeTruthy();
+      expect(within(activePanel).queryByText(/^removed$/i)).toBeNull();
     } finally {
       globalThis.fetch = originalFetch;
     }

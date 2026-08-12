@@ -1,6 +1,4 @@
-import { Check, List, LoaderCircle, Trash2, Trophy } from "lucide-preact";
-import { useState } from "preact/hooks";
-import { useTransientFeedback } from "../hooks/use-transient-feedback";
+import { List, LoaderCircle, Trash2, Trophy } from "lucide-preact";
 import {
   type HLTBCategory,
   type ListGame,
@@ -11,7 +9,7 @@ import { Button, Field } from "./ui";
 interface Props {
   name: string;
   games: ListGame[];
-  onRemoveGame: (index: number) => void;
+  onRemoveGame: (igdbId: number) => void;
   onSelectGameTime: (index: number, category: HLTBCategory) => void;
   onRenameList: (name: string) => void;
 }
@@ -23,8 +21,6 @@ export function GameListView({
   onSelectGameTime,
   onRenameList,
 }: Props) {
-  const [removingIndex, setRemovingIndex] = useState<number | null>(null);
-  const removeFeedback = useTransientFeedback<number>(1500);
   const previewCoverUrl = (coverUrl: string) =>
     coverUrl.replace("/t_thumb/", "/t_cover_small/");
 
@@ -32,14 +28,6 @@ export function GameListView({
     (sum, game) => sum + getSelectedGameHours(game),
     0,
   );
-
-  const handleRemoveGame = async (index: number) => {
-    setRemovingIndex(index);
-    removeFeedback.trigger(index, 1500);
-    await new Promise((resolve) => window.setTimeout(resolve, 700));
-    onRemoveGame(index);
-    setRemovingIndex(null);
-  };
 
   return (
     <section aria-labelledby="current-list-heading" class="space-y-4">
@@ -89,7 +77,7 @@ export function GameListView({
       ) : (
         <div class="planner-backlog-list">
           {games.map((game, index) => (
-            <article key={`${game.name}-${index}`} class="planner-backlog-row">
+            <article key={game.igdb_id} class="planner-backlog-row">
               {game.cover_url ? (
                 <img
                   src={previewCoverUrl(game.cover_url)}
@@ -172,23 +160,10 @@ export function GameListView({
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={() => void handleRemoveGame(index)}
-                  disabled={removingIndex === index}
-                  feedbackState={
-                    removingIndex === index || removeFeedback.active === index
-                      ? "success"
-                      : "idle"
-                  }
+                  onClick={() => onRemoveGame(game.igdb_id)}
                 >
-                  {removingIndex === index ||
-                  removeFeedback.active === index ? (
-                    <Check class="planner-icon" aria-hidden="true" />
-                  ) : (
-                    <Trash2 class="planner-icon" aria-hidden="true" />
-                  )}
-                  {removingIndex === index || removeFeedback.active === index
-                    ? "Removed"
-                    : "Remove"}
+                  <Trash2 class="planner-icon" aria-hidden="true" />
+                  Remove
                 </Button>
               </div>
             </article>

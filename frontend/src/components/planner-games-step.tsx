@@ -7,7 +7,7 @@ interface Props {
   games: ListGame[];
   onAddGame: (game: CatalogGame) => void;
   onSelectGameTime: (index: number, category: HLTBCategory) => void;
-  onRemoveGame: (index: number) => void;
+  onRemoveGame: (igdbId: number) => void;
   onRenameBacklog: (name: string) => void;
 }
 
