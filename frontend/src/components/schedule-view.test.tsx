@@ -29,7 +29,7 @@ describe("ScheduleView", () => {
       <ScheduleView schedule={schedule} onDownloadIcal={() => {}} />,
     );
 
-    expect(view.getAllByText(/session timeline/i).length).toBeGreaterThan(0);
+    expect(view.getAllByText(/play sessions/i).length).toBeGreaterThan(0);
     expect(view.queryByRole("table")).toBeNull();
     expect(view.getAllByRole("article")).toHaveLength(2);
   });
@@ -39,7 +39,7 @@ describe("ScheduleView", () => {
       <ScheduleView schedule={schedule} onDownloadIcal={() => {}} />,
     );
 
-    expect(view.getByText(/total elapsed days/i)).toBeTruthy();
+    expect(view.getByText(/days to finish/i)).toBeTruthy();
     expect(view.getByText(/3 days/i)).toBeTruthy();
   });
 });

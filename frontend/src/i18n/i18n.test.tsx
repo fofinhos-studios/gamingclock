@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 
 import { HomePage } from "../pages/home";
 import { LanguageProvider, detectLanguage } from "./i18n";
+import { strings } from "./strings";
 
 describe("i18n", () => {
   test("uses the browser's supported language and falls back to English", () => {
@@ -22,12 +23,30 @@ describe("i18n", () => {
 
     const chooser = view.getByRole("combobox", { name: "Idioma" });
     expect((chooser as HTMLSelectElement).value).toBe("pt-BR");
-    expect(view.getByRole("heading", { name: "Monte sua lista" })).toBeTruthy();
+    expect(view.getByRole("heading", { name: "Adicione jogos" })).toBeTruthy();
 
     await user.selectOptions(chooser, "en");
 
     expect(view.getByRole("combobox", { name: "Language" })).toBeTruthy();
-    expect(view.getByRole("heading", { name: "Build backlog" })).toBeTruthy();
+    expect(view.getByRole("heading", { name: "Add games" })).toBeTruthy();
     expect(window.localStorage.getItem("gaming-clock.language")).toBe("en");
+  });
+
+  test("uses direct copy without em dashes in each language", () => {
+    expect(strings.en.app.steps.games.eyebrow).toBe(
+      "Add the games you want to play.",
+    );
+    expect(strings.en.tabs.copy).toBe(
+      "Add games, set your time, then create a schedule.",
+    );
+    expect(
+      strings.en.tabs.aria(1, "Add games", "games", "Current step"),
+    ).not.toContain("—");
+    expect(strings["pt-BR"].app.steps.games.eyebrow).toBe(
+      "Adicione os jogos que você quer jogar.",
+    );
+    expect(
+      strings["pt-BR"].tabs.aria(1, "Adicionar jogos", "games", "Etapa atual"),
+    ).not.toContain("—");
   });
 });
