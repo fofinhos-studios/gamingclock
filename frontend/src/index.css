@@ -390,14 +390,14 @@
   .planner-stepper__connector {
     display: flex;
     align-items: center;
-    min-height: 1.35rem;
-    padding-left: 1.1rem;
+    min-height: 3.25rem;
+    padding: 0.5rem 0 0.5rem 1.1rem;
     color: var(--muted-foreground);
   }
 
   .planner-stepper__connector .planner-icon {
-    width: 1.15rem;
-    height: 1.15rem;
+    width: 1.5rem;
+    height: 1.5rem;
   }
 
   .planner-stepper__tab-marker {
