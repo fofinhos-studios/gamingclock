@@ -46,6 +46,128 @@ function createCatalogResult(
 }
 
 describe("HomePage", () => {
+  test("guides people through the planner with a clickable progress stepper", async () => {
+    const user = userEvent.setup();
+    const view = render(<HomePage path="/" />);
+
+    expect(
+      view.getByText(/build your game schedule step by step/i),
+    ).toBeTruthy();
+    expect(
+      view.getByRole("tab", { name: /add games.*current step/i }),
+    ).toBeTruthy();
+    expect(
+      view.getByRole("tab", {
+        name: /choose your weekly play time.*not started/i,
+      }),
+    ).toBeTruthy();
+
+    await user.click(
+      view.getByRole("tab", { name: /choose your weekly play time/i }),
+    );
+
+    expect(
+      view.getByRole("heading", { name: /choose your weekly play time/i }),
+    ).toBeTruthy();
+  });
+
+  test("restores planner work after the page reloads", async () => {
+    const user = userEvent.setup();
+    const originalFetch = globalThis.fetch;
+    const searchResult = createSearchResult();
+
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith("/api/games/search?")) {
+        return createJsonResponse([createCatalogResult()]);
+      }
+      if (url === "/api/games/resolve") {
+        return createJsonResponse(searchResult);
+      }
+      throw new Error(`Unexpected fetch call: ${url}`);
+    }) as typeof fetch;
+
+    try {
+      const firstView = render(<HomePage path="/" />);
+      const gamesPanel = firstView.getByRole("tabpanel");
+      const searchInput = within(gamesPanel).getByRole("textbox", {
+        name: /search by title/i,
+      });
+
+      await user.type(searchInput, "ho");
+      await waitFor(() =>
+        expect(
+          firstView.getByRole("button", {
+            name: /add hollow knight to backlog/i,
+          }),
+        ).toBeTruthy(),
+      );
+      await user.click(
+        firstView.getByRole("button", {
+          name: /add hollow knight to backlog/i,
+        }),
+      );
+      await waitFor(() =>
+        expect(
+          firstView.getByRole("button", {
+            name: /use main time: 27\.5 hours/i,
+          }),
+        ).toBeTruthy(),
+      );
+
+      await user.clear(firstView.getByDisplayValue("My Backlog"));
+      await user.type(firstView.getByDisplayValue(""), "Weekend games");
+      await user.click(firstView.getByRole("tab", { name: /availability/i }));
+      await user.click(firstView.getByLabelText(/monday/i));
+      await user.click(
+        firstView.getByRole("button", { name: /save availability/i }),
+      );
+      await user.click(firstView.getByRole("tab", { name: /schedule/i }));
+      await user.selectOptions(
+        firstView.getByLabelText(/algorithm/i),
+        "alternating",
+      );
+      await waitFor(() =>
+        expect(
+          (firstView.getByLabelText(/algorithm/i) as HTMLSelectElement).value,
+        ).toBe("alternating"),
+      );
+
+      firstView.unmount();
+      const reloadedView = render(<HomePage path="/" />);
+
+      expect(
+        reloadedView
+          .getByRole("tab", { name: /schedule/i })
+          .getAttribute("aria-selected"),
+      ).toBe("true");
+      expect(reloadedView.getByDisplayValue("Weekend games")).toBeTruthy();
+      await user.click(reloadedView.getByRole("tab", { name: /games/i }));
+      expect(
+        reloadedView.getByRole("button", {
+          name: /use main time: 27\.5 hours/i,
+        }),
+      ).toBeTruthy();
+      await user.click(
+        reloadedView.getByRole("tab", { name: /availability/i }),
+      );
+      expect(
+        (reloadedView.getByLabelText(/monday/i) as HTMLInputElement).checked,
+      ).toBe(true);
+      await user.click(reloadedView.getByRole("tab", { name: /schedule/i }));
+      expect(
+        (reloadedView.getByLabelText(/algorithm/i) as HTMLSelectElement).value,
+      ).toBe("alternating");
+      expect(
+        reloadedView
+          .getByRole("button", { name: /generate schedule/i })
+          .hasAttribute("disabled"),
+      ).toBe(false);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   test("adds the selected IGDB game immediately while its playtime resolves", async () => {
     const user = userEvent.setup();
     const originalFetch = globalThis.fetch;

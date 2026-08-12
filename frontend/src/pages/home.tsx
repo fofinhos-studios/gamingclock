@@ -1,12 +1,16 @@
 import { Gamepad2 } from "lucide-preact";
 import type { RoutableProps } from "preact-router";
-import { useState } from "preact/hooks";
+import { useLayoutEffect, useState } from "preact/hooks";
 
 import { PlannerAvailabilityStep } from "../components/planner-availability-step";
 import { PlannerGamesStep } from "../components/planner-games-step";
 import { PlannerScheduleStep } from "../components/planner-schedule-step";
 import { type PlannerTab, PlannerTabs } from "../components/planner-tabs";
 import { downloadIcal, generateSchedule, resolveGame } from "../services/api";
+import {
+  loadPlannerState,
+  savePlannerState,
+} from "../services/planner-storage";
 import {
   type CatalogGame,
   type GameList,
@@ -20,31 +24,60 @@ import {
 const TAB_CONTENT: Record<PlannerTab, { title: string; eyebrow: string }> = {
   games: {
     title: "Build backlog",
-    eyebrow: "Step 01",
+    eyebrow: "Start here — add the games you want to play",
   },
   availability: {
-    title: "Set weekly time",
-    eyebrow: "Step 02",
+    title: "Choose your weekly play time",
+    eyebrow: "Tell us when you usually have time to play",
   },
   schedule: {
-    title: "Generate schedule",
-    eyebrow: "Step 03",
+    title: "Make your schedule",
+    eyebrow: "Turn your backlog and free time into a play plan",
   },
 };
 
 export function HomePage(_props: RoutableProps) {
-  const [activeTab, setActiveTab] = useState<PlannerTab>("games");
-  const [backlogs, setBacklogs] = useState<GameList[]>([
-    { name: "My Backlog", games: [] },
-  ]);
-  const [activeBacklogIndex, setActiveBacklogIndex] = useState(0);
-  const [availability, setAvailability] = useState<WeeklyAvailability | null>(
-    null,
+  const [initialState] = useState(() =>
+    loadPlannerState(getLocalCalendarDate()),
   );
-  const [algorithm, setAlgorithm] = useState<ScheduleAlgorithm>("sequential");
-  const [schedule, setSchedule] = useState<ScheduleResponse | null>(null);
+  const [activeTab, setActiveTab] = useState<PlannerTab>(
+    initialState.activeTab,
+  );
+  const [backlogs, setBacklogs] = useState<GameList[]>(initialState.backlogs);
+  const [activeBacklogIndex, setActiveBacklogIndex] = useState(
+    initialState.activeBacklogIndex,
+  );
+  const [availability, setAvailability] = useState<WeeklyAvailability | null>(
+    initialState.availability,
+  );
+  const [algorithm, setAlgorithm] = useState<ScheduleAlgorithm>(
+    initialState.algorithm,
+  );
+  const [schedule, setSchedule] = useState<ScheduleResponse | null>(
+    initialState.schedule,
+  );
   const [actionError, setActionError] = useState("");
-  const [startDate, setStartDate] = useState(getLocalCalendarDate());
+  const [startDate, setStartDate] = useState(initialState.startDate);
+
+  useLayoutEffect(() => {
+    savePlannerState({
+      activeTab,
+      backlogs,
+      activeBacklogIndex,
+      availability,
+      algorithm,
+      schedule,
+      startDate,
+    });
+  }, [
+    activeTab,
+    backlogs,
+    activeBacklogIndex,
+    availability,
+    algorithm,
+    schedule,
+    startDate,
+  ]);
   const activeBacklog = backlogs[activeBacklogIndex];
   const backlogName = activeBacklog.name;
   const games = activeBacklog.games;
@@ -106,6 +139,13 @@ export function HomePage(_props: RoutableProps) {
       : []),
   ];
   const activeStep = TAB_CONTENT[activeTab];
+  const completedTabs: PlannerTab[] = [
+    ...(games.length > 0 && !hasLoadingGames && !hasUnresolvedGames
+      ? (["games"] as const)
+      : []),
+    ...(availability ? (["availability"] as const) : []),
+    ...(schedule ? (["schedule"] as const) : []),
+  ];
 
   const addGame = (game: CatalogGame) => {
     const pendingGame: ListGame = {
@@ -292,47 +332,51 @@ export function HomePage(_props: RoutableProps) {
 
       <main id="planner" class="planner-app">
         <div class="planner-app__frame">
-          <div class="planner-app__rail">
-            <div class="planner-brand">
-              <p class="planner-brand__name">
-                <Gamepad2
-                  class="planner-icon planner-brand__icon"
-                  aria-hidden="true"
-                />
-                <span>Gaming Clock</span>
-              </p>
-            </div>
-
-            <PlannerTabs activeTab={activeTab} onChange={setActiveTab} />
-          </div>
-
           <div class="planner-app__workspace">
             <header class="planner-toolbar">
-              <div class="planner-toolbar__main">
-                <p class="planner-toolbar__eyebrow">{activeStep.eyebrow}</p>
-                <h1 class="planner-toolbar__title">{activeStep.title}</h1>
+              <div class="planner-toolbar__topline">
+                <div class="planner-brand">
+                  <p class="planner-brand__name">
+                    <Gamepad2
+                      class="planner-icon planner-brand__icon"
+                      aria-hidden="true"
+                    />
+                    <span>Gaming Clock</span>
+                  </p>
+                </div>
+                <PlannerTabs
+                  activeTab={activeTab}
+                  completedTabs={completedTabs}
+                  onChange={setActiveTab}
+                />
               </div>
-              <div aria-label="Backlogs" class="planner-toolbar__backlogs">
-                {backlogs.map((backlog, index) => (
-                  <button
-                    key={`${backlog.name}-${index}`}
-                    type="button"
-                    aria-pressed={index === activeBacklogIndex}
-                    onClick={() => {
-                      setActiveBacklogIndex(index);
-                      clearGeneratedSchedule();
-                    }}
-                  >
-                    {backlog.name}
+              <div class="planner-toolbar__content">
+                <div class="planner-toolbar__main">
+                  <p class="planner-toolbar__eyebrow">{activeStep.eyebrow}</p>
+                  <h1 class="planner-toolbar__title">{activeStep.title}</h1>
+                </div>
+                <div aria-label="Backlogs" class="planner-toolbar__backlogs">
+                  {backlogs.map((backlog, index) => (
+                    <button
+                      key={`${backlog.name}-${index}`}
+                      type="button"
+                      aria-pressed={index === activeBacklogIndex}
+                      onClick={() => {
+                        setActiveBacklogIndex(index);
+                        clearGeneratedSchedule();
+                      }}
+                    >
+                      {backlog.name}
+                    </button>
+                  ))}
+                  <button type="button" onClick={addBacklog}>
+                    New backlog
                   </button>
-                ))}
-                <button type="button" onClick={addBacklog}>
-                  New backlog
-                </button>
-                <p>
-                  All backlogs: {allBacklogGames.length} games,{" "}
-                  {totalAllBacklogsHours.toFixed(1)}h
-                </p>
+                  <p>
+                    All backlogs: {allBacklogGames.length} games,{" "}
+                    {totalAllBacklogsHours.toFixed(1)}h
+                  </p>
+                </div>
               </div>
             </header>
 

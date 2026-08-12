@@ -34,7 +34,7 @@ export function PlannerAvailabilityStep({
           </p>
         </div>
 
-        <AvailabilityForm onSubmit={onSubmit} />
+        <AvailabilityForm availability={availability} onSubmit={onSubmit} />
       </div>
 
       <div class="planner-note-grid">
