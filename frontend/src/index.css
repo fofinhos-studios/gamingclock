@@ -133,6 +133,11 @@
     font-family: var(--font-body);
   }
 
+  select option {
+    background: var(--surface);
+    color: var(--foreground);
+  }
+
   h1,
   h2,
   h3,

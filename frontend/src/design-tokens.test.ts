@@ -20,6 +20,16 @@ test("sets the native control color scheme for each theme", async () => {
   );
 });
 
+test("gives native select options an explicit themed surface", async () => {
+  const stylesheet = await Bun.file(
+    new URL("./index.css", import.meta.url),
+  ).text();
+
+  expect(stylesheet).toMatch(
+    /select option\s*\{[\s\S]*?background:\s*var\(--surface\);[\s\S]*?color:\s*var\(--foreground\);/,
+  );
+});
+
 test("uses larger shared icons and an accessible animated brand title", async () => {
   const stylesheet = await Bun.file(
     new URL("./index.css", import.meta.url),
