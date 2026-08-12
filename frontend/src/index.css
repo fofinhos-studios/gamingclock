@@ -486,6 +486,14 @@
     gap: 0.9rem;
   }
 
+  .planner-toolbar__controls {
+    display: flex;
+    align-items: center;
+    justify-content: end;
+    gap: 0.75rem;
+    margin-left: auto;
+  }
+
   .planner-toolbar__main {
     display: grid;
     gap: 0.2rem;
@@ -1505,6 +1513,10 @@
 
   .planner-toolbar__backlogs p {
     text-align: start;
+  }
+
+  .planner-toolbar__controls {
+    align-self: end;
   }
 
   .planner-games-workspace,

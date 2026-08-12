@@ -67,6 +67,15 @@ describe("HomePage", () => {
     ).toBeTruthy();
   });
 
+  test("groups theme and language controls at the top right", () => {
+    const view = render(<HomePage path="/" />);
+    const controls = view.container.querySelector(".planner-toolbar__controls");
+
+    expect(controls).toBeTruthy();
+    expect(controls?.querySelector(".theme-toggle")).toBeTruthy();
+    expect(controls?.querySelector(".language-chooser")).toBeTruthy();
+  });
+
   test("guides people through the planner with a clickable progress stepper", async () => {
     const user = userEvent.setup();
     const view = render(<HomePage path="/" />);

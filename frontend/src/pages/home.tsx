@@ -348,6 +348,8 @@ export function HomePage(_props: RoutableProps) {
                     />
                     <span class="planner-brand__title">{t.app.brand}</span>
                   </p>
+                </div>
+                <div class="planner-toolbar__controls">
                   <button
                     type="button"
                     class="theme-toggle"
