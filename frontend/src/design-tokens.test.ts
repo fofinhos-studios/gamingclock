@@ -53,6 +53,19 @@ test("frames inactive planner stages with a subtle border", async () => {
   );
 });
 
+test("uses distinct raised surfaces for planner panes and empty states", async () => {
+  const stylesheet = await Bun.file(
+    new URL("./index.css", import.meta.url),
+  ).text();
+
+  expect(stylesheet).toMatch(
+    /\.planner-pane\s*\{[^}]*?background:\s*var\(--muted\);/,
+  );
+  expect(stylesheet).toMatch(
+    /\.planner-empty-state\s*\{[^}]*?background:\s*var\(--surface-hover\);/,
+  );
+});
+
 test("uses larger shared icons and an accessible animated brand title", async () => {
   const stylesheet = await Bun.file(
     new URL("./index.css", import.meta.url),
