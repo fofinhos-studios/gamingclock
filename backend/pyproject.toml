@@ -42,6 +42,9 @@ select = ["E", "F", "I", "N", "UP", "B", "SIM", "RUF"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+markers = [
+    "live_igdb: makes authenticated requests to the live IGDB API",
+]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
