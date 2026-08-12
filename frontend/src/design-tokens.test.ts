@@ -19,3 +19,21 @@ test("sets the native control color scheme for each theme", async () => {
     /:root\[data-theme="light"\]\s*\{[\s\S]*?color-scheme:\s*light;/,
   );
 });
+
+test("uses larger shared icons and an accessible animated brand title", async () => {
+  const stylesheet = await Bun.file(
+    new URL("./index.css", import.meta.url),
+  ).text();
+
+  expect(stylesheet).toMatch(
+    /\.planner-icon\s*\{[\s\S]*?width:\s*1\.15rem;[\s\S]*?height:\s*1\.15rem;/,
+  );
+  expect(stylesheet).toMatch(
+    /\.planner-brand__title\s*\{[\s\S]*?animation:\s*planner-title-shimmer[\s\S]*?planner-title-wave/,
+  );
+  expect(stylesheet).toMatch(/@keyframes planner-title-shimmer/);
+  expect(stylesheet).toMatch(/@keyframes planner-title-wave/);
+  expect(stylesheet).toMatch(
+    /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?\.planner-brand__title\s*\{[\s\S]*?animation:\s*none;/,
+  );
+});

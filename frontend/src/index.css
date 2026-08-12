@@ -242,8 +242,26 @@
   }
 
   .planner-brand__icon {
-    width: 1.05rem;
-    height: 1.05rem;
+    width: 1.3rem;
+    height: 1.3rem;
+  }
+
+  .planner-brand__title {
+    display: inline-block;
+    background: linear-gradient(
+      110deg,
+      var(--foreground) 35%,
+      var(--step-active) 48%,
+      var(--foreground) 61%
+    );
+    background-position: 120% 0;
+    background-size: 250% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation:
+      planner-title-shimmer 5.5s linear infinite,
+      planner-title-wave 2.8s ease-in-out infinite;
   }
 
   .theme-toggle {
@@ -268,8 +286,8 @@
   }
 
   .theme-toggle svg {
-    width: 0.85rem;
-    height: 0.85rem;
+    width: 1rem;
+    height: 1rem;
   }
 
   .language-chooser {
@@ -373,8 +391,8 @@
   }
 
   .planner-stepper__connector .planner-icon {
-    width: 1rem;
-    height: 1rem;
+    width: 1.15rem;
+    height: 1.15rem;
   }
 
   .planner-stepper__tab-marker {
@@ -1275,8 +1293,8 @@
 
   .planner-icon {
     flex: 0 0 auto;
-    width: 0.95rem;
-    height: 0.95rem;
+    width: 1.15rem;
+    height: 1.15rem;
     stroke-width: 1.8;
   }
 
@@ -1427,6 +1445,35 @@
     box-shadow:
       inset 0 0 0 1px var(--foreground-22),
       0 0 0 1px var(--foreground-04);
+  }
+}
+
+@keyframes planner-title-shimmer {
+  from {
+    background-position: 120% 0;
+  }
+
+  to {
+    background-position: -120% 0;
+  }
+}
+
+@keyframes planner-title-wave {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-0.075rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .planner-brand__title {
+    background: none;
+    color: var(--foreground);
+    animation: none;
   }
 }
 
