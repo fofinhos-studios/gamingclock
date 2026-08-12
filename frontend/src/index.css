@@ -565,7 +565,7 @@
   .planner-pane {
     padding: 0.9rem;
     min-width: 0;
-    background: var(--surface-62);
+    background: var(--muted);
   }
 
   .planner-pane__header {
@@ -811,7 +811,7 @@
     display: grid;
     gap: 0.3rem;
     padding: 1rem;
-    background: var(--foreground-04);
+    background: var(--surface-hover);
   }
 
   .planner-empty-state__icon {
