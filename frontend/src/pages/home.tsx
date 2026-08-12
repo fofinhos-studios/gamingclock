@@ -7,6 +7,7 @@ import { PlannerGamesStep } from "../components/planner-games-step";
 import { PlannerScheduleStep } from "../components/planner-schedule-step";
 import { type PlannerTab, PlannerTabs } from "../components/planner-tabs";
 import { useLanguage } from "../i18n/i18n";
+import { strings } from "../i18n/strings";
 import { downloadIcal, generateSchedule, resolveGame } from "../services/api";
 import {
   loadPlannerState,
@@ -26,6 +27,9 @@ import {
 type Theme = "dark" | "light";
 
 const THEME_STORAGE_KEY = "gaming-clock-theme";
+const DEFAULT_BACKLOG_NAMES = new Set(
+  Object.values(strings).map(({ app }) => app.defaultBacklog),
+);
 
 function loadTheme(): Theme {
   return window.localStorage.getItem(THEME_STORAGE_KEY) === "light"
@@ -86,6 +90,17 @@ export function HomePage(_props: RoutableProps) {
   useLayoutEffect(() => {
     document.documentElement.lang = language;
   }, [language]);
+
+  useLayoutEffect(() => {
+    setBacklogs((currentBacklogs) =>
+      currentBacklogs.map((backlog, index) =>
+        index === 0 && DEFAULT_BACKLOG_NAMES.has(backlog.name)
+          ? { ...backlog, name: t.app.defaultBacklog }
+          : backlog,
+      ),
+    );
+  }, [t.app.defaultBacklog]);
+
   const activeBacklog = backlogs[activeBacklogIndex];
   const backlogName = activeBacklog.name;
   const games = activeBacklog.games;

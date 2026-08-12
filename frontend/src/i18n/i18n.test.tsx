@@ -24,12 +24,24 @@ describe("i18n", () => {
     const chooser = view.getByRole("combobox", { name: "Idioma" });
     expect((chooser as HTMLSelectElement).value).toBe("pt-BR");
     expect(view.getByRole("heading", { name: "Adicione jogos" })).toBeTruthy();
+    expect(view.getByDisplayValue("Minha lista")).toBeTruthy();
 
     await user.selectOptions(chooser, "en");
 
     expect(view.getByRole("combobox", { name: "Language" })).toBeTruthy();
     expect(view.getByRole("heading", { name: "Add games" })).toBeTruthy();
+    expect(view.getByDisplayValue("My Backlog")).toBeTruthy();
     expect(window.localStorage.getItem("gaming-clock.language")).toBe("en");
+
+    const backlogName = view.getByDisplayValue("My Backlog");
+    await user.clear(backlogName);
+    await user.type(backlogName, "Weekend games");
+    await user.selectOptions(
+      view.getByRole("combobox", { name: "Language" }),
+      "pt-BR",
+    );
+
+    expect(view.getByDisplayValue("Weekend games")).toBeTruthy();
   });
 
   test("uses direct copy without em dashes in each language", () => {
