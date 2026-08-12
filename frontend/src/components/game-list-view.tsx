@@ -1,4 +1,5 @@
 import { List, LoaderCircle, Trash2, Trophy } from "lucide-preact";
+import { useLanguage } from "../i18n/i18n";
 import {
   type HLTBCategory,
   type ListGame,
@@ -21,6 +22,7 @@ export function GameListView({
   onSelectGameTime,
   onRenameList,
 }: Props) {
+  const { t } = useLanguage();
   const previewCoverUrl = (coverUrl: string) =>
     coverUrl.replace("/t_thumb/", "/t_cover_small/");
 
@@ -41,7 +43,7 @@ export function GameListView({
               class="planner-icon planner-heading__icon"
               aria-hidden="true"
             />
-            <span>Current list</span>
+            <span>{t.list.title}</span>
           </h2>
         </div>
         <div class="planner-inline-stats">
@@ -49,7 +51,11 @@ export function GameListView({
         </div>
       </div>
 
-      <Field label="Backlog name" controlId="active-list-name" class="max-w-md">
+      <Field
+        label={t.list.backlogName}
+        controlId="active-list-name"
+        class="max-w-md"
+      >
         <input
           id="active-list-name"
           type="text"
@@ -67,12 +73,8 @@ export function GameListView({
             class="planner-icon planner-empty-state__icon"
             aria-hidden="true"
           />
-          <p class="planner-empty-state__title">
-            No games in this backlog yet.
-          </p>
-          <p class="planner-empty-state__text">
-            Search on the left and add titles directly into the list.
-          </p>
+          <p class="planner-empty-state__title">{t.list.emptyTitle}</p>
+          <p class="planner-empty-state__text">{t.list.emptyCopy}</p>
         </div>
       ) : (
         <div class="planner-backlog-list">
@@ -90,7 +92,7 @@ export function GameListView({
                 />
               ) : (
                 <div class="planner-backlog-row__cover planner-backlog-row__cover--empty">
-                  No image
+                  {t.list.noImage}
                 </div>
               )}
 
@@ -99,7 +101,7 @@ export function GameListView({
                   <h3 class="planner-backlog-row__title">{game.name}</h3>
                   <fieldset class="planner-chip-group">
                     <legend class="sr-only">
-                      {game.name} playtime options
+                      {t.list.playtimeOptions(game.name)}
                     </legend>
                     {game.hltb_status === "loading" ? (
                       <span
@@ -110,24 +112,23 @@ export function GameListView({
                           class="planner-icon planner-icon--spin"
                           aria-hidden="true"
                         />
-                        Retrieving playtime
+                        {t.list.retrieving}
                       </span>
                     ) : game.hltb_status === "unresolved" ? (
-                      <span class="planner-chip">Playtime unavailable</span>
+                      <span class="planner-chip">{t.list.unavailable}</span>
                     ) : (
                       <>
                         {games.length === 1 && index === 0 && (
                           <span class="planner-hltb-onboarding">
-                            Choose a playtime for each game: click Main, Main +
-                            Extras, or Completionist.
+                            {t.list.onboarding}
                           </span>
                         )}
                         {[
-                          ["main", "Main", game.main_story_hours],
-                          ["extras", "Main + Extras", game.main_extra_hours],
+                          ["main", t.list.main, game.main_story_hours],
+                          ["extras", t.list.extras, game.main_extra_hours],
                           [
                             "completionist",
-                            "Completionist",
+                            t.list.completionist,
                             game.completionist_hours,
                           ],
                         ].map(([category, label, hours]) =>
@@ -145,7 +146,7 @@ export function GameListView({
                                 (game.selected_hltb_category ?? "main") ===
                                 category
                               }
-                              aria-label={`Use ${label} time: ${hours} hours`}
+                              aria-label={t.list.useTime(String(label), hours)}
                               onClick={() =>
                                 onSelectGameTime(
                                   index,
@@ -174,7 +175,7 @@ export function GameListView({
                   onClick={() => onRemoveGame(game.igdb_id)}
                 >
                   <Trash2 class="planner-icon" aria-hidden="true" />
-                  Remove
+                  {t.list.remove}
                 </Button>
               </div>
             </article>

@@ -1,14 +1,17 @@
-import { CalendarDays, CalendarRange, Check, Gamepad2 } from "lucide-preact";
+import {
+  ArrowDown,
+  CalendarDays,
+  CalendarRange,
+  Check,
+  Gamepad2,
+} from "lucide-preact";
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
+import { useLanguage } from "../i18n/i18n";
 
 const PLANNER_TABS = [
-  { id: "games", label: "Add games", icon: Gamepad2 },
-  {
-    id: "availability",
-    label: "Choose your weekly play time",
-    icon: CalendarDays,
-  },
-  { id: "schedule", label: "Make your schedule", icon: CalendarRange },
+  { id: "games", icon: Gamepad2 },
+  { id: "availability", icon: CalendarDays },
+  { id: "schedule", icon: CalendarRange },
 ] as const;
 
 export type PlannerTab = (typeof PLANNER_TABS)[number]["id"];
@@ -20,6 +23,7 @@ interface Props {
 }
 
 export function PlannerTabs({ activeTab, completedTabs, onChange }: Props) {
+  const { t } = useLanguage();
   const feedback = useTransientFeedback<PlannerTab>(1400);
 
   const focusTab = (tab: PlannerTab) => {
@@ -53,68 +57,74 @@ export function PlannerTabs({ activeTab, completedTabs, onChange }: Props) {
   };
 
   return (
-    <nav
-      class="planner-stepper"
-      aria-label="Build your game schedule step by step"
-    >
+    <nav class="planner-stepper" aria-label={t.tabs.nav}>
       <div class="planner-stepper__intro">
-        <p class="planner-stepper__eyebrow">Your game plan</p>
-        <p class="planner-stepper__copy">
-          Build your game schedule step by step. You can return to any step
-          whenever you need to.
-        </p>
+        <p class="planner-stepper__eyebrow">{t.tabs.intro}</p>
+        <p class="planner-stepper__copy">{t.tabs.copy}</p>
       </div>
       <div
         role="tablist"
-        aria-label="Planner steps"
-        aria-orientation="horizontal"
+        aria-label={t.tabs.steps}
+        aria-orientation="vertical"
         class="planner-stepper__list"
       >
         {PLANNER_TABS.map((tab, index) => {
+          const label =
+            tab.id === "games"
+              ? t.tabs.addGames
+              : tab.id === "availability"
+                ? t.tabs.availability
+                : t.tabs.schedule;
           const selected = tab.id === activeTab;
           const complete = completedTabs.includes(tab.id);
           const Icon = tab.icon;
           const status = complete
-            ? "Complete"
+            ? t.tabs.complete
             : selected
-              ? "Current step"
-              : "Not started";
+              ? t.tabs.current
+              : t.tabs.notStarted;
 
           return (
-            <button
-              key={tab.id}
-              id={`planner-tab-${tab.id}`}
-              role="tab"
-              type="button"
-              class={`planner-stepper__tab ${
-                selected ? "planner-stepper__tab--active" : ""
-              } ${complete ? "planner-stepper__tab--complete" : ""} ${feedback.active === tab.id ? "planner-stepper__tab--confirmed" : ""}`}
-              aria-selected={selected}
-              aria-controls={`planner-panel-${tab.id}`}
-              aria-label={`Step ${index + 1}: ${tab.label} (${tab.id}) — ${status}`}
-              tabIndex={selected ? 0 : -1}
-              onClick={() => {
-                onChange(tab.id);
-                feedback.trigger(tab.id);
-              }}
-              onKeyDown={(event) =>
-                handleKeyDown(event as KeyboardEvent, index)
-              }
-            >
-              <span class="planner-stepper__tab-marker" aria-hidden="true">
-                {complete ? <Check class="planner-icon" /> : index + 1}
-              </span>
-              <span class="planner-stepper__tab-content">
-                <Icon
-                  class="planner-icon planner-stepper__tab-icon"
-                  aria-hidden="true"
-                />
-                <span>
-                  <span class="planner-stepper__tab-label">{tab.label}</span>
-                  <span class="planner-stepper__tab-status">{status}</span>
+            <div class="planner-stepper__item" key={tab.id}>
+              <button
+                id={`planner-tab-${tab.id}`}
+                role="tab"
+                type="button"
+                class={`planner-stepper__tab ${
+                  selected ? "planner-stepper__tab--active" : ""
+                } ${complete ? "planner-stepper__tab--complete" : ""} ${feedback.active === tab.id ? "planner-stepper__tab--confirmed" : ""}`}
+                aria-selected={selected}
+                aria-controls={`planner-panel-${tab.id}`}
+                aria-label={t.tabs.aria(index + 1, label, tab.id, status)}
+                tabIndex={selected ? 0 : -1}
+                onClick={() => {
+                  onChange(tab.id);
+                  feedback.trigger(tab.id);
+                }}
+                onKeyDown={(event) =>
+                  handleKeyDown(event as KeyboardEvent, index)
+                }
+              >
+                <span class="planner-stepper__tab-marker" aria-hidden="true">
+                  {complete ? <Check class="planner-icon" /> : index + 1}
                 </span>
-              </span>
-            </button>
+                <span class="planner-stepper__tab-content">
+                  <Icon
+                    class="planner-icon planner-stepper__tab-icon"
+                    aria-hidden="true"
+                  />
+                  <span>
+                    <span class="planner-stepper__tab-label">{label}</span>
+                    <span class="planner-stepper__tab-status">{status}</span>
+                  </span>
+                </span>
+              </button>
+              {index < PLANNER_TABS.length - 1 && (
+                <span class="planner-stepper__connector" aria-hidden="true">
+                  <ArrowDown class="planner-icon" />
+                </span>
+              )}
+            </div>
           );
         })}
       </div>

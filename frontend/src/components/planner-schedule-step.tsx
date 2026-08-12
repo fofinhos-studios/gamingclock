@@ -7,6 +7,7 @@ import {
 } from "lucide-preact";
 import { useState } from "preact/hooks";
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
+import { useLanguage } from "../i18n/i18n";
 import type {
   ScheduleAlgorithm,
   ScheduleResponse,
@@ -47,6 +48,7 @@ export function PlannerScheduleStep({
   onGenerateSchedule,
   onDownloadIcal,
 }: Props) {
+  const { t } = useLanguage();
   const prerequisitesDescriptionId = "schedule-prerequisites";
   const [isGenerating, setIsGenerating] = useState(false);
   const feedback = useTransientFeedback<"success">();
@@ -70,7 +72,7 @@ export function PlannerScheduleStep({
       <div class="planner-pane">
         <div class="planner-pane__header">
           <div class="space-y-1">
-            <p class="section-eyebrow">Schedule</p>
+            <p class="section-eyebrow">{t.schedule.section}</p>
             <h2
               id="planner-schedule-heading"
               class="planner-panel__title planner-heading"
@@ -79,16 +81,14 @@ export function PlannerScheduleStep({
                 class="planner-icon planner-heading__icon"
                 aria-hidden="true"
               />
-              <span>Generate schedule</span>
+              <span>{t.schedule.heading}</span>
             </h2>
           </div>
-          <p class="planner-panel__copy">
-            Pick a start date and algorithm for the current backlog.
-          </p>
+          <p class="planner-panel__copy">{t.schedule.copy}</p>
         </div>
 
         <div class="planner-controls">
-          <Field label="Start date" controlId="schedule-start-date">
+          <Field label={t.schedule.startDate} controlId="schedule-start-date">
             <Input
               id="schedule-start-date"
               type="date"
@@ -99,7 +99,7 @@ export function PlannerScheduleStep({
             />
           </Field>
 
-          <Field label="Algorithm" controlId="schedule-algorithm">
+          <Field label={t.schedule.algorithm} controlId="schedule-algorithm">
             <Select
               id="schedule-algorithm"
               value={algorithm}
@@ -110,8 +110,8 @@ export function PlannerScheduleStep({
                 )
               }
             >
-              <option value="sequential">Sequential</option>
-              <option value="alternating">Alternating</option>
+              <option value="sequential">{t.schedule.sequential}</option>
+              <option value="alternating">{t.schedule.alternating}</option>
             </Select>
           </Field>
 
@@ -146,18 +146,16 @@ export function PlannerScheduleStep({
                 <Sparkles class="planner-icon" aria-hidden="true" />
               )}
               {isGenerating
-                ? "Generating"
+                ? t.schedule.generating
                 : feedback.active === "success"
-                  ? "Generated"
-                  : "Generate Schedule"}
+                  ? t.schedule.generated
+                  : t.schedule.generate}
             </Button>
           </div>
         </div>
 
         <p class="planner-controls__hint">
-          {availability
-            ? "Changing the start date or algorithm clears the current schedule."
-            : "Set weekly availability before generating a schedule."}
+          {availability ? t.schedule.changeHint : t.schedule.availabilityHint}
         </p>
 
         {prerequisiteMessages.length > 0 && (
@@ -167,7 +165,7 @@ export function PlannerScheduleStep({
                 class="planner-icon planner-inline-notice__icon"
                 aria-hidden="true"
               />
-              <span>Before you generate</span>
+              <span>{t.schedule.before}</span>
             </p>
             <ul class="planner-inline-notice__list">
               {prerequisiteMessages.map((prerequisite) => (
