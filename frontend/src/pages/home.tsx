@@ -346,7 +346,7 @@ export function HomePage(_props: RoutableProps) {
                       class="planner-icon planner-brand__icon"
                       aria-hidden="true"
                     />
-                    <span>{t.app.brand}</span>
+                    <span class="planner-brand__title">{t.app.brand}</span>
                   </p>
                   <button
                     type="button"
