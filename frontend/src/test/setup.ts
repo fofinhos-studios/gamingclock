@@ -6,4 +6,5 @@ GlobalRegistrator.register();
 
 afterEach(() => {
   cleanup();
+  window.localStorage.clear();
 });

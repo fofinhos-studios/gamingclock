@@ -18,6 +18,7 @@ const DAY_NAMES = [
 const START_HOURS = Array.from({ length: 18 }, (_, index) => index + 6);
 
 interface Props {
+  availability: WeeklyAvailability | null;
   onSubmit: (availability: WeeklyAvailability) => void;
 }
 
@@ -25,18 +26,37 @@ function formatHour(hour: number): string {
   return `${hour.toString().padStart(2, "0")}:00`;
 }
 
-export function AvailabilityForm({ onSubmit }: Props) {
-  const [hoursMode, setHoursMode] = useState<"uniform" | "custom">("uniform");
-  const [startHourMode, setStartHourMode] = useState<"uniform" | "custom">(
-    "uniform",
+export function AvailabilityForm({ availability, onSubmit }: Props) {
+  const initialDays = availability?.days ?? [];
+  const initialHours = initialDays[0]?.hours ?? 2;
+  const initialStartHour = initialDays[0]?.start_hour ?? 20;
+  const initialHoursAreUniform = initialDays.every(
+    (day) => day.hours === initialHours,
   );
-  const [uniformHours, setUniformHours] = useState(2);
-  const [uniformStartHour, setUniformStartHour] = useState(20);
-  const [selectedDays, setSelectedDays] = useState<Set<number>>(new Set());
-  const [customHours, setCustomHours] = useState<Record<number, number>>({});
+  const initialStartHoursAreUniform = initialDays.every(
+    (day) => day.start_hour === initialStartHour,
+  );
+  const [hoursMode, setHoursMode] = useState<"uniform" | "custom">(
+    initialHoursAreUniform ? "uniform" : "custom",
+  );
+  const [startHourMode, setStartHourMode] = useState<"uniform" | "custom">(
+    initialStartHoursAreUniform ? "uniform" : "custom",
+  );
+  const [uniformHours, setUniformHours] = useState(initialHours);
+  const [uniformStartHour, setUniformStartHour] = useState(initialStartHour);
+  const [selectedDays, setSelectedDays] = useState<Set<number>>(
+    new Set(initialDays.map((day) => day.day_of_week)),
+  );
+  const [customHours, setCustomHours] = useState<Record<number, number>>(
+    Object.fromEntries(initialDays.map((day) => [day.day_of_week, day.hours])),
+  );
   const [customStartHours, setCustomStartHours] = useState<
     Record<number, number>
-  >({});
+  >(
+    Object.fromEntries(
+      initialDays.map((day) => [day.day_of_week, day.start_hour]),
+    ),
+  );
   const hoursModeFeedback = useTransientFeedback<"uniform" | "custom">(1300);
   const startHourModeFeedback = useTransientFeedback<"uniform" | "custom">(
     1300,
