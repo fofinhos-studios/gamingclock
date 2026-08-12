@@ -65,7 +65,10 @@ async def test_igdb_search_returns_mocked_metadata_without_credentials(monkeypat
 
 
 @pytest.mark.asyncio
-async def test_igdb_get_by_id_returns_mocked_game():
+async def test_igdb_get_by_id_returns_mocked_game(monkeypatch):
+    monkeypatch.delenv("IGDB_CLIENT_ID", raising=False)
+    monkeypatch.delenv("IGDB_CLIENT_SECRET", raising=False)
+
     result = await IGDBService().get_by_id(22)
 
     assert result.igdb_id == 22

@@ -169,15 +169,13 @@ export function HomePage(_props: RoutableProps) {
       });
   };
 
-  const removeGame = (index: number) => {
+  const removeGame = (igdbId: number) => {
     setBacklogs((currentBacklogs) =>
       currentBacklogs.map((backlog, backlogIndex) =>
         backlogIndex === activeBacklogIndex
           ? {
               ...backlog,
-              games: backlog.games.filter(
-                (_, gameIndex) => gameIndex !== index,
-              ),
+              games: backlog.games.filter((game) => game.igdb_id !== igdbId),
             }
           : backlog,
       ),
