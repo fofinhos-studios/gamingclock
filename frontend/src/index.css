@@ -110,8 +110,11 @@
   input,
   select,
   textarea {
-    transition: background-color 120ms linear, border-color 120ms linear, color
-      120ms linear, box-shadow 120ms linear;
+    transition:
+      background-color 120ms linear,
+      border-color 120ms linear,
+      color 120ms linear,
+      box-shadow 120ms linear;
   }
 
   button:focus-visible,
@@ -490,8 +493,11 @@
     text-align: left;
     cursor: pointer;
     transform: translateY(0);
-    transition: transform 160ms ease, background-color 140ms linear, color 140ms
-      linear, opacity 140ms linear;
+    transition:
+      transform 160ms ease,
+      background-color 140ms linear,
+      color 140ms linear,
+      opacity 140ms linear;
   }
 
   .planner-result:first-child {
@@ -582,13 +588,6 @@
     color: var(--muted-foreground);
   }
 
-  .planner-result--active .planner-result__meta,
-  .planner-result--active .planner-result__status,
-  .planner-result--active .planner-result__detail,
-  .planner-result--active .planner-result__summary {
-    color: var(--surface-82);
-  }
-
   .planner-result__meta-group {
     display: grid;
     justify-items: end;
@@ -609,6 +608,13 @@
 
   .planner-result__status--unmatched {
     color: var(--muted-foreground);
+  }
+
+  .planner-result--active .planner-result__meta,
+  .planner-result--active .planner-result__status,
+  .planner-result--active .planner-result__detail,
+  .planner-result--active .planner-result__summary {
+    color: var(--surface-82);
   }
 
   .planner-result--muted {
@@ -741,8 +747,10 @@
     color: var(--foreground);
     cursor: pointer;
     font: inherit;
-    transition: background-color 120ms linear, color 120ms linear, box-shadow
-      180ms ease;
+    transition:
+      background-color 120ms linear,
+      color 120ms linear,
+      box-shadow 180ms ease;
   }
 
   .planner-hltb-option:hover,
@@ -817,8 +825,11 @@
     cursor: pointer;
     padding: 0.75rem;
     transform: translateY(0);
-    transition: transform 160ms ease, background-color 120ms linear, color 120ms
-      linear, box-shadow 180ms ease;
+    transition:
+      transform 160ms ease,
+      background-color 120ms linear,
+      color 120ms linear,
+      box-shadow 180ms ease;
   }
 
   .planner-option-card {
@@ -945,8 +956,11 @@
     color: inherit;
     cursor: pointer;
     appearance: none;
-    transition: background-color 120ms linear, color 120ms linear, transform
-      140ms ease, box-shadow 180ms ease;
+    transition:
+      background-color 120ms linear,
+      color 120ms linear,
+      transform 140ms ease,
+      box-shadow 180ms ease;
   }
 
   .planner-hour-chip:hover {
@@ -993,8 +1007,9 @@
   }
 
   .planner-choice--confirmed {
-    box-shadow: inset 0 0 0 1px var(--foreground-22), 0 0 0 1px
-      var(--foreground-06);
+    box-shadow:
+      inset 0 0 0 1px var(--foreground-22),
+      0 0 0 1px var(--foreground-06);
     animation: planner-confirm-flash 900ms ease;
   }
 
@@ -1175,15 +1190,16 @@
 
   .ui-select {
     appearance: none;
-    background-image: linear-gradient(
-        45deg,
-        transparent 50%,
-        var(--foreground) 50%
-      ), linear-gradient(135deg, var(--foreground) 50%, transparent 50%);
-    background-position: calc(100% - 1rem) calc(50% - 0.14rem),
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--foreground) 50%),
+      linear-gradient(135deg, var(--foreground) 50%, transparent 50%);
+    background-position:
+      calc(100% - 1rem) calc(50% - 0.14rem),
       calc(100% - 0.72rem) calc(50% - 0.14rem);
     background-repeat: no-repeat;
-    background-size: 0.34rem 0.34rem, 0.34rem 0.34rem;
+    background-size:
+      0.34rem 0.34rem,
+      0.34rem 0.34rem;
     padding-right: 2.2rem;
   }
 
@@ -1217,8 +1233,9 @@
     background: var(--foreground-92);
     border-color: var(--foreground-92);
     color: var(--surface);
-    box-shadow: inset 0 0 0 1px var(--surface-08), 0 0.45rem 1rem
-      var(--foreground-1);
+    box-shadow:
+      inset 0 0 0 1px var(--surface-08),
+      0 0.45rem 1rem var(--foreground-1);
     animation: planner-success-settle 1400ms ease;
   }
 
@@ -1249,8 +1266,9 @@
   }
 
   .planner-rail__tab--confirmed {
-    box-shadow: inset 0 0 0 1px var(--foreground-18), 0 0 0 1px
-      var(--foreground-04);
+    box-shadow:
+      inset 0 0 0 1px var(--foreground-18),
+      0 0 0 1px var(--foreground-04);
     animation: planner-confirm-flash 900ms ease;
   }
 }
@@ -1281,13 +1299,15 @@
 
 @keyframes planner-confirm-flash {
   0% {
-    box-shadow: inset 0 0 0 1px var(--foreground-32), 0 0 0 0
-      var(--foreground-12);
+    box-shadow:
+      inset 0 0 0 1px var(--foreground-32),
+      0 0 0 0 var(--foreground-12);
   }
 
   100% {
-    box-shadow: inset 0 0 0 1px var(--foreground-22), 0 0 0 1px
-      var(--foreground-04);
+    box-shadow:
+      inset 0 0 0 1px var(--foreground-22),
+      0 0 0 1px var(--foreground-04);
   }
 }
 

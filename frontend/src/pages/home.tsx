@@ -21,6 +21,7 @@ import {
   type WeeklyAvailability,
   getSelectedGameHours,
 } from "../types";
+
 const TAB_CONTENT: Record<PlannerTab, { title: string; eyebrow: string }> = {
   games: {
     title: "Build backlog",
@@ -355,7 +356,8 @@ export function HomePage(_props: RoutableProps) {
                   <p class="planner-toolbar__eyebrow">{activeStep.eyebrow}</p>
                   <h1 class="planner-toolbar__title">{activeStep.title}</h1>
                 </div>
-                <div aria-label="Backlogs" class="planner-toolbar__backlogs">
+                <fieldset class="planner-toolbar__backlogs">
+                  <legend class="sr-only">Backlogs</legend>
                   {backlogs.map((backlog, index) => (
                     <button
                       key={`${backlog.name}-${index}`}
@@ -376,7 +378,7 @@ export function HomePage(_props: RoutableProps) {
                     All backlogs: {allBacklogGames.length} games,{" "}
                     {totalAllBacklogsHours.toFixed(1)}h
                   </p>
-                </div>
+                </fieldset>
               </div>
             </header>
 
