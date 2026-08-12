@@ -10,6 +10,7 @@ import {
 } from "lucide-preact";
 import { useState } from "preact/hooks";
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
+import { useLanguage } from "../i18n/i18n";
 import type { ScheduleResponse } from "../types";
 import { Button } from "./ui";
 
@@ -36,13 +37,14 @@ function calculateElapsedDays(schedule: ScheduleResponse): number | null {
 }
 
 export function ScheduleView({ schedule, onDownloadIcal }: Props) {
+  const { t } = useLanguage();
   const [isDownloading, setIsDownloading] = useState(false);
   const feedback = useTransientFeedback<"success">();
 
   if (schedule.sessions.length === 0) {
     return (
       <section>
-        <p>No sessions generated.</p>
+        <p>{t.schedule.noSessions}</p>
       </section>
     );
   }
@@ -64,7 +66,7 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
     <section aria-labelledby="schedule-heading" class="space-y-4">
       <div class="planner-pane__header">
         <div class="space-y-1">
-          <p class="section-eyebrow">Output</p>
+          <p class="section-eyebrow">{t.schedule.output}</p>
           <h2
             id="schedule-heading"
             class="planner-panel__title planner-heading"
@@ -73,7 +75,7 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
               class="planner-icon planner-heading__icon"
               aria-hidden="true"
             />
-            <span>Generated schedule</span>
+            <span>{t.schedule.generatedHeading}</span>
           </h2>
         </div>
 
@@ -102,10 +104,10 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
             <Download class="planner-icon" aria-hidden="true" />
           )}
           {isDownloading
-            ? "Downloading"
+            ? t.schedule.downloading
             : feedback.active === "success"
-              ? "Downloaded"
-              : "Download .ics"}
+              ? t.schedule.downloaded
+              : t.schedule.download}
         </Button>
       </div>
 
@@ -116,7 +118,7 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
               class="planner-icon planner-metric__icon"
               aria-hidden="true"
             />
-            <span>Total planned hours</span>
+            <span>{t.schedule.totalHours}</span>
           </p>
           <p class="planner-metric__value">{schedule.total_hours.toFixed(1)}</p>
         </div>
@@ -126,10 +128,10 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
               class="planner-icon planner-metric__icon"
               aria-hidden="true"
             />
-            <span>Estimated finish</span>
+            <span>{t.schedule.estimatedFinish}</span>
           </p>
           <p class="planner-metric__value">
-            {schedule.estimated_end_date ?? "Not available"}
+            {schedule.estimated_end_date ?? t.schedule.unavailable}
           </p>
         </div>
         <div class="planner-metric">
@@ -138,7 +140,7 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
               class="planner-icon planner-metric__icon"
               aria-hidden="true"
             />
-            <span>Sessions</span>
+            <span>{t.schedule.sessions}</span>
           </p>
           <p class="planner-metric__value">{schedule.sessions.length}</p>
         </div>
@@ -149,24 +151,24 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
                 class="planner-icon planner-metric__icon"
                 aria-hidden="true"
               />
-              <span>Total elapsed days</span>
+              <span>{t.schedule.elapsed}</span>
             </p>
             <p class="planner-metric__value">
-              {totalElapsedDays} day{totalElapsedDays === 1 ? "" : "s"}
+              {t.schedule.days(totalElapsedDays)}
             </p>
           </div>
         )}
       </div>
 
       <div class="space-y-3">
-        <p class="section-eyebrow">Session timeline</p>
+        <p class="section-eyebrow">{t.schedule.timeline}</p>
         <ol class="timeline">
           {schedule.sessions.map((session, index) => (
             <li key={`${session.game_name}-${session.date}-${index}`}>
               <article class="timeline-entry">
                 <div class="timeline-entry__header">
                   <p class="timeline-meta">
-                    {session.date} / starts {session.start_time}
+                    {t.schedule.starts(session.date, session.start_time)}
                   </p>
                   <p class="timeline-duration">
                     {session.duration_hours.toFixed(1)}h
@@ -174,7 +176,7 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
                 </div>
                 <h3 class="timeline-title">{session.game_name}</h3>
                 <p class="timeline-detail">
-                  {session.duration_hours.toFixed(1)} planned hours
+                  {t.schedule.plannedHours(session.duration_hours.toFixed(1))}
                 </p>
               </article>
             </li>

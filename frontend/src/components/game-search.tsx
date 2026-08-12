@@ -2,6 +2,7 @@ import { Check, LoaderCircle, Search } from "lucide-preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
+import { useLanguage } from "../i18n/i18n";
 import { searchGames } from "../services/api";
 import type { CatalogGame, ListGame } from "../types";
 import { Field, Input } from "./ui";
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function GameSearch({ games, onAddGame }: Props) {
+  const { t } = useLanguage();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const resultRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [query, setQuery] = useState("");
@@ -60,7 +62,7 @@ export function GameSearch({ games, onAddGame }: Props) {
       } catch (searchError) {
         setResults([]);
         setError(
-          searchError instanceof Error ? searchError.message : "Search failed",
+          searchError instanceof Error ? searchError.message : t.search.failed,
         );
       } finally {
         setLoading(false);
@@ -68,7 +70,7 @@ export function GameSearch({ games, onAddGame }: Props) {
     }, 250);
 
     return () => window.clearTimeout(timeoutId);
-  }, [query]);
+  }, [query, t.search.failed]);
 
   useEffect(() => {
     if (highlightedIndex < 0) {
@@ -82,7 +84,7 @@ export function GameSearch({ games, onAddGame }: Props) {
 
   const handleAddGame = (game: CatalogGame) => {
     if (games.some((backlogGame) => backlogGame.igdb_id === game.igdb_id)) {
-      setInfoMessage(`${game.name} is already in your backlog.`);
+      setInfoMessage(t.search.alreadyAdded(game.name));
       setError("");
       return;
     }
@@ -151,13 +153,13 @@ export function GameSearch({ games, onAddGame }: Props) {
               class="planner-icon planner-heading__icon"
               aria-hidden="true"
             />
-            <span>Find games</span>
+            <span>{t.search.title}</span>
           </h2>
         </div>
       </div>
 
       <div ref={containerRef} class="space-y-3">
-        <Field label="Search by title" controlId="game-search-input">
+        <Field label={t.search.label} controlId="game-search-input">
           <Input
             id="game-search-input"
             type="text"
@@ -172,7 +174,7 @@ export function GameSearch({ games, onAddGame }: Props) {
             onInput={(event) =>
               setQuery((event.target as HTMLInputElement).value)
             }
-            placeholder="Search for a game"
+            placeholder={t.search.placeholder}
             autoComplete="off"
           />
         </Field>
@@ -201,7 +203,7 @@ export function GameSearch({ games, onAddGame }: Props) {
                     class="planner-icon planner-icon--spin"
                     aria-hidden="true"
                   />
-                  <span>Finding games...</span>
+                  <span>{t.search.finding}</span>
                 </p>
               )}
               {error && (
@@ -210,7 +212,9 @@ export function GameSearch({ games, onAddGame }: Props) {
                 </p>
               )}
               {!loading && !error && results.length === 0 && (
-                <p class="planner-search-results__message">No matches found.</p>
+                <p class="planner-search-results__message">
+                  {t.search.noMatches}
+                </p>
               )}
               {!loading &&
                 !error &&
@@ -239,7 +243,7 @@ export function GameSearch({ games, onAddGame }: Props) {
                       onFocus={() => setHighlightedIndex(index)}
                       onClick={() => handleAddGame(game)}
                       disabled={addingId === game.igdb_id}
-                      aria-label={`Add ${game.name} to backlog`}
+                      aria-label={t.search.addGame(game.name)}
                     >
                       {game.cover_url ? (
                         <img
@@ -253,7 +257,7 @@ export function GameSearch({ games, onAddGame }: Props) {
                         />
                       ) : (
                         <div class="planner-result__cover planner-result__cover--empty">
-                          No image
+                          {t.list.noImage}
                         </div>
                       )}
 
@@ -263,7 +267,7 @@ export function GameSearch({ games, onAddGame }: Props) {
                           <div class="planner-result__meta-group">
                             <p class="planner-result__meta">
                               {game.release_year === null
-                                ? "Unknown year"
+                                ? t.search.unknownYear
                                 : game.release_year}
                               {game.rating === null
                                 ? ""
@@ -275,13 +279,13 @@ export function GameSearch({ games, onAddGame }: Props) {
                         <p class="planner-result__detail">
                           {game.platforms.length > 0
                             ? game.platforms.join(", ")
-                            : "Platforms unavailable"}
+                            : t.search.platformsUnavailable}
                         </p>
 
                         <p class="planner-result__detail">
                           {game.genres.length > 0
                             ? game.genres.join(", ")
-                            : "Genres unavailable"}
+                            : t.search.genresUnavailable}
                         </p>
 
                         {game.summary && (
@@ -300,7 +304,9 @@ export function GameSearch({ games, onAddGame }: Props) {
                               <Check class="planner-icon" aria-hidden="true" />
                             )}
                             <span>
-                              {addingId === game.igdb_id ? "Adding" : "Added"}
+                              {addingId === game.igdb_id
+                                ? t.search.adding
+                                : t.search.added}
                             </span>
                           </p>
                         )}
@@ -311,7 +317,7 @@ export function GameSearch({ games, onAddGame }: Props) {
             </div>
           )}
 
-        <p class="planner-search-attribution">Data from IGDB.</p>
+        <p class="planner-search-attribution">{t.search.attribution}</p>
       </div>
     </section>
   );

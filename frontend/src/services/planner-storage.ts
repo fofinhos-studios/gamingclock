@@ -18,10 +18,13 @@ export interface PlannerState {
   startDate: string;
 }
 
-export function createInitialPlannerState(startDate: string): PlannerState {
+export function createInitialPlannerState(
+  startDate: string,
+  defaultBacklogName = "My Backlog",
+): PlannerState {
   return {
     activeTab: "games",
-    backlogs: [{ name: "My Backlog", games: [] }],
+    backlogs: [{ name: defaultBacklogName, games: [] }],
     activeBacklogIndex: 0,
     availability: null,
     algorithm: "sequential",
@@ -30,19 +33,22 @@ export function createInitialPlannerState(startDate: string): PlannerState {
   };
 }
 
-export function loadPlannerState(startDate: string): PlannerState {
+export function loadPlannerState(
+  startDate: string,
+  defaultBacklogName = "My Backlog",
+): PlannerState {
   try {
     const storedState = window.localStorage.getItem(STORAGE_KEY);
     if (!storedState) {
-      return createInitialPlannerState(startDate);
+      return createInitialPlannerState(startDate, defaultBacklogName);
     }
 
     const parsedState: unknown = JSON.parse(storedState);
     return isPlannerState(parsedState)
       ? parsedState
-      : createInitialPlannerState(startDate);
+      : createInitialPlannerState(startDate, defaultBacklogName);
   } catch {
-    return createInitialPlannerState(startDate);
+    return createInitialPlannerState(startDate, defaultBacklogName);
   }
 }
 

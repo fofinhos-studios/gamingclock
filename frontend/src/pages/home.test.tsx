@@ -46,6 +46,27 @@ function createCatalogResult(
 }
 
 describe("HomePage", () => {
+  test("defaults to dark theme and lets the user switch to light theme", async () => {
+    const user = userEvent.setup();
+    const view = render(<HomePage path="/" />);
+
+    expect(document.documentElement.dataset.theme).toBe("dark");
+
+    await user.click(
+      view.getByRole("button", { name: /switch to light theme/i }),
+    );
+
+    expect(document.documentElement.dataset.theme).toBe("light");
+    expect(window.localStorage.getItem("gaming-clock-theme")).toBe("light");
+
+    view.unmount();
+    const restoredView = render(<HomePage path="/" />);
+    expect(document.documentElement.dataset.theme).toBe("light");
+    expect(
+      restoredView.getByRole("button", { name: /switch to dark theme/i }),
+    ).toBeTruthy();
+  });
+
   test("guides people through the planner with a clickable progress stepper", async () => {
     const user = userEvent.setup();
     const view = render(<HomePage path="/" />);
@@ -542,13 +563,17 @@ describe("HomePage", () => {
     expect((restoredSearchInput as HTMLInputElement).value).toBe("z");
   });
 
-  test("supports horizontal keyboard navigation for the tablist", async () => {
+  test("supports vertical keyboard navigation for the sidebar tablist", async () => {
     const user = userEvent.setup();
 
     const view = render(<HomePage path="/" />);
     const gamesTab = view.getByRole("tab", { name: /games/i });
     const availabilityTab = view.getByRole("tab", { name: /availability/i });
     const scheduleTab = view.getByRole("tab", { name: /schedule/i });
+
+    expect(view.getByRole("tablist").getAttribute("aria-orientation")).toBe(
+      "vertical",
+    );
 
     expect(gamesTab.getAttribute("tabindex")).toBe("0");
     expect(availabilityTab.getAttribute("tabindex")).toBe("-1");
@@ -557,7 +582,7 @@ describe("HomePage", () => {
     gamesTab.focus();
     expect(document.activeElement).toBe(gamesTab);
 
-    await user.keyboard("{ArrowRight}");
+    await user.keyboard("{ArrowDown}");
     expect(document.activeElement).toBe(availabilityTab);
     expect(availabilityTab.getAttribute("aria-selected")).toBe("true");
     expect(availabilityTab.getAttribute("tabindex")).toBe("0");
@@ -575,7 +600,7 @@ describe("HomePage", () => {
     expect(gamesTab.getAttribute("tabindex")).toBe("0");
     expect(view.getByRole("tabpanel").id).toBe("planner-panel-games");
 
-    await user.keyboard("{ArrowLeft}");
+    await user.keyboard("{ArrowUp}");
     expect(document.activeElement).toBe(scheduleTab);
     expect(scheduleTab.getAttribute("aria-selected")).toBe("true");
     expect(scheduleTab.getAttribute("tabindex")).toBe("0");

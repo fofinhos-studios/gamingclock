@@ -1,4 +1,4 @@
-import { Gamepad2 } from "lucide-preact";
+import { Gamepad2, Moon, Sun } from "lucide-preact";
 import type { RoutableProps } from "preact-router";
 import { useLayoutEffect, useState } from "preact/hooks";
 
@@ -6,6 +6,7 @@ import { PlannerAvailabilityStep } from "../components/planner-availability-step
 import { PlannerGamesStep } from "../components/planner-games-step";
 import { PlannerScheduleStep } from "../components/planner-schedule-step";
 import { type PlannerTab, PlannerTabs } from "../components/planner-tabs";
+import { useLanguage } from "../i18n/i18n";
 import { downloadIcal, generateSchedule, resolveGame } from "../services/api";
 import {
   loadPlannerState,
@@ -22,24 +23,21 @@ import {
   getSelectedGameHours,
 } from "../types";
 
-const TAB_CONTENT: Record<PlannerTab, { title: string; eyebrow: string }> = {
-  games: {
-    title: "Build backlog",
-    eyebrow: "Start here — add the games you want to play",
-  },
-  availability: {
-    title: "Choose your weekly play time",
-    eyebrow: "Tell us when you usually have time to play",
-  },
-  schedule: {
-    title: "Make your schedule",
-    eyebrow: "Turn your backlog and free time into a play plan",
-  },
-};
+type Theme = "dark" | "light";
+
+const THEME_STORAGE_KEY = "gaming-clock-theme";
+
+function loadTheme(): Theme {
+  return window.localStorage.getItem(THEME_STORAGE_KEY) === "light"
+    ? "light"
+    : "dark";
+}
 
 export function HomePage(_props: RoutableProps) {
+  const { language, setLanguage, t } = useLanguage();
+  const [theme, setTheme] = useState<Theme>(loadTheme);
   const [initialState] = useState(() =>
-    loadPlannerState(getLocalCalendarDate()),
+    loadPlannerState(getLocalCalendarDate(), t.app.defaultBacklog),
   );
   const [activeTab, setActiveTab] = useState<PlannerTab>(
     initialState.activeTab,
@@ -79,6 +77,15 @@ export function HomePage(_props: RoutableProps) {
     schedule,
     startDate,
   ]);
+
+  useLayoutEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
+
+  useLayoutEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
   const activeBacklog = backlogs[activeBacklogIndex];
   const backlogName = activeBacklog.name;
   const games = activeBacklog.games;
@@ -107,8 +114,7 @@ export function HomePage(_props: RoutableProps) {
       ? [
           {
             id: "games-required",
-            message:
-              "Add at least one game to the backlog before generating a schedule.",
+            message: t.app.prerequisites.games,
           },
         ]
       : []),
@@ -116,8 +122,7 @@ export function HomePage(_props: RoutableProps) {
       ? [
           {
             id: "availability-required",
-            message:
-              "Set your weekly availability before generating a schedule.",
+            message: t.app.prerequisites.availability,
           },
         ]
       : []),
@@ -125,7 +130,7 @@ export function HomePage(_props: RoutableProps) {
       ? [
           {
             id: "game-times-loading",
-            message: "We're retrieving playtime estimates for your games.",
+            message: t.app.prerequisites.loading,
           },
         ]
       : []),
@@ -133,13 +138,12 @@ export function HomePage(_props: RoutableProps) {
       ? [
           {
             id: "game-times-unavailable",
-            message:
-              "A playtime estimate is unavailable for one or more games.",
+            message: t.app.prerequisites.unavailable,
           },
         ]
       : []),
   ];
-  const activeStep = TAB_CONTENT[activeTab];
+  const activeStep = t.app.steps[activeTab];
   const completedTabs: PlannerTab[] = [
     ...(games.length > 0 && !hasLoadingGames && !hasUnresolvedGames
       ? (["games"] as const)
@@ -253,7 +257,7 @@ export function HomePage(_props: RoutableProps) {
   const addBacklog = () => {
     setBacklogs((currentBacklogs) => [
       ...currentBacklogs,
-      { name: `Backlog ${currentBacklogs.length + 1}`, games: [] },
+      { name: t.app.newBacklogName(currentBacklogs.length + 1), games: [] },
     ]);
     setActiveBacklogIndex(backlogs.length);
     clearGeneratedSchedule();
@@ -276,7 +280,7 @@ export function HomePage(_props: RoutableProps) {
       return true;
     } catch (error) {
       setActionError(
-        error instanceof Error ? error.message : "Schedule generation failed",
+        error instanceof Error ? error.message : t.app.scheduleFailed,
       );
       return false;
     }
@@ -304,7 +308,7 @@ export function HomePage(_props: RoutableProps) {
       return true;
     } catch (error) {
       setActionError(
-        error instanceof Error ? error.message : "iCal download failed",
+        error instanceof Error ? error.message : t.app.downloadFailed,
       );
       return false;
     }
@@ -328,7 +332,7 @@ export function HomePage(_props: RoutableProps) {
   return (
     <div class="page-shell">
       <a href="#planner" class="skip-link">
-        Skip to planner
+        {t.app.skipToPlanner}
       </a>
 
       <main id="planner" class="planner-app">
@@ -342,22 +346,64 @@ export function HomePage(_props: RoutableProps) {
                       class="planner-icon planner-brand__icon"
                       aria-hidden="true"
                     />
-                    <span>Gaming Clock</span>
+                    <span>{t.app.brand}</span>
                   </p>
+                  <button
+                    type="button"
+                    class="theme-toggle"
+                    aria-label={t.app.theme.switchTo(
+                      theme === "dark" ? t.app.theme.light : t.app.theme.dark,
+                    )}
+                    aria-pressed={theme === "light"}
+                    onClick={() =>
+                      setTheme((currentTheme) =>
+                        currentTheme === "dark" ? "light" : "dark",
+                      )
+                    }
+                  >
+                    {theme === "dark" ? (
+                      <Moon aria-hidden="true" />
+                    ) : (
+                      <Sun aria-hidden="true" />
+                    )}
+                    <span>
+                      {theme === "dark" ? t.app.theme.dark : t.app.theme.light}
+                    </span>
+                  </button>
+                  <label class="language-chooser">
+                    <span>{t.language.label}</span>
+                    <select
+                      value={language}
+                      onChange={(event) =>
+                        setLanguage(
+                          (event.target as HTMLSelectElement)
+                            .value as typeof language,
+                        )
+                      }
+                    >
+                      <option value="en">{t.language.english}</option>
+                      <option value="pt-BR">{t.language.portuguese}</option>
+                    </select>
+                  </label>
                 </div>
-                <PlannerTabs
-                  activeTab={activeTab}
-                  completedTabs={completedTabs}
-                  onChange={setActiveTab}
-                />
               </div>
+            </header>
+            <PlannerTabs
+              activeTab={activeTab}
+              completedTabs={completedTabs}
+              onChange={setActiveTab}
+            />
+            <div class="planner-workspace__main">
               <div class="planner-toolbar__content">
                 <div class="planner-toolbar__main">
                   <p class="planner-toolbar__eyebrow">{activeStep.eyebrow}</p>
                   <h1 class="planner-toolbar__title">{activeStep.title}</h1>
                 </div>
-                <fieldset class="planner-toolbar__backlogs">
-                  <legend class="sr-only">Backlogs</legend>
+                <fieldset
+                  class="planner-toolbar__backlogs"
+                  aria-label={t.app.backlogs}
+                >
+                  <legend class="sr-only">{t.app.backlogs}</legend>
                   {backlogs.map((backlog, index) => (
                     <button
                       key={`${backlog.name}-${index}`}
@@ -372,69 +418,70 @@ export function HomePage(_props: RoutableProps) {
                     </button>
                   ))}
                   <button type="button" onClick={addBacklog}>
-                    New backlog
+                    {t.app.newBacklog}
                   </button>
                   <p>
-                    All backlogs: {allBacklogGames.length} games,{" "}
-                    {totalAllBacklogsHours.toFixed(1)}h
+                    {t.app.allBacklogs(
+                      allBacklogGames.length,
+                      totalAllBacklogsHours.toFixed(1),
+                    )}
                   </p>
                 </fieldset>
               </div>
-            </header>
+              <div class="planner-workspace__body">
+                <section
+                  id="planner-panel-games"
+                  role="tabpanel"
+                  aria-labelledby="planner-tab-games"
+                  hidden={activeTab !== "games"}
+                  class="planner-panel"
+                >
+                  <PlannerGamesStep
+                    backlogName={backlogName}
+                    games={games}
+                    onAddGame={addGame}
+                    onSelectGameTime={selectGameTime}
+                    onRemoveGame={removeGame}
+                    onRenameBacklog={renameBacklog}
+                  />
+                </section>
 
-            <div class="planner-workspace__body">
-              <section
-                id="planner-panel-games"
-                role="tabpanel"
-                aria-labelledby="planner-tab-games"
-                hidden={activeTab !== "games"}
-                class="planner-panel"
-              >
-                <PlannerGamesStep
-                  backlogName={backlogName}
-                  games={games}
-                  onAddGame={addGame}
-                  onSelectGameTime={selectGameTime}
-                  onRemoveGame={removeGame}
-                  onRenameBacklog={renameBacklog}
-                />
-              </section>
+                <section
+                  id="planner-panel-availability"
+                  role="tabpanel"
+                  aria-labelledby="planner-tab-availability"
+                  hidden={activeTab !== "availability"}
+                  class="planner-panel"
+                >
+                  <PlannerAvailabilityStep
+                    availability={availability}
+                    gameCount={games.length}
+                    onSubmit={handleSetAvailability}
+                  />
+                </section>
 
-              <section
-                id="planner-panel-availability"
-                role="tabpanel"
-                aria-labelledby="planner-tab-availability"
-                hidden={activeTab !== "availability"}
-                class="planner-panel"
-              >
-                <PlannerAvailabilityStep
-                  availability={availability}
-                  gameCount={games.length}
-                  onSubmit={handleSetAvailability}
-                />
-              </section>
-
-              <section
-                id="planner-panel-schedule"
-                role="tabpanel"
-                aria-labelledby="planner-tab-schedule"
-                hidden={activeTab !== "schedule"}
-                class="planner-panel"
-              >
-                <PlannerScheduleStep
-                  availability={availability}
-                  algorithm={algorithm}
-                  startDate={startDate}
-                  schedule={schedule}
-                  actionError={actionError}
-                  canGenerateSchedule={canGenerateSchedule}
-                  prerequisiteMessages={schedulePrerequisites}
-                  onAlgorithmChange={handleAlgorithmChange}
-                  onStartDateChange={handleStartDateChange}
-                  onGenerateSchedule={handleGenerateSchedule}
-                  onDownloadIcal={handleDownloadIcal}
-                />
-              </section>
+                <section
+                  id="planner-panel-schedule"
+                  role="tabpanel"
+                  aria-labelledby="planner-tab-schedule"
+                  hidden={activeTab !== "schedule"}
+                  class="planner-panel"
+                >
+                  <PlannerScheduleStep
+                    availability={availability}
+                    algorithm={algorithm}
+                    startDate={startDate}
+                    schedule={schedule}
+                    actionError={actionError}
+                    canGenerateSchedule={canGenerateSchedule}
+                    prerequisiteMessages={schedulePrerequisites}
+                    onAlgorithmChange={handleAlgorithmChange}
+                    onStartDateChange={handleStartDateChange}
+                    onGenerateSchedule={handleGenerateSchedule}
+                    onDownloadIcal={handleDownloadIcal}
+                  />
+                </section>
+              </div>
             </div>
           </div>
         </div>

@@ -2,18 +2,9 @@ import { Check, Clock3, Save } from "lucide-preact";
 import { useState } from "preact/hooks";
 
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
+import { useLanguage } from "../i18n/i18n";
 import type { DayAvailability, WeeklyAvailability } from "../types";
 import { Button, Field, Input } from "./ui";
-
-const DAY_NAMES = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
 
 const START_HOURS = Array.from({ length: 18 }, (_, index) => index + 6);
 
@@ -27,6 +18,7 @@ function formatHour(hour: number): string {
 }
 
 export function AvailabilityForm({ availability, onSubmit }: Props) {
+  const { t } = useLanguage();
   const initialDays = availability?.days ?? [];
   const initialHours = initialDays[0]?.hours ?? 2;
   const initialStartHour = initialDays[0]?.start_hour ?? 20;
@@ -96,11 +88,11 @@ export function AvailabilityForm({ availability, onSubmit }: Props) {
   return (
     <section aria-labelledby="availability-heading" class="space-y-4">
       <h3 id="availability-heading" class="sr-only">
-        Availability
+        {t.availability.form.heading}
       </h3>
 
       <fieldset class="planner-toggle-grid">
-        <legend class="sr-only">Availability mode</legend>
+        <legend class="sr-only">{t.availability.form.mode}</legend>
         <label
           class={`planner-option-card ${
             hoursMode === "uniform" ? "planner-option-card--active" : ""
@@ -117,7 +109,9 @@ export function AvailabilityForm({ availability, onSubmit }: Props) {
           />
           <div class="planner-option-card__body">
             <div class="planner-choice-row">
-              <p class="planner-option-card__label">Uniform</p>
+              <p class="planner-option-card__label">
+                {t.availability.form.uniform}
+              </p>
               {hoursMode === "uniform" && (
                 <Check
                   class="planner-icon planner-choice-indicator"
@@ -126,7 +120,7 @@ export function AvailabilityForm({ availability, onSubmit }: Props) {
               )}
             </div>
             <p class="planner-option-card__text">
-              Same hours on every selected day
+              {t.availability.form.sameHours}
             </p>
           </div>
         </label>
@@ -147,7 +141,9 @@ export function AvailabilityForm({ availability, onSubmit }: Props) {
           />
           <div class="planner-option-card__body">
             <div class="planner-choice-row">
-              <p class="planner-option-card__label">Custom</p>
+              <p class="planner-option-card__label">
+                {t.availability.form.custom}
+              </p>
               {hoursMode === "custom" && (
                 <Check
                   class="planner-icon planner-choice-indicator"
@@ -155,14 +151,16 @@ export function AvailabilityForm({ availability, onSubmit }: Props) {
                 />
               )}
             </div>
-            <p class="planner-option-card__text">Different hours by day</p>
+            <p class="planner-option-card__text">
+              {t.availability.form.differentHours}
+            </p>
           </div>
         </label>
       </fieldset>
 
       {hoursMode === "uniform" && (
         <Field
-          label="Hours per selected day"
+          label={t.availability.form.hoursPerDay}
           controlId="uniform-hours"
           class="max-w-xs"
         >
@@ -182,14 +180,14 @@ export function AvailabilityForm({ availability, onSubmit }: Props) {
 
       <div class="space-y-3">
         <div class="planner-section-heading">
-          <p class="section-eyebrow">Start hour</p>
+          <p class="section-eyebrow">{t.availability.form.startHour}</p>
           <p class="planner-section-heading__text">
-            Use one start hour across the week, or set it per day.
+            {t.availability.form.startHourCopy}
           </p>
         </div>
 
         <fieldset class="planner-toggle-grid">
-          <legend class="sr-only">Start hour mode</legend>
+          <legend class="sr-only">{t.availability.form.startHourMode}</legend>
           <label
             class={`planner-option-card ${
               startHourMode === "uniform" ? "planner-option-card--active" : ""
@@ -206,7 +204,9 @@ export function AvailabilityForm({ availability, onSubmit }: Props) {
             />
             <div class="planner-option-card__body">
               <div class="planner-choice-row">
-                <p class="planner-option-card__label">Uniform</p>
+                <p class="planner-option-card__label">
+                  {t.availability.form.uniform}
+                </p>
                 {startHourMode === "uniform" && (
                   <Check
                     class="planner-icon planner-choice-indicator"
@@ -215,7 +215,7 @@ export function AvailabilityForm({ availability, onSubmit }: Props) {
                 )}
               </div>
               <p class="planner-option-card__text">
-                Same start hour on every selected day
+                {t.availability.form.sameStart}
               </p>
             </div>
           </label>
@@ -236,7 +236,9 @@ export function AvailabilityForm({ availability, onSubmit }: Props) {
             />
             <div class="planner-option-card__body">
               <div class="planner-choice-row">
-                <p class="planner-option-card__label">Custom</p>
+                <p class="planner-option-card__label">
+                  {t.availability.form.custom}
+                </p>
                 {startHourMode === "custom" && (
                   <Check
                     class="planner-icon planner-choice-indicator"
@@ -245,7 +247,7 @@ export function AvailabilityForm({ availability, onSubmit }: Props) {
                 )}
               </div>
               <p class="planner-option-card__text">
-                Different start hour by day
+                {t.availability.form.differentStart}
               </p>
             </div>
           </label>
@@ -253,7 +255,7 @@ export function AvailabilityForm({ availability, onSubmit }: Props) {
 
         {startHourMode === "uniform" && (
           <fieldset class="planner-hour-fieldset">
-            <legend class="sr-only">Uniform start hour</legend>
+            <legend class="sr-only">{t.availability.form.uniformStart}</legend>
             <div class="planner-hour-grid">
               {START_HOURS.map((hour) => (
                 <button
@@ -283,9 +285,9 @@ export function AvailabilityForm({ availability, onSubmit }: Props) {
       </div>
 
       <div class="space-y-3">
-        <p class="section-eyebrow">Weekly days</p>
+        <p class="section-eyebrow">{t.availability.form.weeklyDays}</p>
         <div class="planner-day-grid">
-          {DAY_NAMES.map((name, index) => {
+          {t.availability.days.map((name, index) => {
             const selected = selectedDays.has(index);
 
             return (
@@ -313,9 +315,10 @@ export function AvailabilityForm({ availability, onSubmit }: Props) {
                       )}
                     </div>
                     <p class="planner-day-card__text">
-                      {`${getDayHours(index)} hour${
-                        getDayHours(index) === 1 ? "" : "s"
-                      } / ${formatHour(getDayStartHour(index))}`}
+                      {t.availability.form.hoursAt(
+                        getDayHours(index),
+                        formatHour(getDayStartHour(index)),
+                      )}
                     </p>
                   </div>
                 </div>
@@ -325,7 +328,7 @@ export function AvailabilityForm({ availability, onSubmit }: Props) {
                     <div class="planner-day-card__controls">
                       {hoursMode === "custom" && (
                         <Field
-                          label={`${name} hours`}
+                          label={t.availability.form.dayHours(name)}
                           controlId={`custom-hours-${index}`}
                         >
                           <Input
@@ -351,7 +354,7 @@ export function AvailabilityForm({ availability, onSubmit }: Props) {
                         <fieldset class="planner-hour-fieldset">
                           <legend class="planner-subtle-label">
                             <Clock3 class="planner-icon" aria-hidden="true" />
-                            <span>{name} start hour</span>
+                            <span>{t.availability.form.dayStart(name)}</span>
                           </legend>
                           <div class="planner-hour-grid planner-hour-grid--compact">
                             {START_HOURS.map((hour) => (
@@ -407,7 +410,9 @@ export function AvailabilityForm({ availability, onSubmit }: Props) {
           ) : (
             <Save class="planner-icon" aria-hidden="true" />
           )}
-          {submitFeedback.active === "saved" ? "Saved" : "Save Availability"}
+          {submitFeedback.active === "saved"
+            ? t.availability.form.saved
+            : t.availability.form.save}
         </Button>
       </div>
     </section>
