@@ -37,16 +37,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: oven-sh/setup-bun@v2
-
-      - name: Install dependencies
-        run: cd frontend && bun install
+      - uses: jdx/aube-action@v1
+        with:
+          node-version: "22"
+          run-install: true
 
       - name: Audit dependencies
-        run: cd frontend && bun audit
+        run: cd frontend && aube audit
 
       - name: Lint
-        run: cd frontend && bunx @biomejs/biome check src/
+        run: cd frontend && aube exec biome check src/
+
+      - name: Test
+        run: cd frontend && aube test
 
       - name: Build
-        run: cd frontend && bun run build
+        run: cd frontend && aube build

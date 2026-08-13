@@ -21,18 +21,23 @@ local ci_steps = new Mapping<String, Step> {
     exclusive = true
   }
   ["frontend-audit"] {
-    check = "cd frontend && bun audit"
-    fix = "cd frontend && bun audit"
+    check = "cd frontend && aube audit"
+    fix = "cd frontend && aube audit"
     exclusive = true
   }
   ["frontend-lint"] {
-    check = "cd frontend && bunx @biomejs/biome check src/"
-    fix = "cd frontend && bunx @biomejs/biome check src/"
+    check = "cd frontend && aube exec biome check src/"
+    fix = "cd frontend && aube exec biome check src/"
+    exclusive = true
+  }
+  ["frontend-test"] {
+    check = "cd frontend && aube test"
+    fix = "cd frontend && aube test"
     exclusive = true
   }
   ["frontend-build"] {
-    check = "cd frontend && bun run build"
-    fix = "cd frontend && bun run build"
+    check = "cd frontend && aube build"
+    fix = "cd frontend && aube build"
     exclusive = true
   }
 }

@@ -2,7 +2,7 @@ import datetime
 
 import pytest
 
-from gamingclock.models.catalog import HLTBStatus, ScheduleGameInput
+from gamingclock.models.catalog import HLTBStatus, ListGame
 from gamingclock.models.schedule import (
     DayAvailability,
     PlaySession,
@@ -49,7 +49,7 @@ def test_schedule_request():
     req = ScheduleRequest(
         game_list_name="My List",
         games=[
-            ScheduleGameInput(
+            ListGame(
                 igdb_id=7,
                 name="FF7",
                 cover_url="https://example.com/ff7.png",

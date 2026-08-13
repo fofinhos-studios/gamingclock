@@ -1,6 +1,6 @@
-import { describe, expect, test } from "bun:test";
 import { render, waitFor, within } from "@testing-library/preact";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, test } from "vitest";
 
 import type { CatalogGame, ListGame, ScheduleResponse } from "../types";
 import { HomePage } from "./home";

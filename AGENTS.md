@@ -13,8 +13,8 @@
 
 ## Tech Stack
 
-- **Backend**: Python 3.14, FastAPI, Pydantic, httpx, howlongtobeatpy, ruff, ty, pytest + xdist + Polyfactory
-- **Frontend**: Bun, Vite + Preact, Tailwind CSS (minimal styling for MVP — raw elements, focus on layout/functionality)
+- **Backend**: Python 3.14, FastAPI, Pydantic, httpx, howlongtobeatpy, ruff, ty, pytest + xdist
+- **Frontend**: Node.js + Aube, Vite + Preact, Tailwind CSS (minimal styling for MVP — raw elements, focus on layout/functionality)
 - **Infra**: Docker Compose, GitHub Actions, Justfile, hk (git hook manager)
 
 ## Project Structure
@@ -43,7 +43,7 @@ gamingclock/
 │   ├── index.html
 │   ├── package.json
 │   ├── vite.config.ts
-│   └── tailwind.config.ts
+│   └── biome.json
 ├── docker-compose.yml
 ├── Justfile
 ├── hk.pkl

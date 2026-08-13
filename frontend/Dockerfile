@@ -1,12 +1,16 @@
-FROM oven/bun:latest AS build
+FROM rust:1.91-bookworm AS aube
+RUN cargo install aube --version 1.39.0 --locked
+
+FROM node:22-bookworm-slim AS build
 
 WORKDIR /app
 
-COPY package.json bun.lock* ./
-RUN bun install --frozen-lockfile
+COPY --from=aube /usr/local/cargo/bin/aube /usr/local/bin/aube
+COPY package.json aube-lock.yaml ./
+RUN aube install --frozen-lockfile
 
 COPY . .
-RUN bun run build
+RUN aube build
 
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
