@@ -78,14 +78,6 @@ async def _enrich_catalog_game(catalog_game: CatalogGame) -> ListGame:
     )
 
 
-async def _enrich_search_result(catalog_game: CatalogGame) -> ListGame:
-    try:
-        return await _enrich_catalog_game(catalog_game)
-    except Exception:
-        logger.exception("HLTB enrichment failed for IGDB game %s", catalog_game.igdb_id)
-        return _unresolved_game(catalog_game)
-
-
 def _unresolved_game(catalog_game: CatalogGame) -> ListGame:
     return ListGame(
         igdb_id=catalog_game.igdb_id,

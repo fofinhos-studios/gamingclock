@@ -1,5 +1,4 @@
 import { Gamepad2, Moon, Sun } from "lucide-preact";
-import type { RoutableProps } from "preact-router";
 import { useLayoutEffect, useState } from "preact/hooks";
 
 import { PlannerAvailabilityStep } from "../components/planner-availability-step";
@@ -37,7 +36,7 @@ function loadTheme(): Theme {
     : "dark";
 }
 
-export function HomePage(_props: RoutableProps) {
+export function HomePage() {
   const { language, setLanguage, t } = useLanguage();
   const [theme, setTheme] = useState<Theme>(loadTheme);
   const [initialState] = useState(() =>

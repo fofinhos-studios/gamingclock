@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
 import { render } from "@testing-library/preact";
+import { describe, expect, test } from "vitest";
 
 import type { ScheduleResponse } from "../types";
 import { ScheduleView } from "./schedule-view";

@@ -24,22 +24,25 @@ backend-audit:
 
 # Frontend
 frontend-install:
-    cd frontend && bun install
+    cd frontend && aube install
 
 frontend-dev:
-    cd frontend && bun run dev
+    cd frontend && aube dev
 
 frontend-build:
-    cd frontend && bun run build
+    cd frontend && aube build
+
+frontend-test:
+    cd frontend && aube test
 
 frontend-lint:
-    cd frontend && bunx @biomejs/biome check src/
+    cd frontend && aube exec biome check src/
 
 frontend-format:
-    cd frontend && bunx @biomejs/biome check --write src/
+    cd frontend && aube exec biome check --write src/
 
 frontend-audit:
-    cd frontend && bun audit
+    cd frontend && aube audit
 
 # Both
 install: backend-install frontend-install
@@ -47,7 +50,7 @@ install: backend-install frontend-install
 dev:
     just backend-dev & just frontend-dev
 
-test: backend-test
+test: backend-test frontend-test
 
 lint: backend-lint frontend-lint
 

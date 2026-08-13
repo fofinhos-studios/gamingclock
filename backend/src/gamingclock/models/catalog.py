@@ -59,10 +59,6 @@ class ScheduleErrorDetail(BaseModel):
     name: str
 
 
-class ScheduleGameInput(ListGame):
-    pass
-
-
 def release_year_from_epoch(epoch_seconds: int | None) -> int | None:
     if epoch_seconds is None:
         return None

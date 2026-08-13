@@ -1,8 +1,22 @@
-import { afterEach } from "bun:test";
-import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { cleanup } from "@testing-library/preact";
+import { afterEach } from "vitest";
 
-GlobalRegistrator.register();
+const storageValues = new Map<string, string>();
+const storage: Storage = {
+  get length() {
+    return storageValues.size;
+  },
+  clear: () => storageValues.clear(),
+  getItem: (key) => storageValues.get(key) ?? null,
+  key: (index) => [...storageValues.keys()][index] ?? null,
+  removeItem: (key) => storageValues.delete(key),
+  setItem: (key, value) => storageValues.set(key, value),
+};
+
+Object.defineProperty(globalThis, "localStorage", {
+  configurable: true,
+  value: storage,
+});
 
 afterEach(() => {
   cleanup();

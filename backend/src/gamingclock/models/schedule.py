@@ -3,7 +3,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, Field, computed_field
 
-from gamingclock.models.catalog import ScheduleGameInput
+from gamingclock.models.catalog import ListGame
 
 
 class ScheduleAlgorithm(StrEnum):
@@ -28,7 +28,7 @@ class WeeklyAvailability(BaseModel):
 
 class ScheduleRequest(BaseModel):
     game_list_name: str
-    games: list[ScheduleGameInput]
+    games: list[ListGame]
     availability: WeeklyAvailability
     algorithm: ScheduleAlgorithm = ScheduleAlgorithm.SEQUENTIAL
     start_date: datetime.date = datetime.date.today()

@@ -1,6 +1,6 @@
-import { describe, expect, test } from "bun:test";
 import { render } from "@testing-library/preact";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, test } from "vitest";
 
 import { HomePage } from "../pages/home";
 import { LanguageProvider, detectLanguage } from "./i18n";
@@ -17,7 +17,7 @@ describe("i18n", () => {
     const user = userEvent.setup();
     const view = render(
       <LanguageProvider browserLanguages={["pt-BR"]}>
-        <HomePage path="/" />
+        <HomePage />
       </LanguageProvider>,
     );
 
