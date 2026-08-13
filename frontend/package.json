@@ -29,10 +29,13 @@
   "overrides": {
     "@babel/core": "7.29.6"
   },
+  "engines": {
+    "node": "24.x"
+  },
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": "22.23.2",
+      "version": ">=22.23.2",
       "onFail": "download"
     }
   }
