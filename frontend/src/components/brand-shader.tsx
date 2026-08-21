@@ -25,14 +25,14 @@ const fragmentShaderSource = `
   void main() {
     vec2 uv = gl_FragCoord.xy / u_resolution;
     float glyph = texture2D(u_text, vec2(uv.x, 1.0 - uv.y)).a;
-    float scanline = 0.82 + 0.18 * sin(gl_FragCoord.y * 1.35 + u_time * 8.0);
-    float signal = sin((uv.x * 17.0 - uv.y * 6.0) - u_time * 1.25) * 0.5 + 0.5;
-    float pulse = smoothstep(0.68, 0.95, signal);
-    float pixel = step(0.92, fract(uv.x * 37.0 + uv.y * 11.0 + u_time * 0.08));
-    vec3 colour = mix(u_ink, u_aqua, pulse * 0.62);
-    colour = mix(colour, u_heat, pixel * pulse);
+    float current = sin(uv.x * 6.0 - u_time * 0.7 + sin(uv.y * 8.0 + u_time * 0.45)) * 0.5 + 0.5;
+    float ripple = sin(uv.x * 13.0 + uv.y * 5.0 + u_time * 1.1) * 0.5 + 0.5;
+    float aqua = smoothstep(0.32, 0.82, current);
+    float amber = smoothstep(0.84, 0.98, ripple) * aqua;
+    vec3 colour = mix(u_ink, u_aqua, aqua * 0.76);
+    colour = mix(colour, u_heat, amber * 0.48);
 
-    gl_FragColor = vec4(colour * scanline * glyph, glyph);
+    gl_FragColor = vec4(colour * glyph, glyph);
   }
 `;
 

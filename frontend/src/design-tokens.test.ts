@@ -98,6 +98,14 @@ test("uses larger shared icons and an accessible animated brand title", async ()
   );
 });
 
+test("makes the app title a bold grotesk wordmark", async () => {
+  const stylesheet = await readStylesheet();
+
+  expect(stylesheet).toMatch(
+    /\.planner-brand__title\s*\{[\s\S]*?font-family:\s*"Archivo", sans-serif;[\s\S]*?font-size:\s*clamp\(2rem, 3\.3vw, 3rem\);[\s\S]*?font-weight:\s*800;/,
+  );
+});
+
 test("keeps touch controls large and disables motion when requested", async () => {
   const stylesheet = await readStylesheet();
 
