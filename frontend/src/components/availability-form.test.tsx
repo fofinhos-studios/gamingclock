@@ -1,4 +1,4 @@
-import { render } from "@testing-library/preact";
+import { fireEvent, render } from "@testing-library/preact";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 
@@ -34,6 +34,44 @@ describe("AvailabilityForm", () => {
       days: [{ day_of_week: 0, hours: 1, start_hour: 20, start_minute: 0 }],
     });
     expect(view.getByLabelText("Monday, 1h from 20:00")).toBeTruthy();
+  });
+
+  test("creates a snapped event range when an empty time is dragged", () => {
+    const onChange = vi.fn();
+    const view = renderForm(onChange);
+    const column = view.container.querySelector<HTMLElement>(
+      '[data-week-day="0"]',
+    );
+    const slot = view.getByRole("button", { name: "Monday at 20:00" });
+
+    if (!column) {
+      throw new Error("Monday column is missing");
+    }
+
+    vi.spyOn(column, "getBoundingClientRect").mockReturnValue({
+      bottom: 360,
+      height: 360,
+      left: 0,
+      right: 100,
+      top: 0,
+      width: 100,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
+    const elementFromPoint = vi
+      .spyOn(document, "elementFromPoint")
+      .mockReturnValue(column);
+
+    fireEvent.pointerDown(slot, { clientX: 50, clientY: 280 });
+    fireEvent.pointerMove(window, { clientX: 50, clientY: 320 });
+    fireEvent.pointerUp(window);
+
+    expect(onChange).toHaveBeenLastCalledWith({
+      days: [{ day_of_week: 0, hours: 2, start_hour: 20, start_minute: 0 }],
+    });
+
+    elementFromPoint.mockRestore();
   });
 
   test("offers week presets and clears the weekly calendar", async () => {
