@@ -1,27 +1,19 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
-from pydantic import BaseModel
 
 from gamingclock.calendar.ical import generate_ical
 from gamingclock.models.catalog import HLTBCategory, HLTBStatus, ScheduleErrorDetail
 from gamingclock.models.game import Game
-from gamingclock.models.schedule import PlaySession, ScheduleRequest
+from gamingclock.models.schedule import (
+    ScheduleErrorResponse,
+    ScheduleRequest,
+    ScheduleResponse,
+)
 from gamingclock.services.scheduler import SchedulerService
 
 router = APIRouter(prefix="/schedule", tags=["schedule"])
 
 scheduler_service = SchedulerService()
-
-
-class ScheduleResponse(BaseModel):
-    sessions: list[PlaySession]
-    total_hours: float
-    estimated_end_date: str | None
-
-
-class ScheduleErrorResponse(BaseModel):
-    message: str
-    unresolved_games: list[ScheduleErrorDetail]
 
 
 def _build_schedule_games(request: ScheduleRequest) -> list[Game]:
@@ -73,7 +65,7 @@ async def generate_schedule(request: ScheduleRequest) -> ScheduleResponse:
         start_date=request.start_date,
     )
     total_hours = sum(session.duration_hours for session in sessions)
-    end_date = sessions[-1].date.isoformat() if sessions else None
+    end_date = sessions[-1].date if sessions else None
     return ScheduleResponse(
         sessions=sessions,
         total_hours=total_hours,

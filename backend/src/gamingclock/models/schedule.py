@@ -3,7 +3,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, Field, computed_field
 
-from gamingclock.models.catalog import ListGame
+from gamingclock.models.catalog import ListGame, ScheduleErrorDetail
 
 
 class ScheduleAlgorithm(StrEnum):
@@ -39,3 +39,18 @@ class PlaySession(BaseModel):
     date: datetime.date
     start_time: datetime.time
     duration_hours: float
+
+
+class ScheduleResponse(BaseModel):
+    """Stable JSON contract returned by schedule generation."""
+
+    sessions: list[PlaySession]
+    total_hours: float
+    estimated_end_date: datetime.date | None
+
+
+class ScheduleErrorResponse(BaseModel):
+    """Actionable schedule failure details returned for unresolved games."""
+
+    message: str
+    unresolved_games: list[ScheduleErrorDetail]

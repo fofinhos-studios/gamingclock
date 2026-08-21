@@ -2,12 +2,14 @@ import datetime
 
 import pytest
 
-from gamingclock.models.catalog import HLTBStatus, ListGame
+from gamingclock.models.catalog import HLTBStatus, ListGame, ScheduleErrorDetail
 from gamingclock.models.schedule import (
     DayAvailability,
     PlaySession,
     ScheduleAlgorithm,
+    ScheduleErrorResponse,
     ScheduleRequest,
+    ScheduleResponse,
     WeeklyAvailability,
 )
 
@@ -84,3 +86,25 @@ def test_play_session():
     )
     assert session.game_name == "FF7"
     assert session.duration_hours == 2.0
+
+
+def test_schedule_response_and_error_contracts_are_pydantic_models():
+    response = ScheduleResponse(
+        sessions=[],
+        total_hours=0,
+        estimated_end_date=None,
+    )
+    error = ScheduleErrorResponse(
+        message="Cannot generate schedule with unresolved games",
+        unresolved_games=[ScheduleErrorDetail(igdb_id=7, name="FF7")],
+    )
+
+    assert response.model_dump() == {
+        "sessions": [],
+        "total_hours": 0,
+        "estimated_end_date": None,
+    }
+    assert error.model_dump() == {
+        "message": "Cannot generate schedule with unresolved games",
+        "unresolved_games": [{"igdb_id": 7, "name": "FF7"}],
+    }
