@@ -78,7 +78,6 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
     <section aria-labelledby="schedule-heading" class="space-y-4">
       <div class="planner-pane__header">
         <div class="space-y-1">
-          <p class="section-eyebrow">{t.schedule.output}</p>
           <h2
             id="schedule-heading"
             class="planner-panel__title planner-heading"

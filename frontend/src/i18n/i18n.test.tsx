@@ -54,19 +54,32 @@ describe("i18n", () => {
     expect(view.getByDisplayValue("Weekend games")).toBeTruthy();
   });
 
-  test("uses direct copy without em dashes in each language", () => {
-    expect(strings.en.app.steps.games.eyebrow).toBe(
-      "Add the games you want to play.",
-    );
-    expect(strings.en.tabs.copy).toBe(
-      "Add games, set your time, then create a schedule.",
-    );
+  test("omits redundant planner subtitles in each language", () => {
+    expect(strings.en.app.steps.games).not.toHaveProperty("eyebrow");
+    expect(strings.en.app.steps.availability).not.toHaveProperty("eyebrow");
+    expect(strings.en.app.steps.schedule).not.toHaveProperty("eyebrow");
+    expect(strings.en.tabs).not.toHaveProperty("intro");
+    expect(strings.en.tabs).not.toHaveProperty("copy");
+    expect(strings.en.availability).not.toHaveProperty("title");
+    expect(strings.en.availability).not.toHaveProperty("copy");
+    expect(strings.en.schedule).not.toHaveProperty("section");
+    expect(strings.en.schedule).not.toHaveProperty("copy");
+    expect(strings.en.schedule).not.toHaveProperty("output");
     expect(
       strings.en.tabs.aria(1, "Add games", "games", "Current step"),
     ).not.toContain("—");
-    expect(strings["pt-BR"].app.steps.games.eyebrow).toBe(
-      "Adicione os jogos que você quer jogar.",
+    expect(strings["pt-BR"].app.steps.games).not.toHaveProperty("eyebrow");
+    expect(strings["pt-BR"].app.steps.availability).not.toHaveProperty(
+      "eyebrow",
     );
+    expect(strings["pt-BR"].app.steps.schedule).not.toHaveProperty("eyebrow");
+    expect(strings["pt-BR"].tabs).not.toHaveProperty("intro");
+    expect(strings["pt-BR"].tabs).not.toHaveProperty("copy");
+    expect(strings["pt-BR"].availability).not.toHaveProperty("title");
+    expect(strings["pt-BR"].availability).not.toHaveProperty("copy");
+    expect(strings["pt-BR"].schedule).not.toHaveProperty("section");
+    expect(strings["pt-BR"].schedule).not.toHaveProperty("copy");
+    expect(strings["pt-BR"].schedule).not.toHaveProperty("output");
     expect(
       strings["pt-BR"].tabs.aria(1, "Adicionar jogos", "games", "Etapa atual"),
     ).not.toContain("—");

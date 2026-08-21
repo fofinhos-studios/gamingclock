@@ -498,7 +498,6 @@ export function HomePage() {
             <div class="planner-workspace__main">
               <div class="planner-toolbar__content">
                 <div class="planner-toolbar__main">
-                  <p class="planner-toolbar__eyebrow">{activeStep.eyebrow}</p>
                   <h1 class="planner-toolbar__title">{activeStep.title}</h1>
                 </div>
                 <fieldset
