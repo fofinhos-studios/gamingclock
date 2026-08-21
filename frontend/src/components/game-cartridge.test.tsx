@@ -23,6 +23,25 @@ const game: ListGame = {
 };
 
 describe("GameCartridge", () => {
+  test("keeps its loading shell visible until the HLTB duration lookup resolves", async () => {
+    const pendingGame = { ...game, hltb_status: "loading" as const };
+    const view = render(<GameCartridge game={pendingGame} />);
+
+    fireEvent.load(
+      view.container.querySelector(".game-cartridge__hero") as HTMLImageElement,
+    );
+    fireEvent.load(view.getByAltText("Hollow Knight cover"));
+    fireEvent.load(view.getByAltText("Hollow Knight logo"));
+
+    await waitFor(() =>
+      expect(
+        view.container
+          .querySelector(".game-cartridge")
+          ?.getAttribute("aria-busy"),
+      ).toBe("true"),
+    );
+  });
+
   test("reveals hero, logo, cover, and a playtime nutrition label once artwork is ready", async () => {
     const view = render(<GameCartridge game={game} />);
 
