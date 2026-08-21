@@ -52,10 +52,6 @@ export function PlannerTabs({ activeTab, completedTabs, onChange }: Props) {
 
   return (
     <nav class="planner-stepper" aria-label={t.tabs.nav}>
-      <div class="planner-stepper__intro">
-        <p class="planner-stepper__eyebrow">{t.tabs.intro}</p>
-        <p class="planner-stepper__copy">{t.tabs.copy}</p>
-      </div>
       <div
         role="tablist"
         aria-label={t.tabs.steps}

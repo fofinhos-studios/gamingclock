@@ -17,15 +17,12 @@ export const strings = {
       steps: {
         games: {
           title: "Add games",
-          eyebrow: "Add the games you want to play.",
         },
         availability: {
           title: "Set your weekly play time",
-          eyebrow: "Choose the days and times you play.",
         },
         schedule: {
           title: "Create your schedule",
-          eyebrow: "Plan sessions with your list and free time.",
         },
       },
       prerequisites: {
@@ -47,8 +44,6 @@ export const strings = {
     },
     tabs: {
       nav: "Plan your game time step by step",
-      intro: "Plan your games",
-      copy: "Add games, set your time, then create a schedule.",
       steps: "Planner steps",
       addGames: "Add games",
       availability: "Set weekly play time",
@@ -110,9 +105,7 @@ export const strings = {
         `Use ${label} time: ${hours} hours`,
     },
     availability: {
-      title: "Availability",
       heading: "Weekly play time",
-      copy: "Choose your play days, session length, and start time.",
       status: "Status",
       saved: "Availability saved",
       notSet: "Availability not set",
@@ -170,9 +163,7 @@ export const strings = {
       ],
     },
     schedule: {
-      section: "Schedule",
       heading: "Generate schedule",
-      copy: "Choose a start date and method for this list.",
       startDate: "Start date",
       algorithm: "Schedule method",
       sequential: "One game at a time",
@@ -201,7 +192,6 @@ export const strings = {
       startsOn: (date: string) => `Starts on ${date}`,
       sequentialCopy: "Finish one game before the next.",
       alternatingCopy: "Rotate between games to keep several in progress.",
-      output: "Output",
       generatedHeading: "Your schedule",
       downloading: "Downloading",
       downloaded: "Downloaded",
@@ -236,15 +226,12 @@ export const strings = {
       steps: {
         games: {
           title: "Adicione jogos",
-          eyebrow: "Adicione os jogos que você quer jogar.",
         },
         availability: {
           title: "Defina seu tempo semanal",
-          eyebrow: "Escolha os dias e horários em que você joga.",
         },
         schedule: {
           title: "Crie seu cronograma",
-          eyebrow: "Planeje sessões com sua lista e tempo livre.",
         },
       },
       prerequisites: {
@@ -266,8 +253,6 @@ export const strings = {
     },
     tabs: {
       nav: "Planeje seu tempo de jogo passo a passo",
-      intro: "Planeje seus jogos",
-      copy: "Adicione jogos, defina seu tempo e crie um cronograma.",
       steps: "Etapas do planejador",
       addGames: "Adicionar jogos",
       availability: "Definir tempo semanal",
@@ -330,9 +315,7 @@ export const strings = {
         `Usar duração ${label}: ${hours} horas`,
     },
     availability: {
-      title: "Disponibilidade",
       heading: "Tempo semanal de jogo",
-      copy: "Escolha os dias, a duração da sessão e o horário de início.",
       status: "Status",
       saved: "Disponibilidade salva",
       notSet: "Disponibilidade não definida",
@@ -391,9 +374,7 @@ export const strings = {
       ],
     },
     schedule: {
-      section: "Cronograma",
       heading: "Gerar cronograma",
-      copy: "Escolha uma data inicial e um método para esta lista.",
       startDate: "Data de início",
       algorithm: "Método de cronograma",
       sequential: "Um jogo por vez",
@@ -423,7 +404,6 @@ export const strings = {
       startsOn: (date: string) => `Começa em ${date}`,
       sequentialCopy: "Termine um jogo antes de começar o próximo.",
       alternatingCopy: "Alterne entre jogos para manter vários em andamento.",
-      output: "Resultado",
       generatedHeading: "Seu cronograma",
       downloading: "Baixando",
       downloaded: "Baixado",

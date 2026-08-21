@@ -24,7 +24,6 @@ export function PlannerAvailabilityStep({
       <div class="planner-pane">
         <div class="planner-pane__header">
           <div class="space-y-1">
-            <p class="section-eyebrow">{t.availability.title}</p>
             <h2 class="planner-panel__title planner-heading">
               <CalendarDays
                 class="planner-icon planner-heading__icon"
@@ -33,7 +32,6 @@ export function PlannerAvailabilityStep({
               <span>{t.availability.heading}</span>
             </h2>
           </div>
-          <p class="planner-panel__copy">{t.availability.copy}</p>
         </div>
 
         <AvailabilityForm availability={availability} onSubmit={onSubmit} />

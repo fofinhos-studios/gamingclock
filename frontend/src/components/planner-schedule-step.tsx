@@ -85,7 +85,6 @@ export function PlannerScheduleStep({
       <div class="planner-pane">
         <div class="planner-pane__header">
           <div class="space-y-1">
-            <p class="section-eyebrow">{t.schedule.section}</p>
             <h2
               id="planner-schedule-heading"
               class="planner-panel__title planner-heading"
@@ -97,7 +96,6 @@ export function PlannerScheduleStep({
               <span>{t.schedule.heading}</span>
             </h2>
           </div>
-          <p class="planner-panel__copy">{t.schedule.copy}</p>
         </div>
 
         <div class="planner-controls">
