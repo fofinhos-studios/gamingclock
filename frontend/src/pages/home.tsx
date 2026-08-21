@@ -8,8 +8,14 @@ import { PlannerStepActions } from "../components/planner-step-actions";
 import { type PlannerTab, PlannerTabs } from "../components/planner-tabs";
 import { useLanguage } from "../i18n/i18n";
 import { strings } from "../i18n/strings";
-import { downloadIcal, generateSchedule, resolveGame } from "../services/api";
 import {
+  downloadIcal,
+  generateSchedule,
+  getApiErrorMessage,
+  resolveGame,
+} from "../services/api";
+import {
+  createPlannerListId,
   loadPlannerState,
   savePlannerState,
 } from "../services/planner-storage";
@@ -47,8 +53,8 @@ export function HomePage() {
     initialState.activeTab,
   );
   const [backlogs, setBacklogs] = useState<GameList[]>(initialState.backlogs);
-  const [activeBacklogIndex, setActiveBacklogIndex] = useState(
-    initialState.activeBacklogIndex,
+  const [activeBacklogId, setActiveBacklogId] = useState(
+    initialState.activeBacklogId,
   );
   const [availability, setAvailability] = useState<WeeklyAvailability | null>(
     initialState.availability,
@@ -66,7 +72,7 @@ export function HomePage() {
     savePlannerState({
       activeTab,
       backlogs,
-      activeBacklogIndex,
+      activeBacklogId,
       availability,
       algorithm,
       schedule,
@@ -75,7 +81,7 @@ export function HomePage() {
   }, [
     activeTab,
     backlogs,
-    activeBacklogIndex,
+    activeBacklogId,
     availability,
     algorithm,
     schedule,
@@ -101,7 +107,8 @@ export function HomePage() {
     );
   }, [t.app.defaultBacklog]);
 
-  const activeBacklog = backlogs[activeBacklogIndex];
+  const activeBacklog =
+    backlogs.find((backlog) => backlog.id === activeBacklogId) ?? backlogs[0];
   const backlogName = activeBacklog.name;
   const games = activeBacklog.games;
   const allBacklogGames = backlogs.flatMap((backlog) => backlog.games);
@@ -182,16 +189,17 @@ export function HomePage() {
     ...(schedule ? (["schedule"] as const) : []),
   ];
 
-  const resolveBacklogGame = (game: CatalogGame, backlogIndex: number) => {
+  const resolveBacklogGame = (game: CatalogGame, backlogId: string) => {
     void resolveGame(game)
       .then((resolvedGame) => {
         const nextGame: ListGame = {
           ...resolvedGame,
+          hltb_error: null,
           selected_hltb_category: "main",
         };
         setBacklogs((currentBacklogs) =>
-          currentBacklogs.map((backlog, index) =>
-            index === backlogIndex
+          currentBacklogs.map((backlog) =>
+            backlog.id === backlogId
               ? {
                   ...backlog,
                   games: backlog.games.map((backlogGame) =>
@@ -204,10 +212,10 @@ export function HomePage() {
           ),
         );
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         setBacklogs((currentBacklogs) =>
-          currentBacklogs.map((backlog, index) =>
-            index === backlogIndex
+          currentBacklogs.map((backlog) =>
+            backlog.id === backlogId
               ? {
                   ...backlog,
                   games: backlog.games.map((backlogGame) =>
@@ -215,6 +223,10 @@ export function HomePage() {
                       ? {
                           ...backlogGame,
                           hltb_status: "unresolved",
+                          hltb_error: getApiErrorMessage(
+                            error,
+                            t.list.unavailable,
+                          ),
                         }
                       : backlogGame,
                   ),
@@ -226,7 +238,7 @@ export function HomePage() {
   };
 
   const addGame = (game: CatalogGame) => {
-    const targetBacklogIndex = activeBacklogIndex;
+    const targetBacklogId = activeBacklogId;
     const pendingGame: ListGame = {
       ...game,
       hltb_status: "loading",
@@ -234,37 +246,42 @@ export function HomePage() {
       main_story_hours: null,
       main_extra_hours: null,
       completionist_hours: null,
+      hltb_error: null,
       selected_hltb_category: "main",
     };
 
     setBacklogs((currentBacklogs) =>
-      currentBacklogs.map((backlog, index) =>
-        index === targetBacklogIndex
+      currentBacklogs.map((backlog) =>
+        backlog.id === targetBacklogId
           ? { ...backlog, games: [...backlog.games, pendingGame] }
           : backlog,
       ),
     );
     clearGeneratedSchedule();
-    resolveBacklogGame(game, targetBacklogIndex);
+    resolveBacklogGame(game, targetBacklogId);
   };
 
   const retryGame = (igdbId: number) => {
-    const targetBacklogIndex = activeBacklogIndex;
-    const game = backlogs[targetBacklogIndex]?.games.find(
-      (backlogGame) => backlogGame.igdb_id === igdbId,
-    );
+    const targetBacklogId = activeBacklogId;
+    const game = backlogs
+      .find((backlog) => backlog.id === targetBacklogId)
+      ?.games.find((backlogGame) => backlogGame.igdb_id === igdbId);
     if (!game) {
       return;
     }
 
     setBacklogs((currentBacklogs) =>
-      currentBacklogs.map((backlog, index) =>
-        index === targetBacklogIndex
+      currentBacklogs.map((backlog) =>
+        backlog.id === targetBacklogId
           ? {
               ...backlog,
               games: backlog.games.map((backlogGame) =>
                 backlogGame.igdb_id === igdbId
-                  ? { ...backlogGame, hltb_status: "loading" }
+                  ? {
+                      ...backlogGame,
+                      hltb_status: "loading",
+                      hltb_error: null,
+                    }
                   : backlogGame,
               ),
             }
@@ -272,13 +289,13 @@ export function HomePage() {
       ),
     );
     clearGeneratedSchedule();
-    resolveBacklogGame(game, targetBacklogIndex);
+    resolveBacklogGame(game, targetBacklogId);
   };
 
   const removeGame = (igdbId: number) => {
     setBacklogs((currentBacklogs) =>
-      currentBacklogs.map((backlog, backlogIndex) =>
-        backlogIndex === activeBacklogIndex
+      currentBacklogs.map((backlog) =>
+        backlog.id === activeBacklogId
           ? {
               ...backlog,
               games: backlog.games.filter((game) => game.igdb_id !== igdbId),
@@ -291,8 +308,8 @@ export function HomePage() {
 
   const selectGameTime = (index: number, category: HLTBCategory) => {
     setBacklogs((currentBacklogs) =>
-      currentBacklogs.map((backlog, backlogIndex) =>
-        backlogIndex === activeBacklogIndex
+      currentBacklogs.map((backlog) =>
+        backlog.id === activeBacklogId
           ? {
               ...backlog,
               games: backlog.games.map((game, gameIndex) =>
@@ -314,8 +331,8 @@ export function HomePage() {
     }
 
     setBacklogs((currentBacklogs) =>
-      currentBacklogs.map((backlog, backlogIndex) => {
-        if (backlogIndex !== activeBacklogIndex) {
+      currentBacklogs.map((backlog) => {
+        if (backlog.id !== activeBacklogId) {
           return backlog;
         }
 
@@ -333,18 +350,20 @@ export function HomePage() {
 
   const renameBacklog = (name: string) => {
     setBacklogs((currentBacklogs) =>
-      currentBacklogs.map((backlog, index) =>
-        index === activeBacklogIndex ? { ...backlog, name } : backlog,
+      currentBacklogs.map((backlog) =>
+        backlog.id === activeBacklogId ? { ...backlog, name } : backlog,
       ),
     );
   };
 
   const addBacklog = () => {
-    setBacklogs((currentBacklogs) => [
-      ...currentBacklogs,
-      { name: t.app.newBacklogName(currentBacklogs.length + 1), games: [] },
-    ]);
-    setActiveBacklogIndex(backlogs.length);
+    const nextBacklog: GameList = {
+      id: createPlannerListId(),
+      name: t.app.newBacklogName(backlogs.length + 1),
+      games: [],
+    };
+    setBacklogs((currentBacklogs) => [...currentBacklogs, nextBacklog]);
+    setActiveBacklogId(nextBacklog.id);
     clearGeneratedSchedule();
   };
 
@@ -364,9 +383,7 @@ export function HomePage() {
       setSchedule(result);
       return true;
     } catch (error) {
-      setActionError(
-        error instanceof Error ? error.message : t.app.scheduleFailed,
-      );
+      setActionError(getApiErrorMessage(error, t.app.scheduleFailed));
       return false;
     }
   };
@@ -392,9 +409,7 @@ export function HomePage() {
       URL.revokeObjectURL(url);
       return true;
     } catch (error) {
-      setActionError(
-        error instanceof Error ? error.message : t.app.downloadFailed,
-      );
+      setActionError(getApiErrorMessage(error, t.app.downloadFailed));
       return false;
     }
   };
@@ -491,13 +506,13 @@ export function HomePage() {
                   aria-label={t.app.backlogs}
                 >
                   <legend class="sr-only">{t.app.backlogs}</legend>
-                  {backlogs.map((backlog, index) => (
+                  {backlogs.map((backlog) => (
                     <button
-                      key={`${backlog.name}-${index}`}
+                      key={backlog.id}
                       type="button"
-                      aria-pressed={index === activeBacklogIndex}
+                      aria-pressed={backlog.id === activeBacklogId}
                       onClick={() => {
-                        setActiveBacklogIndex(index);
+                        setActiveBacklogId(backlog.id);
                         clearGeneratedSchedule();
                       }}
                     >

@@ -128,9 +128,16 @@ export function GameListView({
                         {t.list.retrieving}
                       </span>
                     ) : game.hltb_status === "unresolved" ? (
-                      <span class="planner-chip" aria-live="polite">
-                        {t.list.unavailable}
-                      </span>
+                      <>
+                        <span class="planner-chip" aria-live="polite">
+                          {t.list.unavailable}
+                        </span>
+                        {game.hltb_error && (
+                          <span class="planner-chip" role="alert">
+                            {game.hltb_error}
+                          </span>
+                        )}
+                      </>
                     ) : (
                       <>
                         {games.length === 1 && index === 0 && (

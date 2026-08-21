@@ -10,7 +10,9 @@ from gamingclock.models.schedule import (
     DayAvailability,
     PlaySession,
     ScheduleAlgorithm,
+    ScheduleErrorResponse,
     ScheduleRequest,
+    ScheduleResponse,
     WeeklyAvailability,
 )
 
@@ -24,6 +26,8 @@ __all__ = [
     "ResolveGameRequest",
     "ScheduleAlgorithm",
     "ScheduleErrorDetail",
+    "ScheduleErrorResponse",
     "ScheduleRequest",
+    "ScheduleResponse",
     "WeeklyAvailability",
 ]
