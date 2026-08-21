@@ -1,4 +1,4 @@
-import { render } from "@testing-library/preact";
+import { fireEvent, render, waitFor } from "@testing-library/preact";
 import { describe, expect, test } from "vitest";
 
 import type { ListGame } from "../types";
@@ -23,9 +23,29 @@ const game: ListGame = {
 };
 
 describe("GameCartridge", () => {
-  test("renders hero, logo, cover, and a playtime nutrition label", () => {
+  test("reveals hero, logo, cover, and a playtime nutrition label once artwork is ready", async () => {
     const view = render(<GameCartridge game={game} />);
 
+    expect(view.getByLabelText(/loading hollow knight artwork/i)).toBeTruthy();
+    expect(
+      view.container
+        .querySelector(".game-cartridge")
+        ?.getAttribute("aria-busy"),
+    ).toBe("true");
+
+    fireEvent.load(
+      view.container.querySelector(".game-cartridge__hero") as HTMLImageElement,
+    );
+    fireEvent.load(view.getByAltText("Hollow Knight cover"));
+    fireEvent.load(view.getByAltText("Hollow Knight logo"));
+
+    await waitFor(() =>
+      expect(
+        view.container
+          .querySelector(".game-cartridge")
+          ?.getAttribute("aria-busy"),
+      ).toBe("false"),
+    );
     expect(view.getByAltText("Hollow Knight logo")).toBeTruthy();
     expect(view.getByAltText("Hollow Knight cover")).toBeTruthy();
     expect(

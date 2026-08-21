@@ -1594,6 +1594,85 @@
     transform: translate(-1px, -1px);
   }
 
+  .game-cartridge--loading:hover {
+    border-color: var(--foreground-22);
+    box-shadow: 4px 4px 0 var(--foreground-08);
+    transform: none;
+  }
+
+  .game-cartridge--loading .game-cartridge__hero,
+  .game-cartridge--loading .game-cartridge__wash,
+  .game-cartridge--loading .game-cartridge__cover-frame,
+  .game-cartridge--loading .game-cartridge__content {
+    opacity: 0;
+  }
+
+  .game-cartridge__loading {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    display: grid;
+    grid-template-columns: inherit;
+    min-height: inherit;
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .game-cartridge__loading::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+    background: linear-gradient(
+      105deg,
+      transparent 34%,
+      var(--surface-82) 48%,
+      transparent 62%
+    );
+    background-size: 220% 100%;
+    animation: game-cartridge-scan 1200ms ease-in-out infinite;
+  }
+
+  .game-cartridge__loading-cover {
+    margin: 0.42rem 0 0.42rem 0.42rem;
+    border: 1px solid var(--foreground-16);
+    background: var(--foreground-08);
+  }
+
+  .game-cartridge__loading-content {
+    display: grid;
+    align-content: space-between;
+    gap: 0.6rem;
+    padding: 0.7rem 0.75rem 0.55rem;
+  }
+
+  .game-cartridge__loading-logo,
+  .game-cartridge__loading-line,
+  .game-cartridge__loading-label {
+    display: block;
+    background: var(--foreground-12);
+  }
+
+  .game-cartridge__loading-logo {
+    width: min(62%, 10rem);
+    height: 1.75rem;
+  }
+
+  .game-cartridge__loading-line {
+    width: 78%;
+    height: 0.55rem;
+  }
+
+  .game-cartridge__loading-label {
+    width: 100%;
+    height: 1.85rem;
+    border-top: 1px solid var(--foreground-16);
+  }
+
+  .game-cartridge:not(.game-cartridge--loading) .game-cartridge__cover-frame,
+  .game-cartridge:not(.game-cartridge--loading) .game-cartridge__content {
+    animation: game-cartridge-reveal 220ms ease-out;
+  }
+
   .game-cartridge__hero,
   .game-cartridge__wash {
     position: absolute;
@@ -1703,9 +1782,24 @@
   }
 
   .game-cartridge__label dt {
+    display: flex;
+    align-items: center;
+    gap: 0.18rem;
     color: var(--muted-foreground);
     font-size: 0.5rem;
     letter-spacing: 0.08em;
+  }
+
+  .game-cartridge__label dt svg {
+    flex: 0 0 auto;
+    width: 0.62rem;
+    height: 0.62rem;
+    stroke-width: 1.8;
+  }
+
+  .game-cartridge__label dt span {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .game-cartridge__label dd {
@@ -1829,6 +1923,10 @@
     padding: 0.28rem 0 0.28rem 0.28rem;
   }
 
+  .game-cartridge--calendar .game-cartridge__loading-cover {
+    margin: 0.28rem 0 0.28rem 0.28rem;
+  }
+
   .game-cartridge--calendar .game-cartridge__cover {
     min-height: 5.75rem;
   }
@@ -1836,6 +1934,18 @@
   .game-cartridge--calendar .game-cartridge__content {
     gap: 0.42rem;
     padding: 0.5rem 0.55rem 0.45rem;
+  }
+
+  .game-cartridge--calendar .game-cartridge__loading-content {
+    gap: 0.42rem;
+    padding: 0.5rem 0.55rem 0.45rem;
+  }
+
+  .planner-hltb-option__icon {
+    width: 0.78rem;
+    height: 0.78rem;
+    margin-right: 0.28rem;
+    stroke-width: 2;
   }
 
   .game-cartridge--calendar .game-cartridge__logo {
@@ -2045,6 +2155,28 @@
 
   50% {
     transform: translateY(-0.075rem);
+  }
+}
+
+@keyframes game-cartridge-scan {
+  from {
+    background-position: 120% 0;
+  }
+
+  to {
+    background-position: -120% 0;
+  }
+}
+
+@keyframes game-cartridge-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(0.2rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
