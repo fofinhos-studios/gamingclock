@@ -73,6 +73,9 @@ describe("ScheduleView", () => {
     expect(
       view.container.querySelectorAll(".schedule-calendar__day"),
     ).toHaveLength(7);
+    expect(
+      view.container.querySelectorAll(".schedule-calendar__day--empty"),
+    ).toHaveLength(5);
   });
 
   test("lays sessions out in a weekly calendar with their game cartridges", () => {

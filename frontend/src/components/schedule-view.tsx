@@ -252,7 +252,14 @@ export function ScheduleView({ schedule, games = [], onDownloadIcal }: Props) {
             );
 
             return (
-              <div key={day.date} class="schedule-calendar__day">
+              <div
+                key={day.date}
+                class={`schedule-calendar__day${
+                  day.sessions.length === 0
+                    ? " schedule-calendar__day--empty"
+                    : ""
+                }`}
+              >
                 {dayContents}
               </div>
             );
