@@ -7,7 +7,6 @@ import {
 } from "preact/hooks";
 
 import { BacklogManager } from "../components/backlog-manager";
-import { BrandEmblem, BrandShader } from "../components/brand-shader";
 import { PlannerAvailabilityStep } from "../components/planner-availability-step";
 import { PlannerGamesStep } from "../components/planner-games-step";
 import { PlannerScheduleStep } from "../components/planner-schedule-step";
@@ -498,12 +497,6 @@ export function HomePage() {
           <div class="planner-app__workspace">
             <header class="planner-toolbar">
               <div class="planner-toolbar__topline">
-                <div class="planner-brand">
-                  <p class="planner-brand__name">
-                    <BrandEmblem />
-                    <BrandShader text={t.app.brand} />
-                  </p>
-                </div>
                 <div class="planner-toolbar__controls">
                   <button
                     type="button"

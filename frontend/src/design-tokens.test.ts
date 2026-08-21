@@ -120,28 +120,14 @@ test("does not leave a detached frame around the desktop stepper", async () => {
   );
 });
 
-test("uses larger shared icons and an accessible animated brand title", async () => {
+test("uses larger shared icons without the retired brand styling", async () => {
   const stylesheet = await readStylesheet();
 
   expect(stylesheet).toMatch(
     /\.planner-icon\s*\{[\s\S]*?width:\s*1\.15rem;[\s\S]*?height:\s*1\.15rem;/,
   );
-  expect(stylesheet).toMatch(
-    /\.planner-brand__title-fallback\s*\{[\s\S]*?animation:\s*planner-title-shimmer[\s\S]*?planner-title-wave/,
-  );
-  expect(stylesheet).toMatch(/@keyframes planner-title-shimmer/);
-  expect(stylesheet).toMatch(/@keyframes planner-title-wave/);
-  expect(stylesheet).toMatch(
-    /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?\.planner-brand__title-fallback\s*\{[\s\S]*?animation:\s*none;/,
-  );
-});
-
-test("makes the app title a bold grotesk wordmark", async () => {
-  const stylesheet = await readStylesheet();
-
-  expect(stylesheet).toMatch(
-    /\.planner-brand__title\s*\{[\s\S]*?font-family:\s*"Archivo", sans-serif;[\s\S]*?font-size:\s*clamp\(2rem, 3\.3vw, 3rem\);[\s\S]*?font-weight:\s*800;/,
-  );
+  expect(stylesheet).not.toMatch(/\.planner-brand(?:__|\s|\{)/);
+  expect(stylesheet).not.toMatch(/@keyframes planner-title-/);
 });
 
 test("keeps touch controls large and disables motion when requested", async () => {
