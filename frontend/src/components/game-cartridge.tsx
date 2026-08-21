@@ -39,7 +39,9 @@ export function GameCartridge({
   const primaryLabel = plannedHours === undefined ? "PLAY TIME" : "TODAY";
   const artworkUrls = getArtworkUrls(game);
   const [settledArtwork, setSettledArtwork] = useState<string[]>([]);
-  const isReady = artworkUrls.every((url) => settledArtwork.includes(url));
+  const isReady =
+    game.hltb_status !== "loading" &&
+    artworkUrls.every((url) => settledArtwork.includes(url));
 
   const markArtworkSettled = (url: string) => {
     setSettledArtwork((current) =>
