@@ -71,7 +71,7 @@ async def _enrich_catalog_game(catalog_game: CatalogGame) -> ListGame:
     return ListGame(
         igdb_id=catalog_game.igdb_id,
         name=catalog_game.name,
-        cover_url=catalog_game.cover_url,
+        cover_url=artwork.cover_url or catalog_game.cover_url,
         logo_url=artwork.logo_url,
         hero_url=artwork.hero_url,
         summary=catalog_game.summary,
@@ -99,7 +99,7 @@ def _unresolved_game(catalog_game: CatalogGame, artwork: GameArtwork) -> ListGam
     return ListGame(
         igdb_id=catalog_game.igdb_id,
         name=catalog_game.name,
-        cover_url=catalog_game.cover_url,
+        cover_url=artwork.cover_url or catalog_game.cover_url,
         logo_url=artwork.logo_url,
         hero_url=artwork.hero_url,
         summary=catalog_game.summary,
