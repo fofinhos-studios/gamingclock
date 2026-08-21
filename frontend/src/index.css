@@ -366,10 +366,6 @@
     text-shadow:
       -1px -1px 0 var(--metal-highlight),
       1px 1px 0 var(--metal-shadow);
-    transition: opacity 180ms linear;
-  }
-
-  .planner-identity__shader[data-ready="true"] + .planner-identity__label {
     opacity: 0;
   }
 
