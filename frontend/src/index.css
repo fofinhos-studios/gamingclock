@@ -820,8 +820,23 @@
   }
 
   .planner-backlog-row__actions {
-    display: flex;
+    display: grid;
+    gap: 0.45rem;
     align-items: start;
+    justify-items: end;
+  }
+
+  .planner-backlog-row__reorder,
+  .planner-backlog-row__action-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    justify-content: end;
+  }
+
+  .planner-reorder-button {
+    padding-right: 0.55rem;
+    padding-left: 0.55rem;
   }
 
   .planner-inline-feedback {
@@ -834,6 +849,10 @@
     color: var(--muted-foreground);
     font-size: 0.72rem;
     line-height: 1.35;
+  }
+
+  .planner-search-clear {
+    justify-self: start;
   }
 
   .planner-inline-stats {
@@ -1619,6 +1638,12 @@
 
   .planner-backlog-row__actions {
     grid-column: 1 / -1;
+    justify-items: start;
+  }
+
+  .planner-backlog-row__reorder,
+  .planner-backlog-row__action-group {
+    justify-content: start;
   }
 
   .planner-chip-group {

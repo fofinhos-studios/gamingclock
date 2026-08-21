@@ -941,6 +941,161 @@ describe("HomePage", () => {
     }
   });
 
+  test("offers a retry when a game's playtime is unavailable", async () => {
+    const user = userEvent.setup();
+    const originalFetch = globalThis.fetch;
+    let resolveAttempts = 0;
+
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+
+      if (url.startsWith("/api/games/search?")) {
+        return createJsonResponse([createCatalogResult()]);
+      }
+
+      if (url === "/api/games/resolve") {
+        resolveAttempts += 1;
+        return createJsonResponse(
+          resolveAttempts === 1
+            ? createSearchResult({
+                hltb_status: "unresolved",
+                hltb_match_name: null,
+                main_story_hours: null,
+                main_extra_hours: null,
+                completionist_hours: null,
+              })
+            : createSearchResult(),
+        );
+      }
+
+      throw new Error(`Unexpected fetch call: ${url}`);
+    }) as typeof fetch;
+
+    try {
+      const view = render(<HomePage path="/" />);
+      const gamesPanel = view.getByRole("tabpanel");
+      const searchInput = within(gamesPanel).getByRole("textbox", {
+        name: /search by title/i,
+      });
+
+      await user.type(searchInput, "ho");
+      await waitFor(() =>
+        expect(
+          view.getByRole("button", { name: /add hollow knight to backlog/i }),
+        ).toBeTruthy(),
+      );
+      await user.click(
+        view.getByRole("button", { name: /add hollow knight to backlog/i }),
+      );
+
+      await waitFor(() =>
+        expect(
+          within(gamesPanel).getByRole("button", {
+            name: /retry hollow knight playtime/i,
+          }),
+        ).toBeTruthy(),
+      );
+      await user.click(
+        within(gamesPanel).getByRole("button", {
+          name: /retry hollow knight playtime/i,
+        }),
+      );
+
+      await waitFor(() =>
+        expect(
+          within(gamesPanel).getByRole("button", {
+            name: /use main time: 27\.5 hours/i,
+          }),
+        ).toBeTruthy(),
+      );
+      expect(resolveAttempts).toBe(2);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test("reorders games deterministically and removes the selected item", async () => {
+    const user = userEvent.setup();
+    const originalFetch = globalThis.fetch;
+    const secondCatalog = createCatalogResult({
+      igdb_id: 11,
+      name: "Celeste",
+    });
+    const secondResolved = createSearchResult({
+      igdb_id: 11,
+      name: "Celeste",
+    });
+
+    globalThis.fetch = (async (
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ) => {
+      const url = String(input);
+
+      if (url.startsWith("/api/games/search?")) {
+        return createJsonResponse([createCatalogResult(), secondCatalog]);
+      }
+
+      if (url === "/api/games/resolve") {
+        const body = JSON.parse(String(init?.body ?? "{}")) as {
+          igdb_id?: number;
+        };
+        return createJsonResponse(
+          body.igdb_id === 11 ? secondResolved : createSearchResult(),
+        );
+      }
+
+      throw new Error(`Unexpected fetch call: ${url}`);
+    }) as typeof fetch;
+
+    try {
+      const view = render(<HomePage path="/" />);
+      const gamesPanel = view.getByRole("tabpanel");
+      const searchInput = within(gamesPanel).getByRole("textbox", {
+        name: /search by title/i,
+      });
+
+      await user.type(searchInput, "ga");
+      await waitFor(() =>
+        expect(
+          view.getByRole("button", { name: /add hollow knight to backlog/i }),
+        ).toBeTruthy(),
+      );
+      await user.click(
+        view.getByRole("button", { name: /add hollow knight to backlog/i }),
+      );
+      await user.click(
+        view.getByRole("button", { name: /add celeste to backlog/i }),
+      );
+
+      const currentList = view.getByRole("region", { name: /current list/i });
+      await waitFor(() =>
+        expect(
+          within(currentList).getAllByRole("heading", { level: 3 }),
+        ).toHaveLength(2),
+      );
+      const listTitles = () =>
+        within(currentList)
+          .getAllByRole("heading", { level: 3 })
+          .map((heading) => heading.textContent);
+
+      expect(listTitles()).toEqual(["Hollow Knight", "Celeste"]);
+      await user.click(
+        within(currentList).getByRole("button", {
+          name: /move hollow knight later/i,
+        }),
+      );
+      expect(listTitles()).toEqual(["Celeste", "Hollow Knight"]);
+
+      await user.click(
+        within(currentList).getAllByRole("button", { name: /^remove$/i })[0],
+      );
+      expect(listTitles()).toEqual(["Hollow Knight"]);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   test("keeps duplicate add feedback stable without key warnings", async () => {
     const user = userEvent.setup();
     const originalFetch = globalThis.fetch;

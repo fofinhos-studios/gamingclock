@@ -171,26 +171,7 @@ export function HomePage() {
     ...(schedule ? (["schedule"] as const) : []),
   ];
 
-  const addGame = (game: CatalogGame) => {
-    const pendingGame: ListGame = {
-      ...game,
-      hltb_status: "loading",
-      hltb_match_name: null,
-      main_story_hours: null,
-      main_extra_hours: null,
-      completionist_hours: null,
-      selected_hltb_category: "main",
-    };
-
-    setBacklogs((currentBacklogs) =>
-      currentBacklogs.map((backlog, index) =>
-        index === activeBacklogIndex
-          ? { ...backlog, games: [...backlog.games, pendingGame] }
-          : backlog,
-      ),
-    );
-    clearGeneratedSchedule();
-
+  const resolveBacklogGame = (game: CatalogGame, backlogIndex: number) => {
     void resolveGame(game)
       .then((resolvedGame) => {
         const nextGame: ListGame = {
@@ -199,7 +180,7 @@ export function HomePage() {
         };
         setBacklogs((currentBacklogs) =>
           currentBacklogs.map((backlog, index) =>
-            index === activeBacklogIndex
+            index === backlogIndex
               ? {
                   ...backlog,
                   games: backlog.games.map((backlogGame) =>
@@ -215,7 +196,7 @@ export function HomePage() {
       .catch(() => {
         setBacklogs((currentBacklogs) =>
           currentBacklogs.map((backlog, index) =>
-            index === activeBacklogIndex
+            index === backlogIndex
               ? {
                   ...backlog,
                   games: backlog.games.map((backlogGame) =>
@@ -231,6 +212,56 @@ export function HomePage() {
           ),
         );
       });
+  };
+
+  const addGame = (game: CatalogGame) => {
+    const targetBacklogIndex = activeBacklogIndex;
+    const pendingGame: ListGame = {
+      ...game,
+      hltb_status: "loading",
+      hltb_match_name: null,
+      main_story_hours: null,
+      main_extra_hours: null,
+      completionist_hours: null,
+      selected_hltb_category: "main",
+    };
+
+    setBacklogs((currentBacklogs) =>
+      currentBacklogs.map((backlog, index) =>
+        index === targetBacklogIndex
+          ? { ...backlog, games: [...backlog.games, pendingGame] }
+          : backlog,
+      ),
+    );
+    clearGeneratedSchedule();
+    resolveBacklogGame(game, targetBacklogIndex);
+  };
+
+  const retryGame = (igdbId: number) => {
+    const targetBacklogIndex = activeBacklogIndex;
+    const game = backlogs[targetBacklogIndex]?.games.find(
+      (backlogGame) => backlogGame.igdb_id === igdbId,
+    );
+    if (!game) {
+      return;
+    }
+
+    setBacklogs((currentBacklogs) =>
+      currentBacklogs.map((backlog, index) =>
+        index === targetBacklogIndex
+          ? {
+              ...backlog,
+              games: backlog.games.map((backlogGame) =>
+                backlogGame.igdb_id === igdbId
+                  ? { ...backlogGame, hltb_status: "loading" }
+                  : backlogGame,
+              ),
+            }
+          : backlog,
+      ),
+    );
+    clearGeneratedSchedule();
+    resolveBacklogGame(game, targetBacklogIndex);
   };
 
   const removeGame = (igdbId: number) => {
@@ -261,6 +292,30 @@ export function HomePage() {
             }
           : backlog,
       ),
+    );
+    clearGeneratedSchedule();
+  };
+
+  const moveGame = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= games.length) {
+      return;
+    }
+
+    setBacklogs((currentBacklogs) =>
+      currentBacklogs.map((backlog, backlogIndex) => {
+        if (backlogIndex !== activeBacklogIndex) {
+          return backlog;
+        }
+
+        const nextGames = [...backlog.games];
+        const [movedGame] = nextGames.splice(index, 1);
+        if (!movedGame) {
+          return backlog;
+        }
+        nextGames.splice(targetIndex, 0, movedGame);
+        return { ...backlog, games: nextGames };
+      }),
     );
     clearGeneratedSchedule();
   };
@@ -463,6 +518,8 @@ export function HomePage() {
                     onAddGame={addGame}
                     onSelectGameTime={selectGameTime}
                     onRemoveGame={removeGame}
+                    onRetryGame={retryGame}
+                    onMoveGame={moveGame}
                     onRenameBacklog={renameBacklog}
                   />
                 </section>
