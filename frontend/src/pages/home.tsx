@@ -12,6 +12,7 @@ import { PlannerGamesStep } from "../components/planner-games-step";
 import { PlannerScheduleStep } from "../components/planner-schedule-step";
 import { PlannerStepActions } from "../components/planner-step-actions";
 import { type PlannerTab, PlannerTabs } from "../components/planner-tabs";
+import { SurfaceWordmark } from "../components/surface-wordmark";
 import { Button } from "../components/ui";
 import { useLanguage } from "../i18n/i18n";
 import { strings } from "../i18n/strings";
@@ -498,6 +499,7 @@ export function HomePage() {
           <div class="planner-app__workspace">
             <header class="planner-toolbar">
               <div class="planner-toolbar__topline">
+                <SurfaceWordmark text="Gaming Clock" />
                 <div class="planner-toolbar__controls">
                   <Button
                     unstyled
