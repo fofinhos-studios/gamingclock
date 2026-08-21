@@ -42,10 +42,55 @@ local ci_steps = new Mapping<String, Step> {
   }
 }
 
+local pre_commit_steps = new Mapping<String, Step> {
+  ["backend-audit"] {
+    check = "cd backend && uv audit --locked"
+    fix = "cd backend && uv audit --locked"
+    exclusive = true
+    glob = List("backend/**")
+  }
+  ["backend-lint"] {
+    check = "cd backend && uv run ruff check src/ tests/ && uv run ty check"
+    fix = "cd backend && uv run ruff check src/ tests/ && uv run ty check"
+    exclusive = true
+    glob = List("backend/**")
+  }
+  ["backend-test"] {
+    check = "cd backend && uv run pytest -n auto -v"
+    fix = "cd backend && uv run pytest -n auto -v"
+    exclusive = true
+    glob = List("backend/**")
+  }
+  ["frontend-audit"] {
+    check = "cd frontend && aube audit"
+    fix = "cd frontend && aube audit"
+    exclusive = true
+    glob = List("frontend/**")
+  }
+  ["frontend-lint"] {
+    check = "cd frontend && aube exec biome check src/"
+    fix = "cd frontend && aube exec biome check src/"
+    exclusive = true
+    glob = List("frontend/**")
+  }
+  ["frontend-test"] {
+    check = "cd frontend && aube test"
+    fix = "cd frontend && aube test"
+    exclusive = true
+    glob = List("frontend/**")
+  }
+  ["frontend-build"] {
+    check = "cd frontend && aube build"
+    fix = "cd frontend && aube build"
+    exclusive = true
+    glob = List("frontend/**")
+  }
+}
+
 hooks {
   ["pre-commit"] {
     fix = false
-    steps = ci_steps
+    steps = pre_commit_steps
   }
   ["pre-push"] {
     fix = false

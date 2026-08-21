@@ -19,7 +19,11 @@ async def test_igdb_search_uses_live_api_when_credentials_are_configured(monkeyp
         if request.url.host == "api.igdb.com":
             assert request.headers["Client-ID"] == "client-id"
             assert request.headers["Authorization"] == "Bearer test-token"
-            assert 'where name ~ "dragon quest"*;' in request.content.decode()
+            body = request.content.decode()
+            assert 'search "Dragon Quest";' in body
+            assert "where version_parent = null & game_type = (0,8,9,10);" in body
+            assert "sort" not in body
+            assert "limit 40;" in body
             return httpx.Response(
                 200,
                 json=[
@@ -49,6 +53,61 @@ async def test_igdb_search_uses_live_api_when_credentials_are_configured(monkeyp
 
     assert [result.name for result in results] == ["Dragon Quest XI S: Echoes of an Elusive Age"]
     assert results[0].cover_url == "https://images.igdb.com/igdb/image/upload/t_thumb/dq11.jpg"
+
+
+@pytest.mark.asyncio
+async def test_igdb_search_filters_noise_and_collapses_related_releases(monkeypatch):
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "id.twitch.tv":
+            return _token_response()
+        if request.url.host == "api.igdb.com":
+            return httpx.Response(
+                200,
+                json=[
+                    {
+                        "id": 2,
+                        "name": "Galactic Adventure: Enhanced",
+                        "game_type": 10,
+                        "total_rating_count": 200,
+                        "platforms": [{"name": "Switch"}],
+                    },
+                    {
+                        "id": 3,
+                        "name": "Galactic Adventure Ultimate Mod",
+                        "game_type": 5,
+                        "total_rating_count": 9999,
+                    },
+                    {
+                        "id": 4,
+                        "name": "Galactic Adventure Deluxe",
+                        "game_type": 0,
+                        "version_parent": 1,
+                        "total_rating_count": 500,
+                    },
+                    {
+                        "id": 1,
+                        "name": "Galactic Adventure",
+                        "game_type": 0,
+                        "expanded_games": [2],
+                        "total_rating_count": 50,
+                        "platforms": [{"name": "PC"}],
+                    },
+                ],
+            )
+        raise AssertionError(f"Unexpected request: {request.url}")
+
+    transport = httpx.MockTransport(handler)
+    monkeypatch.setenv("IGDB_CLIENT_ID", "client-id")
+    monkeypatch.setenv("IGDB_CLIENT_SECRET", "client-secret")
+    service = IGDBService(
+        http_client=httpx.AsyncClient(transport=transport),
+        token_client=httpx.AsyncClient(transport=transport),
+    )
+
+    results = await service.search("Galactic Adventure")
+
+    assert [result.name for result in results] == ["Galactic Adventure"]
+    assert results[0].platforms == ["Switch", "PC"]
 
 
 @pytest.mark.asyncio

@@ -1,5 +1,8 @@
 import os
+import re
 import time
+from collections.abc import Iterable
+from math import log1p
 from typing import ClassVar
 
 import httpx
@@ -9,6 +12,10 @@ from gamingclock.models.catalog import CatalogGame, release_year_from_epoch
 
 class IGDBService:
     """Use IGDB in configured environments and a small catalog for local work."""
+
+    _SEARCH_FETCH_LIMIT: ClassVar[int] = 40
+    _ALLOWED_GAME_TYPES: ClassVar[frozenset[int]] = frozenset({0, 8, 9, 10})
+    _GAME_TYPE_PREFERENCE: ClassVar[dict[int, float]] = {0: 1.0, 10: 0.95, 9: 0.9, 8: 0.85}
 
     _local_catalog: ClassVar[list[CatalogGame]] = [
         CatalogGame(
@@ -44,16 +51,19 @@ class IGDBService:
         self._expires_at = 0.0
 
     async def search(self, query: str, limit: int = 10) -> list[CatalogGame]:
+        normalized = query.strip()
+        if not normalized:
+            return []
         if not self._is_configured():
-            return self._search_local_catalog(query, limit)
+            return self._search_local_catalog(normalized, limit)
 
         client_id, token = await self._get_auth_headers()
-        normalized = query.strip().lower()
         body = (
-            "fields id,name,summary,rating,first_release_date,cover.url,genres.name,platforms.name;"
-            f'where name ~ "{normalized}"*;'
-            "sort rating desc;"
-            f"limit {limit};"
+            "fields id,name,summary,rating,total_rating_count,first_release_date,cover.url,genres.name,"
+            "platforms.name,game_type,version_parent,ports,remasters,expanded_games;"
+            f'search "{self._escape_search_query(normalized)}";'
+            "where version_parent = null & game_type = (0,8,9,10);"
+            f"limit {max(self._SEARCH_FETCH_LIMIT, limit)};"
         )
         response = await self._http_client.post(
             "https://api.igdb.com/v4/games",
@@ -61,7 +71,7 @@ class IGDBService:
             content=body,
         )
         response.raise_for_status()
-        return [self._to_catalog_game(item) for item in response.json()]
+        return self._clean_search_results(normalized, response.json(), limit)
 
     async def get_by_id(self, igdb_id: int) -> CatalogGame:
         if not self._is_configured():
@@ -97,6 +107,129 @@ class IGDBService:
         if not normalized_query:
             return []
         return [game for game in IGDBService._local_catalog if normalized_query in game.name.casefold()][:limit]
+
+    @staticmethod
+    def _escape_search_query(query: str) -> str:
+        return query.replace("\\", "\\\\").replace('"', '\\"')
+
+    @classmethod
+    def _clean_search_results(cls, query: str, items: list[dict], limit: int) -> list[CatalogGame]:
+        """Collapse related releases without letting popularity replace title relevance."""
+        candidates = [item for item in items if cls._is_search_candidate(item)]
+        if not candidates or limit <= 0:
+            return []
+
+        candidates_by_id = {item["id"]: item for item in candidates}
+        parents = {game_id: game_id for game_id in candidates_by_id}
+
+        def find(game_id: int) -> int:
+            while parents[game_id] != game_id:
+                parents[game_id] = parents[parents[game_id]]
+                game_id = parents[game_id]
+            return game_id
+
+        def union(left: int, right: int) -> None:
+            left_root, right_root = find(left), find(right)
+            if left_root != right_root:
+                parents[right_root] = left_root
+
+        for item in candidates:
+            for related_id in cls._related_game_ids(item):
+                if related_id in candidates_by_id:
+                    union(item["id"], related_id)
+
+        groups: dict[int, list[tuple[int, dict]]] = {}
+        for index, item in enumerate(candidates):
+            groups.setdefault(find(item["id"]), []).append((index, item))
+
+        popularity_scale = max(
+            (log1p(item.get("total_rating_count") or 0) for item in candidates), default=1.0
+        )
+        popularity_scale = max(popularity_scale, 1.0)
+        selected_groups = [
+            cls._select_group_representative(query, group, len(candidates), popularity_scale)
+            for group in groups.values()
+        ]
+        selected_groups.sort(key=lambda selection: selection[0], reverse=True)
+
+        results = []
+        for _, representative, grouped_items in selected_groups[:limit]:
+            catalog_game = cls._to_catalog_game(representative)
+            catalog_game.platforms = cls._merged_platforms(grouped_items)
+            results.append(catalog_game)
+        return results
+
+    @classmethod
+    def _is_search_candidate(cls, item: dict) -> bool:
+        game_type = item.get("game_type")
+        return (
+            item.get("id") is not None
+            and bool(item.get("name"))
+            and item.get("version_parent") is None
+            and (game_type is None or game_type in cls._ALLOWED_GAME_TYPES)
+        )
+
+    @staticmethod
+    def _related_game_ids(item: dict) -> Iterable[int]:
+        for field in ("ports", "remasters", "expanded_games"):
+            yield from (game_id for game_id in item.get(field) or [] if isinstance(game_id, int))
+
+    @classmethod
+    def _select_group_representative(
+        cls,
+        query: str,
+        group: list[tuple[int, dict]],
+        candidate_count: int,
+        popularity_scale: float,
+    ) -> tuple[float, dict, list[dict]]:
+        selected = max(
+            group,
+            key=lambda indexed_item: (
+                cls._title_match_priority(query, indexed_item[1]["name"]),
+                cls._search_score(query, indexed_item[0], indexed_item[1], candidate_count, popularity_scale),
+            ),
+        )
+        score = cls._search_score(query, selected[0], selected[1], candidate_count, popularity_scale)
+        return score, selected[1], [item for _, item in group]
+
+    @classmethod
+    def _search_score(
+        cls, query: str, index: int, item: dict, candidate_count: int, popularity_scale: float
+    ) -> float:
+        normalized_query = cls._normalize_title(query)
+        normalized_name = cls._normalize_title(item["name"])
+        relevance = 1 - index / max(candidate_count - 1, 1)
+        popularity = log1p(item.get("total_rating_count") or 0) / popularity_scale
+        game_type = item.get("game_type")
+        type_preference = cls._GAME_TYPE_PREFERENCE.get(game_type, 0.0)
+        exact_boost = 0.75 if normalized_name == normalized_query else 0.0
+        prefix_boost = 0.2 if normalized_name.startswith(normalized_query) else 0.0
+        return exact_boost + prefix_boost + 0.75 * relevance + 0.15 * popularity + 0.1 * type_preference
+
+    @classmethod
+    def _title_match_priority(cls, query: str, name: str) -> int:
+        normalized_query = cls._normalize_title(query)
+        normalized_name = cls._normalize_title(name)
+        if normalized_name == normalized_query:
+            return 2
+        if normalized_name.startswith(normalized_query):
+            return 1
+        return 0
+
+    @staticmethod
+    def _normalize_title(value: str) -> str:
+        return re.sub(r"[^a-z0-9]+", " ", value.casefold()).strip()
+
+    @staticmethod
+    def _merged_platforms(items: list[dict]) -> list[str]:
+        return list(
+            dict.fromkeys(
+                platform["name"]
+                for item in items
+                for platform in item.get("platforms") or []
+                if platform.get("name")
+            )
+        )
 
     async def _get_auth_headers(self) -> tuple[str, str]:
         client_id = os.getenv("IGDB_CLIENT_ID")
