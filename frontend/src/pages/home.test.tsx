@@ -76,13 +76,12 @@ describe("HomePage", () => {
     expect(controls?.querySelector(".language-chooser")).toBeTruthy();
   });
 
-  test("renders the brand through a decorative shader canvas", () => {
+  test("does not render the retired brand mark or animated wordmark", () => {
     const view = render(<HomePage path="/" />);
-    const title = view.container.querySelector(".planner-brand__title");
 
-    expect(title?.textContent).toContain("Gaming Clock");
-    expect(title?.querySelector(".planner-brand__shader canvas")).toBeTruthy();
-    expect(view.container.querySelector(".planner-brand__emblem")).toBeTruthy();
+    expect(view.container.querySelector(".planner-brand")).toBeNull();
+    expect(view.container.querySelector(".planner-brand__shader")).toBeNull();
+    expect(view.container.querySelector(".planner-brand__emblem")).toBeNull();
   });
 
   test("guides people through the planner with a clickable progress stepper", async () => {
@@ -473,7 +472,6 @@ describe("HomePage", () => {
 
     expect(view.getByRole("link", { name: /skip to planner/i })).toBeTruthy();
     expect(view.getByRole("main")).toBeTruthy();
-    expect(view.getByText(/gaming clock/i)).toBeTruthy();
     expect(
       view.getByRole("heading", {
         level: 1,

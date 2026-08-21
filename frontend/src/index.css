@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=DotGothic16&family=Space+Mono:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DotGothic16&family=Space+Mono:wght@400;700&display=swap");
 @import "tailwindcss";
 
 @theme {
@@ -20,7 +20,6 @@
   --rust-signal: #ec4624;
   --heat-marker: #f39120;
   --architectural-cream: #e2dac2;
-  --brand-base: #e2dac2;
   --panel-glass: var(--surface-82);
   --panel-chassis: var(--surface-92);
   --metal-highlight: var(--foreground-16);
@@ -93,7 +92,6 @@
   --step-active: #bd5a12;
   --step-active-soft: #f3d2af;
   --placeholder: #6c7469;
-  --brand-base: #222a2a;
   --panel-glass: var(--surface-82);
   --panel-chassis: var(--surface-92);
   --metal-highlight: var(--foreground-16);
@@ -284,119 +282,6 @@
       linear-gradient(90deg, var(--foreground-0), var(--foreground-04), var(--foreground-0)),
       var(--brushed-metal);
     pointer-events: none;
-  }
-
-  .planner-brand {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-  }
-
-  .planner-brand__name {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.7rem;
-    color: var(--foreground);
-  }
-
-  .planner-brand__emblem {
-    flex: 0 0 auto;
-    width: clamp(2.5rem, 4vw, 3.65rem);
-    height: clamp(2.5rem, 4vw, 3.65rem);
-    overflow: visible;
-    filter: drop-shadow(0 0 0.55rem var(--brand-glow));
-  }
-
-  .planner-brand__emblem-orbit,
-  .planner-brand__emblem-core,
-  .planner-brand__emblem-hand {
-    fill: none;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .planner-brand__emblem-orbit {
-    stroke: var(--industrial-aqua);
-    stroke-width: 3;
-    stroke-dasharray: 35 12;
-    transform-origin: 32px 32px;
-    animation: planner-brand-orbit 7s linear infinite;
-  }
-
-  .planner-brand__emblem-core {
-    fill: var(--surface);
-    stroke: var(--heat-marker);
-    stroke-width: 2.5;
-    transform-origin: 32px 32px;
-    animation: planner-brand-core 2.4s ease-in-out infinite;
-  }
-
-  .planner-brand__emblem-hand {
-    stroke: var(--foreground);
-    stroke-width: 2.75;
-  }
-
-  .planner-brand__emblem-play {
-    fill: var(--heat-marker);
-    opacity: 0.92;
-  }
-
-  .planner-brand__emblem-spark {
-    fill: var(--industrial-aqua);
-    transform-origin: 51px 18px;
-    animation: planner-brand-spark 1.2s ease-in-out infinite alternate;
-  }
-
-  .planner-brand__title {
-    position: relative;
-    display: inline-block;
-    isolation: isolate;
-    font-family: "Archivo", sans-serif;
-    font-size: clamp(2rem, 3.3vw, 3rem);
-    font-weight: 800;
-    letter-spacing: 0;
-    line-height: 0.92;
-  }
-
-  .planner-brand__shader {
-    position: absolute;
-    inset: 0;
-  }
-
-  .planner-brand__shader canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-    filter: drop-shadow(0 0 0.65rem var(--brand-glow));
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  .planner-brand__shader[data-ready="true"] canvas {
-    opacity: 1;
-  }
-
-  .planner-brand__title-fallback {
-    display: inline-block;
-    background: linear-gradient(
-      110deg,
-      var(--foreground) 35%,
-      var(--heat-marker) 48%,
-      var(--foreground) 61%
-    );
-    background-position: 120% 0;
-    background-size: 250% 100%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    animation:
-      planner-title-shimmer 5.5s linear infinite,
-      planner-title-wave 2.8s ease-in-out infinite;
-  }
-
-  .planner-brand__shader[data-ready="true"] + .planner-brand__title-fallback {
-    opacity: 0;
   }
 
   .theme-toggle {
@@ -2311,56 +2196,6 @@
   }
 }
 
-@keyframes planner-title-shimmer {
-  from {
-    background-position: 120% 0;
-  }
-
-  to {
-    background-position: -120% 0;
-  }
-}
-
-@keyframes planner-title-wave {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-0.075rem);
-  }
-}
-
-@keyframes planner-brand-orbit {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes planner-brand-core {
-  0%,
-  100% {
-    transform: scale(0.92);
-  }
-
-  50% {
-    transform: scale(1.05);
-  }
-}
-
-@keyframes planner-brand-spark {
-  from {
-    opacity: 0.3;
-    transform: scale(0.55);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1.15);
-  }
-}
-
 @keyframes game-cartridge-scan {
   from {
     background-position: 120% 0;
@@ -2391,15 +2226,6 @@
     transition-duration: 0.01ms !important;
   }
 
-  .planner-brand__title canvas {
-    display: none;
-  }
-
-  .planner-brand__title-fallback {
-    background: none;
-    color: var(--foreground);
-    animation: none;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

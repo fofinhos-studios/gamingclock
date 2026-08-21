@@ -7,7 +7,6 @@ export const strings = {
     },
     app: {
       skipToPlanner: "Skip to planner",
-      brand: "Gaming Clock",
       backlogs: "Backlogs",
       currentBacklog: "Current backlog",
       manageBacklogs: "Manage backlogs",
@@ -209,7 +208,6 @@ export const strings = {
     },
     app: {
       skipToPlanner: "Pular para o planejador",
-      brand: "Gaming Clock",
       backlogs: "Listas",
       currentBacklog: "Lista atual",
       manageBacklogs: "Gerenciar listas",
