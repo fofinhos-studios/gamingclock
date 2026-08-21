@@ -76,12 +76,17 @@ describe("HomePage", () => {
     expect(controls?.querySelector(".language-chooser")).toBeTruthy();
   });
 
-  test("does not render the retired brand mark or animated wordmark", () => {
+  test("renders an IntraNet surface wordmark with a shader canvas", () => {
     const view = render(<HomePage path="/" />);
 
+    expect(view.getByRole("img", { name: "Gaming Clock" })).toBeTruthy();
+    expect(
+      view.container.querySelector(".planner-identity__shader canvas"),
+    ).toBeTruthy();
+    expect(
+      view.container.querySelector(".planner-identity__label")?.textContent,
+    ).toBe("Gaming Clock");
     expect(view.container.querySelector(".planner-brand")).toBeNull();
-    expect(view.container.querySelector(".planner-brand__shader")).toBeNull();
-    expect(view.container.querySelector(".planner-brand__emblem")).toBeNull();
   });
 
   test("guides people through the planner with a clickable progress stepper", async () => {

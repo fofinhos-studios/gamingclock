@@ -118,12 +118,19 @@ test("does not leave a detached frame around the desktop stepper", async () => {
   );
 });
 
-test("uses larger shared icons without the retired brand styling", async () => {
+test("uses larger shared icons and an IntraNet shader wordmark", async () => {
   const stylesheet = await readStylesheet();
 
   expect(stylesheet).toMatch(
     /\.planner-icon\s*\{[\s\S]*?width:\s*1\.15rem;[\s\S]*?height:\s*1\.15rem;/,
   );
+  expect(stylesheet).toMatch(
+    /@font-face\s*\{[\s\S]*?font-family:\s*"IntraNet";[\s\S]*?IntraNet-Bold\.otf/,
+  );
+  expect(stylesheet).toMatch(
+    /\.planner-identity__label\s*\{[\s\S]*?font-family:\s*"IntraNet"/,
+  );
+  expect(stylesheet).toMatch(/\.planner-identity__shader\s*\{/);
   expect(stylesheet).not.toMatch(/\.planner-brand(?:__|\s|\{)/);
   expect(stylesheet).not.toMatch(/@keyframes planner-title-/);
 });
