@@ -50,9 +50,49 @@ const fragmentShaderSource = `
     float alpha = max(text, recessedEdge * 0.42);
     vec3 colour = mix(edge, face, text);
 
+    if (alpha < 0.001) {
+      gl_FragColor = vec4(0.0);
+      return;
+    }
+
     gl_FragColor = vec4(colour, alpha);
   }
 `;
+
+type TransparentShaderSurface = Pick<
+  WebGLRenderingContext,
+  "blendFunc" | "clear" | "clearColor" | "enable"
+> & {
+  BLEND: number;
+  COLOR_BUFFER_BIT: number;
+  ONE_MINUS_SRC_ALPHA: number;
+  SRC_ALPHA: number;
+};
+
+export function fitWordmarkFontSize({
+  maximumWidth,
+  measuredWidth,
+  preferredSize,
+}: {
+  maximumWidth: number;
+  measuredWidth: number;
+  preferredSize: number;
+}) {
+  if (measuredWidth <= maximumWidth || maximumWidth <= 0) {
+    return preferredSize;
+  }
+
+  return preferredSize * (maximumWidth / measuredWidth);
+}
+
+export function prepareTransparentShaderSurface(
+  context: TransparentShaderSurface,
+) {
+  context.clearColor(0, 0, 0, 0);
+  context.clear(context.COLOR_BUFFER_BIT);
+  context.enable(context.BLEND);
+  context.blendFunc(context.SRC_ALPHA, context.ONE_MINUS_SRC_ALPHA);
+}
 
 function compileShader(
   context: WebGLRenderingContext,
@@ -86,6 +126,7 @@ export function SurfaceWordmark({ text }: SurfaceWordmarkProps) {
     const context = canvas.getContext("webgl", {
       alpha: true,
       antialias: true,
+      premultipliedAlpha: false,
     });
     if (!context) {
       return;
@@ -181,17 +222,29 @@ export function SurfaceWordmark({ text }: SurfaceWordmarkProps) {
       }
 
       const styles = window.getComputedStyle(canvas);
-      textContext.font = `${styles.fontWeight} ${styles.fontSize} ${styles.fontFamily}`;
+      const preferredSize = Number.parseFloat(styles.fontSize) * ratio;
+      const font = (size: number) =>
+        `${styles.fontWeight} ${size}px ${styles.fontFamily}`;
+      const uppercasedText = text.toUpperCase();
+      textContext.clearRect(0, 0, textCanvas.width, textCanvas.height);
+      textContext.font = font(preferredSize);
+      const fontSize = fitWordmarkFontSize({
+        maximumWidth: textCanvas.width * 0.9,
+        measuredWidth: textContext.measureText(uppercasedText).width,
+        preferredSize,
+      });
+      textContext.font = font(fontSize);
       textContext.fillStyle = "#ffffff";
       textContext.textAlign = "center";
       textContext.textBaseline = "middle";
       textContext.fillText(
-        text.toUpperCase(),
+        uppercasedText,
         textCanvas.width / 2,
         textCanvas.height / 2,
       );
 
       context.viewport(0, 0, canvas.width, canvas.height);
+      prepareTransparentShaderSurface(context);
       context.useProgram(program);
       context.bindBuffer(context.ARRAY_BUFFER, buffer);
       context.enableVertexAttribArray(position);
