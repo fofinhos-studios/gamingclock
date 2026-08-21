@@ -290,8 +290,6 @@ export function GameSearch({ games, onAddGame }: Props) {
                 })}
             </div>
           )}
-
-        <p class="planner-search-attribution">{t.search.attribution}</p>
       </div>
     </section>
   );
