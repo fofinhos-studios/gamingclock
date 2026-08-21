@@ -267,16 +267,17 @@
 
   .planner-brand__title {
     position: relative;
-    display: inline-grid;
+    display: inline-block;
     isolation: isolate;
   }
 
-  .planner-brand__shader,
-  .planner-brand__title-fallback {
-    grid-area: 1 / 1;
+  .planner-brand__shader {
+    position: absolute;
+    inset: 0;
   }
 
   .planner-brand__shader canvas {
+    display: block;
     width: 100%;
     height: 100%;
     opacity: 0;

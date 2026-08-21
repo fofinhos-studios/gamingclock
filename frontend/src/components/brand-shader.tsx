@@ -32,7 +32,7 @@ const fragmentShaderSource = `
     vec3 colour = mix(u_ink, u_aqua, pulse * 0.62);
     colour = mix(colour, u_heat, pixel * pulse);
 
-    gl_FragColor = vec4(colour * scanline, glyph);
+    gl_FragColor = vec4(colour * scanline * glyph, glyph);
   }
 `;
 
