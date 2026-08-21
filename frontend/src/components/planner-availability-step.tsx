@@ -6,12 +6,14 @@ import { AvailabilityForm } from "./availability-form";
 interface Props {
   availability: WeeklyAvailability | null;
   gameCount: number;
+  hasSchedule: boolean;
   onSubmit: (availability: WeeklyAvailability) => void;
 }
 
 export function PlannerAvailabilityStep({
   availability,
   gameCount,
+  hasSchedule,
   onSubmit,
 }: Props) {
   const { t } = useLanguage();
@@ -44,9 +46,11 @@ export function PlannerAvailabilityStep({
             {availability ? t.availability.saved : t.availability.notSet}
           </p>
           <p class="planner-note__text">
-            {availability
-              ? t.availability.configured(configuredDays)
-              : t.availability.prompt}
+            {hasSchedule
+              ? t.availability.scheduleWarning
+              : availability
+                ? t.availability.configured(configuredDays)
+                : t.availability.prompt}
           </p>
         </section>
 
