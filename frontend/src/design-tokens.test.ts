@@ -65,6 +65,23 @@ test("uses distinct raised surfaces for planner panes and empty states", async (
   );
 });
 
+test("lays out schedule guidance and plan facts as deliberate responsive groups", async () => {
+  const stylesheet = await readStylesheet();
+
+  expect(stylesheet).toMatch(
+    /\.planner-algorithm-explanations\s*\{[\s\S]*?display:\s*grid;[\s\S]*?grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\);/,
+  );
+  expect(stylesheet).toMatch(
+    /\.planner-schedule-preview\s*\{[\s\S]*?border-left:\s*2px solid var\(--step-active\);/,
+  );
+  expect(stylesheet).toMatch(
+    /\.planner-preview-list\s*\{[\s\S]*?display:\s*grid;[\s\S]*?grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\);/,
+  );
+  expect(stylesheet).toMatch(
+    /@media \(max-width: 767px\)\s*\{[\s\S]*?\.planner-algorithm-explanations,[\s\S]*?\.planner-preview-list\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\);/,
+  );
+});
+
 test("uses larger shared icons and an accessible animated brand title", async () => {
   const stylesheet = await readStylesheet();
 
