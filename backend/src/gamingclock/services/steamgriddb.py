@@ -8,7 +8,7 @@ from gamingclock.models.catalog import GameArtwork
 
 
 class SteamGridDBService:
-    """Retrieve game logos and hero banners from SteamGridDB when configured."""
+    """Retrieve game cover, logo, and hero artwork from SteamGridDB when configured."""
 
     _base_url = "https://www.steamgriddb.com/api/v2"
 
@@ -31,7 +31,16 @@ class SteamGridDBService:
         if game_id is None:
             return GameArtwork()
 
-        logo_response, hero_response = await asyncio.gather(
+        cover_response, logo_response, hero_response = await asyncio.gather(
+            self._http_client.get(
+                f"{self._base_url}/grids/game/{game_id}",
+                headers=headers,
+                params={
+                    "dimensions": "600x900,342x482,660x930",
+                    "types": "static",
+                    "limit": 1,
+                },
+            ),
             self._http_client.get(
                 f"{self._base_url}/logos/game/{game_id}",
                 headers=headers,
@@ -43,9 +52,11 @@ class SteamGridDBService:
                 params={"types": "static", "limit": 1},
             ),
         )
+        cover_response.raise_for_status()
         logo_response.raise_for_status()
         hero_response.raise_for_status()
         return GameArtwork(
+            cover_url=self._first_image_url(cover_response.json()),
             logo_url=self._first_image_url(logo_response.json()),
             hero_url=self._first_image_url(hero_response.json()),
         )

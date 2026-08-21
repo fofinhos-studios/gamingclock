@@ -36,6 +36,7 @@ def test_resolve_game_returns_resolved_item(client):
     assert response.status_code == 200
     data = response.json()
     assert data["igdb_id"] == 10
+    assert data["cover_url"] == "https://example.com/cover.png"
     assert data["hltb_status"] == "resolved"
     assert data["main_story_hours"] == 36.5
 
@@ -88,6 +89,7 @@ def test_resolve_game_includes_steamgriddb_artwork(client):
         mock_hltb.search = AsyncMock(return_value=[])
         mock_steamgriddb.get_artwork = AsyncMock(
             return_value=GameArtwork(
+                cover_url="https://cdn.example/ff7-cover.jpg",
                 logo_url="https://cdn.example/ff7-logo.png",
                 hero_url="https://cdn.example/ff7-hero.jpg",
             )
@@ -97,6 +99,7 @@ def test_resolve_game_includes_steamgriddb_artwork(client):
 
     assert response.status_code == 200
     data = response.json()
+    assert data["cover_url"] == "https://cdn.example/ff7-cover.jpg"
     assert data["logo_url"] == "https://cdn.example/ff7-logo.png"
     assert data["hero_url"] == "https://cdn.example/ff7-hero.jpg"
     mock_steamgriddb.get_artwork.assert_awaited_once_with("Final Fantasy VII")

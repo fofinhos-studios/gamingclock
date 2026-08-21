@@ -5,7 +5,7 @@ from gamingclock.services.steamgriddb import SteamGridDBService
 
 
 @pytest.mark.asyncio
-async def test_steamgriddb_returns_logo_and_hero_for_the_best_name_match(monkeypatch):
+async def test_steamgriddb_returns_cover_logo_and_hero_for_the_best_name_match(monkeypatch):
     requests: list[httpx.Request] = []
 
     async def handler(request: httpx.Request) -> httpx.Response:
@@ -34,6 +34,16 @@ async def test_steamgriddb_returns_logo_and_hero_for_the_best_name_match(monkeyp
                 200,
                 json={"success": True, "data": [{"url": "https://cdn.example/ff7-hero.jpg"}]},
             )
+        if request.url.path == "/api/v2/grids/game/7":
+            assert dict(request.url.params) == {
+                "dimensions": "600x900,342x482,660x930",
+                "types": "static",
+                "limit": "1",
+            }
+            return httpx.Response(
+                200,
+                json={"success": True, "data": [{"url": "https://cdn.example/ff7-cover.jpg"}]},
+            )
         raise AssertionError(f"Unexpected request: {request.url}")
 
     monkeypatch.setenv("STEAMGRIDDB_API_KEY", "steamgriddb-key")
@@ -41,9 +51,10 @@ async def test_steamgriddb_returns_logo_and_hero_for_the_best_name_match(monkeyp
 
     artwork = await service.get_artwork("Final Fantasy VII")
 
+    assert artwork.cover_url == "https://cdn.example/ff7-cover.jpg"
     assert artwork.logo_url == "https://cdn.example/ff7-logo.png"
     assert artwork.hero_url == "https://cdn.example/ff7-hero.jpg"
-    assert len(requests) == 3
+    assert len(requests) == 4
 
 
 @pytest.mark.asyncio
@@ -52,6 +63,7 @@ async def test_steamgriddb_returns_empty_artwork_without_credentials(monkeypatch
 
     artwork = await SteamGridDBService().get_artwork("Final Fantasy VII")
 
+    assert artwork.cover_url == ""
     assert artwork.logo_url == ""
     assert artwork.hero_url == ""
 
@@ -67,5 +79,6 @@ async def test_steamgriddb_returns_empty_artwork_when_no_game_matches(monkeypatc
 
     artwork = await service.get_artwork("Unknown")
 
+    assert artwork.cover_url == ""
     assert artwork.logo_url == ""
     assert artwork.hero_url == ""

@@ -16,6 +16,7 @@ class HLTBCategory(StrEnum):
 
 
 class GameArtwork(BaseModel):
+    cover_url: str = ""
     logo_url: str = ""
     hero_url: str = ""
 
