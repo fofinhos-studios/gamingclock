@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
 import { useLanguage } from "../i18n/i18n";
-import { searchGames } from "../services/api";
+import { getApiErrorMessage, searchGames } from "../services/api";
 import type { CatalogGame, ListGame } from "../types";
 import { Button, Field, Input } from "./ui";
 
@@ -61,9 +61,7 @@ export function GameSearch({ games, onAddGame }: Props) {
         setHighlightedIndex(nextResults.length > 0 ? 0 : -1);
       } catch (searchError) {
         setResults([]);
-        setError(
-          searchError instanceof Error ? searchError.message : t.search.failed,
-        );
+        setError(getApiErrorMessage(searchError, t.search.failed));
       } finally {
         setLoading(false);
       }

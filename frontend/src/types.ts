@@ -14,6 +14,7 @@ export interface CatalogGame {
 
 export interface ListGame extends CatalogGame {
   hltb_status: HLTBStatus;
+  hltb_error?: string | null;
   hltb_match_name: string | null;
   main_story_hours: number | null;
   main_extra_hours: number | null;
@@ -22,6 +23,7 @@ export interface ListGame extends CatalogGame {
 }
 
 export interface GameList {
+  id: string;
   name: string;
   games: ListGame[];
 }
