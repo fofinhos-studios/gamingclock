@@ -27,12 +27,12 @@ describe("i18n", () => {
     expect(view.getByDisplayValue("Minha lista")).toBeTruthy();
     expect(
       view.getByRole("button", {
-        name: /continuar para definir tempo semanal/i,
+        name: /continuar para definir rotina/i,
       }),
     ).toBeTruthy();
     expect(
       view
-        .getByRole("button", { name: /continuar para definir tempo semanal/i })
+        .getByRole("button", { name: /continuar para definir rotina/i })
         .getAttribute("title"),
     ).toMatch(/adicione e resolva pelo menos um jogo/i);
 
@@ -85,5 +85,13 @@ describe("i18n", () => {
     expect(
       strings["pt-BR"].tabs.aria(1, "Adicionar jogos", "games", "Etapa atual"),
     ).not.toContain("—");
+  });
+
+  test("uses distinct copy for the availability step, page, and form", () => {
+    expect(strings["pt-BR"].tabs.availability).toBe("Definir rotina");
+    expect(strings["pt-BR"].app.steps.availability.title).toBe(
+      "Quando você joga?",
+    );
+    expect(strings["pt-BR"].availability.heading).toBe("Dias e horários");
   });
 });
