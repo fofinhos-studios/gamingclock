@@ -1,10 +1,4 @@
-import {
-  ArrowDown,
-  CalendarDays,
-  CalendarRange,
-  Check,
-  Gamepad2,
-} from "lucide-preact";
+import { CalendarDays, CalendarRange, Check, Gamepad2 } from "lucide-preact";
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
 import { useLanguage } from "../i18n/i18n";
 
@@ -65,7 +59,7 @@ export function PlannerTabs({ activeTab, completedTabs, onChange }: Props) {
       <div
         role="tablist"
         aria-label={t.tabs.steps}
-        aria-orientation="vertical"
+        aria-orientation="horizontal"
         class="planner-stepper__list"
       >
         {PLANNER_TABS.map((tab, index) => {
@@ -119,11 +113,6 @@ export function PlannerTabs({ activeTab, completedTabs, onChange }: Props) {
                   </span>
                 </span>
               </button>
-              {index < PLANNER_TABS.length - 1 && (
-                <span class="planner-stepper__connector" aria-hidden="true">
-                  <ArrowDown class="planner-icon" />
-                </span>
-              )}
             </div>
           );
         })}

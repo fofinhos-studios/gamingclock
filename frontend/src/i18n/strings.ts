@@ -56,6 +56,13 @@ export const strings = {
       complete: "Complete",
       current: "Current step",
       notStarted: "Not started",
+      backTo: (label: string) => `Back to ${label}`,
+      continueTo: (label: string) => `Continue to ${label}`,
+      continue: "Continue",
+      firstStep: "You are at the first step.",
+      lastStep: "This is the final step.",
+      gamesRequired: "Add and resolve at least one game before continuing.",
+      availabilityRequired: "Save your weekly play time before continuing.",
       aria: (number: number, label: string, id: string, status: string) =>
         `Step ${number}: ${label} (${id}), ${status}`,
     },
@@ -230,6 +237,14 @@ export const strings = {
       complete: "Concluída",
       current: "Etapa atual",
       notStarted: "Não iniciada",
+      backTo: (label: string) => `Voltar para ${label}`,
+      continueTo: (label: string) => `Continuar para ${label}`,
+      continue: "Continuar",
+      firstStep: "Você está na primeira etapa.",
+      lastStep: "Esta é a última etapa.",
+      gamesRequired:
+        "Adicione e resolva pelo menos um jogo antes de continuar.",
+      availabilityRequired: "Salve seu tempo semanal antes de continuar.",
       aria: (number: number, label: string, id: string, status: string) =>
         `Etapa ${number}: ${label} (${id}), ${status}`,
     },

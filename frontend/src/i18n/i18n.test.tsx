@@ -25,6 +25,16 @@ describe("i18n", () => {
     expect((chooser as HTMLSelectElement).value).toBe("pt-BR");
     expect(view.getByRole("heading", { name: "Adicione jogos" })).toBeTruthy();
     expect(view.getByDisplayValue("Minha lista")).toBeTruthy();
+    expect(
+      view.getByRole("button", {
+        name: /continuar para definir tempo semanal/i,
+      }),
+    ).toBeTruthy();
+    expect(
+      view.getByText(
+        /adicione e resolva pelo menos um jogo antes de continuar/i,
+      ),
+    ).toBeTruthy();
 
     await user.selectOptions(chooser, "en");
 
