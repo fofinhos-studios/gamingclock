@@ -28,19 +28,29 @@ class SchedulerService:
         raise ValueError(f"Unknown algorithm: {algorithm}")
 
     @staticmethod
-    def _get_available_days_map(availability: WeeklyAvailability) -> dict[int, DayAvailability]:
-        return {day.day_of_week: day for day in availability.days}
+    def _get_available_days_map(
+        availability: WeeklyAvailability,
+    ) -> dict[int, list[DayAvailability]]:
+        windows_by_day: dict[int, list[DayAvailability]] = {}
+        for window in availability.days:
+            windows_by_day.setdefault(window.day_of_week, []).append(window)
+
+        for windows in windows_by_day.values():
+            windows.sort(key=lambda window: (window.start_hour, window.start_minute))
+
+        return windows_by_day
 
     def _iter_play_dates(
         self,
         start_date: datetime.date,
-        available_days: dict[int, DayAvailability],
+        available_days: dict[int, list[DayAvailability]],
     ) -> Iterator[tuple[datetime.date, DayAvailability]]:
         current = start_date
         while True:
             weekday = current.weekday()
             if weekday in available_days:
-                yield current, available_days[weekday]
+                for window in available_days[weekday]:
+                    yield current, window
             current += datetime.timedelta(days=1)
 
     def _sequential(

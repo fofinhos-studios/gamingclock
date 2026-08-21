@@ -74,6 +74,24 @@ describe("AvailabilityForm", () => {
     elementFromPoint.mockRestore();
   });
 
+  test("keeps multiple play blocks on the same day", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const view = renderForm(onChange);
+
+    await user.click(view.getByRole("button", { name: "Monday at 12:00" }));
+    await user.click(view.getByRole("button", { name: "Monday at 20:00" }));
+
+    expect(onChange).toHaveBeenLastCalledWith({
+      days: [
+        { day_of_week: 0, hours: 1, start_hour: 12, start_minute: 0 },
+        { day_of_week: 0, hours: 1, start_hour: 20, start_minute: 0 },
+      ],
+    });
+    expect(view.getByLabelText("Monday, 1h from 12:00")).toBeTruthy();
+    expect(view.getByLabelText("Monday, 1h from 20:00")).toBeTruthy();
+  });
+
   test("offers week presets and clears the weekly calendar", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
