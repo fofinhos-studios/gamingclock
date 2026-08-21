@@ -286,7 +286,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    min-height: 2rem;
+    min-height: 2.75rem;
     border: 1px solid var(--foreground-22);
     background: var(--foreground-04);
     padding: 0.35rem 0.5rem;
@@ -312,7 +312,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    min-height: 2rem;
+    min-height: 2.75rem;
     color: var(--muted-foreground);
     font-family: var(--font-mono);
     font-size: 0.66rem;
@@ -322,7 +322,7 @@
   }
 
   .language-chooser select {
-    min-height: 2rem;
+    min-height: 2.75rem;
     border: 1px solid var(--foreground-22);
     background: var(--foreground-04);
     padding: 0.35rem 0.45rem;
@@ -521,6 +521,7 @@
   }
 
   .planner-toolbar__backlogs button {
+    min-height: 2.75rem;
     border: 1px solid var(--foreground);
     background: var(--surface);
     padding: 0.4rem 0.55rem;
@@ -938,6 +939,7 @@
   .planner-hltb-option {
     display: inline-flex;
     align-items: center;
+    min-height: 2.75rem;
     border: 1px solid var(--foreground-12);
     padding: 0.2rem 0.45rem;
     background: var(--surface-8);
@@ -1186,6 +1188,7 @@
   .planner-hour-chip {
     display: grid;
     justify-items: center;
+    min-height: 2.75rem;
     width: 100%;
     border: 0;
     padding: 0.55rem 0.4rem;
@@ -1463,7 +1466,7 @@
 
   .ui-input,
   .ui-select {
-    min-height: 2.65rem;
+    min-height: 2.75rem;
     width: 100%;
     border: 1px solid var(--foreground-16);
     background: var(--surface-92);
@@ -1495,6 +1498,7 @@
   }
 
   .ui-button {
+    min-height: 2.75rem;
     transition:
       transform 140ms ease,
       background-color 140ms ease,
@@ -1618,6 +1622,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
   .planner-brand__title {
     background: none;
     color: var(--foreground);

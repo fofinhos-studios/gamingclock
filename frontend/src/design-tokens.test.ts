@@ -80,3 +80,20 @@ test("uses larger shared icons and an accessible animated brand title", async ()
     /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?\.planner-brand__title\s*\{[\s\S]*?animation:\s*none;/,
   );
 });
+
+test("keeps touch controls large and disables motion when requested", async () => {
+  const stylesheet = await readStylesheet();
+
+  expect(stylesheet).toMatch(
+    /\.theme-toggle\s*\{[\s\S]*?min-height:\s*2\.75rem;/,
+  );
+  expect(stylesheet).toMatch(
+    /\.planner-toolbar__backlogs button\s*\{[\s\S]*?min-height:\s*2\.75rem;/,
+  );
+  expect(stylesheet).toMatch(
+    /\.ui-input,[\s\S]*?\.ui-select\s*\{[\s\S]*?min-height:\s*2\.75rem;/,
+  );
+  expect(stylesheet).toMatch(
+    /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?animation-duration:\s*0\.01ms !important;[\s\S]*?transition-duration:\s*0\.01ms !important;/,
+  );
+});
