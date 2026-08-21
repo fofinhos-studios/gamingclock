@@ -22,10 +22,6 @@ const fragmentShaderSource = `
     return texture2D(u_text, coordinate).a;
   }
 
-  float grain(vec2 point) {
-    return fract(sin(dot(point, vec2(12.9898, 78.233))) * 43758.5453);
-  }
-
   void main() {
     vec2 uv = gl_FragCoord.xy / u_resolution;
     vec2 pixel = 1.0 / u_resolution;
@@ -37,17 +33,17 @@ const fragmentShaderSource = `
     float surrounding = max(max(left, right), max(up, down));
     float recessedEdge = max(surrounding - text, 0.0);
     float bevel = clamp((right - left) + (up - down), -1.0, 1.0);
-    float grit = grain(floor(gl_FragCoord.xy * 1.45));
-    vec3 iron = vec3(0.09, 0.08, 0.06);
-    vec3 steel = vec3(0.43, 0.39, 0.30);
-    vec3 parchment = vec3(0.81, 0.75, 0.61);
-    vec3 brass = vec3(0.57, 0.45, 0.27);
-    vec3 face = mix(iron, steel, 0.64 + grit * 0.17);
-    face += parchment * max(bevel, 0.0) * 0.25;
-    face += brass * max(-bevel, 0.0) * 0.16;
-    face -= vec3(0.16) * grit;
-    vec3 edge = mix(iron, vec3(0.02), grit) * 0.8;
-    float alpha = max(text, recessedEdge * 0.42);
+    float innerEdge = text * (1.0 - min(min(left, right), min(up, down)));
+    float sheen = smoothstep(0.08, 0.9, 1.0 - uv.y);
+    vec3 smokedUmber = vec3(0.12, 0.10, 0.07);
+    vec3 linenGlass = vec3(0.58, 0.53, 0.42);
+    vec3 champagne = vec3(0.98, 0.93, 0.81);
+    vec3 face = mix(smokedUmber, linenGlass, 0.48 + sheen * 0.20);
+    face += champagne * max(bevel, 0.0) * 0.34;
+    face -= smokedUmber * max(-bevel, 0.0) * 0.18;
+    face = mix(face, champagne, innerEdge * 0.30);
+    vec3 edge = mix(smokedUmber, champagne, 0.38 + sheen * 0.28);
+    float alpha = max(text * 0.82, recessedEdge * 0.34);
     vec3 colour = mix(edge, face, text);
 
     if (alpha < 0.001) {
