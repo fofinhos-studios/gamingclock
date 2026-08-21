@@ -15,6 +15,7 @@ class DayAvailability(BaseModel):
     day_of_week: int = Field(ge=0, le=6)
     hours: float = Field(gt=0)
     start_hour: int = Field(default=20, ge=0, le=23)
+    start_minute: int = Field(default=0, ge=0, le=59)
 
 
 class WeeklyAvailability(BaseModel):
