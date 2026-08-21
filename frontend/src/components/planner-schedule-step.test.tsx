@@ -1,4 +1,4 @@
-import { render } from "@testing-library/preact";
+import { render, waitFor } from "@testing-library/preact";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 
@@ -76,6 +76,31 @@ describe("PlannerScheduleStep", () => {
     expect(onNavigate).toHaveBeenCalledWith("games");
     await user.click(view.getByRole("link", { name: /save play time/i }));
     expect(onNavigate).toHaveBeenCalledWith("availability");
+  });
+
+  test("restores focus to the destination step after prerequisite navigation", async () => {
+    const user = userEvent.setup();
+    const destinationTab = document.createElement("button");
+    destinationTab.id = "planner-tab-games";
+    document.body.append(destinationTab);
+
+    try {
+      const view = renderStep({
+        prerequisiteMessages: [
+          {
+            id: "games-required",
+            message: "Add games before generating.",
+            target: "games",
+          },
+        ],
+      });
+
+      await user.click(view.getByRole("link", { name: /add games/i }));
+
+      await waitFor(() => expect(document.activeElement).toBe(destinationTab));
+    } finally {
+      destinationTab.remove();
+    }
   });
 
   test("shows a ready preview with both algorithm explanations and a localized date", () => {
