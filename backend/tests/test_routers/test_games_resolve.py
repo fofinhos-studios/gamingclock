@@ -103,3 +103,27 @@ def test_resolve_game_includes_steamgriddb_artwork(client):
     assert data["logo_url"] == "https://cdn.example/ff7-logo.png"
     assert data["hero_url"] == "https://cdn.example/ff7-hero.jpg"
     mock_steamgriddb.get_artwork.assert_awaited_once_with("Final Fantasy VII")
+
+
+def test_get_game_artwork_returns_only_search_card_artwork(client):
+    with patch("gamingclock.routers.games.steamgriddb_service") as mock_steamgriddb:
+        mock_steamgriddb.get_artwork = AsyncMock(
+            return_value=GameArtwork(
+                cover_url="https://cdn.example/ff7-cover.jpg",
+                logo_url="https://cdn.example/ff7-logo.png",
+                hero_url="https://cdn.example/ff7-hero.jpg",
+            )
+        )
+
+        response = client.post(
+            "/games/artwork",
+            json={"igdb_id": 10, "name": "Final Fantasy VII"},
+        )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "cover_url": "https://cdn.example/ff7-cover.jpg",
+        "logo_url": "https://cdn.example/ff7-logo.png",
+        "hero_url": "https://cdn.example/ff7-hero.jpg",
+    }
+    mock_steamgriddb.get_artwork.assert_awaited_once_with("Final Fantasy VII")
