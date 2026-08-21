@@ -195,6 +195,12 @@ export function PlannerScheduleStep({
                     onClick={(event) => {
                       event.preventDefault();
                       onNavigate(prerequisite.target);
+                      const destinationTab = document.getElementById(
+                        `planner-tab-${prerequisite.target}`,
+                      );
+                      if (destinationTab instanceof HTMLButtonElement) {
+                        destinationTab.focus();
+                      }
                     }}
                   >
                     {prerequisite.message}
