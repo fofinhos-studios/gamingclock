@@ -31,10 +31,10 @@ describe("i18n", () => {
       }),
     ).toBeTruthy();
     expect(
-      view.getByText(
-        /adicione e resolva pelo menos um jogo antes de continuar/i,
-      ),
-    ).toBeTruthy();
+      view
+        .getByRole("button", { name: /continuar para definir tempo semanal/i })
+        .getAttribute("title"),
+    ).toMatch(/adicione e resolva pelo menos um jogo/i);
 
     await user.selectOptions(chooser, "en");
 
@@ -60,10 +60,10 @@ describe("i18n", () => {
     expect(strings.en.app.steps.schedule).not.toHaveProperty("eyebrow");
     expect(strings.en.tabs).not.toHaveProperty("intro");
     expect(strings.en.tabs).not.toHaveProperty("copy");
-    expect(strings.en.availability).not.toHaveProperty("title");
     expect(strings.en.availability).not.toHaveProperty("copy");
-    expect(strings.en.schedule).not.toHaveProperty("section");
+    expect(strings.en.availability.form).not.toHaveProperty("startHourCopy");
     expect(strings.en.schedule).not.toHaveProperty("copy");
+    expect(strings.en.schedule).not.toHaveProperty("section");
     expect(strings.en.schedule).not.toHaveProperty("output");
     expect(
       strings.en.tabs.aria(1, "Add games", "games", "Current step"),
@@ -75,10 +75,12 @@ describe("i18n", () => {
     expect(strings["pt-BR"].app.steps.schedule).not.toHaveProperty("eyebrow");
     expect(strings["pt-BR"].tabs).not.toHaveProperty("intro");
     expect(strings["pt-BR"].tabs).not.toHaveProperty("copy");
-    expect(strings["pt-BR"].availability).not.toHaveProperty("title");
     expect(strings["pt-BR"].availability).not.toHaveProperty("copy");
-    expect(strings["pt-BR"].schedule).not.toHaveProperty("section");
+    expect(strings["pt-BR"].availability.form).not.toHaveProperty(
+      "startHourCopy",
+    );
     expect(strings["pt-BR"].schedule).not.toHaveProperty("copy");
+    expect(strings["pt-BR"].schedule).not.toHaveProperty("section");
     expect(strings["pt-BR"].schedule).not.toHaveProperty("output");
     expect(
       strings["pt-BR"].tabs.aria(1, "Adicionar jogos", "games", "Etapa atual"),

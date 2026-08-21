@@ -1,16 +1,10 @@
-import { Check, Save } from "lucide-preact";
+import { CheckIcon, FloppyDiskIcon } from "@phosphor-icons/react";
 import { useState } from "preact/hooks";
 
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
 import { useLanguage } from "../i18n/i18n";
 import type { DayAvailability, WeeklyAvailability } from "../types";
 import { Button, Field, Input } from "./ui";
-
-const MIN_HOURS = 0.5;
-const MAX_HOURS = 16;
-const MIN_START_HOUR = 6;
-const MAX_START_HOUR = 23;
-type ScheduleMode = "uniform" | "custom";
 
 interface Props {
   availability: WeeklyAvailability | null;
@@ -21,78 +15,55 @@ function formatHour(hour: number): string {
   return `${hour.toString().padStart(2, "0")}:00`;
 }
 
-function parseStartHour(value: string): number | null {
-  const [hourText, minuteText] = value.split(":");
-  const hour = Number(hourText);
-  const minute = Number(minuteText);
-
-  if (
-    !Number.isInteger(hour) ||
-    !Number.isInteger(minute) ||
-    minute !== 0 ||
-    hour < MIN_START_HOUR ||
-    hour > MAX_START_HOUR
-  ) {
-    return null;
-  }
-
-  return hour;
-}
-
-function formatHours(hours: number): string {
-  return Number.isInteger(hours) ? String(hours) : hours.toFixed(1);
+function parseHour(value: string): number {
+  return Number(value.slice(0, 2));
 }
 
 export function AvailabilityForm({ availability, onSubmit }: Props) {
   const { t } = useLanguage();
   const initialDays = availability?.days ?? [];
   const initialHours = initialDays[0]?.hours ?? 2;
-  const initialStartTime = formatHour(initialDays[0]?.start_hour ?? 20);
-  const initialScheduleIsUniform = initialDays.every(
-    (day) =>
-      day.hours === initialHours &&
-      formatHour(day.start_hour) === initialStartTime,
+  const initialStartHour = initialDays[0]?.start_hour ?? 20;
+  const initialHoursAreUniform = initialDays.every(
+    (day) => day.hours === initialHours,
   );
-  const [scheduleMode, setScheduleMode] = useState<ScheduleMode>(
-    initialScheduleIsUniform ? "uniform" : "custom",
+  const initialStartHoursAreUniform = initialDays.every(
+    (day) => day.start_hour === initialStartHour,
+  );
+  const [hoursMode, setHoursMode] = useState<"uniform" | "custom">(
+    initialHoursAreUniform ? "uniform" : "custom",
+  );
+  const [startHourMode, setStartHourMode] = useState<"uniform" | "custom">(
+    initialStartHoursAreUniform ? "uniform" : "custom",
   );
   const [uniformHours, setUniformHours] = useState(initialHours);
-  const [uniformStartTime, setUniformStartTime] = useState(initialStartTime);
+  const [uniformStartHour, setUniformStartHour] = useState(initialStartHour);
   const [selectedDays, setSelectedDays] = useState<Set<number>>(
     new Set(initialDays.map((day) => day.day_of_week)),
   );
   const [customHours, setCustomHours] = useState<Record<number, number>>(
     Object.fromEntries(initialDays.map((day) => [day.day_of_week, day.hours])),
   );
-  const [customStartTimes, setCustomStartTimes] = useState<
-    Record<number, string>
+  const [customStartHours, setCustomStartHours] = useState<
+    Record<number, number>
   >(
     Object.fromEntries(
-      initialDays.map((day) => [day.day_of_week, formatHour(day.start_hour)]),
+      initialDays.map((day) => [day.day_of_week, day.start_hour]),
     ),
   );
-  const [validationError, setValidationError] = useState("");
-  const scheduleModeFeedback = useTransientFeedback<ScheduleMode>(1300);
+  const hoursModeFeedback = useTransientFeedback<"uniform" | "custom">(1300);
+  const startHourModeFeedback = useTransientFeedback<"uniform" | "custom">(
+    1300,
+  );
   const dayFeedback = useTransientFeedback<number>(1300);
   const submitFeedback = useTransientFeedback<"saved">(1800);
 
   const getDayHours = (day: number) =>
-    scheduleMode === "uniform"
-      ? uniformHours
-      : (customHours[day] ?? uniformHours);
-  const getDayStartTime = (day: number) =>
-    scheduleMode === "uniform"
-      ? uniformStartTime
-      : (customStartTimes[day] ?? uniformStartTime);
-  const weeklyHours = [...selectedDays].reduce(
-    (total, day) => total + getDayHours(day),
-    0,
-  );
-
-  const setDays = (days: number[]) => {
-    setSelectedDays(new Set(days));
-    setValidationError("");
-  };
+    hoursMode === "uniform" ? uniformHours : (customHours[day] ?? 1);
+  const getDayStartHour = (day: number) =>
+    startHourMode === "uniform"
+      ? uniformStartHour
+      : (customStartHours[day] ?? uniformStartHour);
 
   const toggleDay = (day: number) => {
     const next = new Set(selectedDays);
@@ -102,44 +73,15 @@ export function AvailabilityForm({ availability, onSubmit }: Props) {
       next.add(day);
     }
     setSelectedDays(next);
-    setValidationError("");
     dayFeedback.trigger(day);
   };
 
   const handleSubmit = () => {
-    if (selectedDays.size === 0) {
-      setValidationError(t.availability.form.selectDayError);
-      return;
-    }
-
-    const days: DayAvailability[] = [...selectedDays]
-      .sort((left, right) => left - right)
-      .map((day) => ({
-        day_of_week: day,
-        hours: getDayHours(day),
-        start_hour: parseStartHour(getDayStartTime(day)) ?? Number.NaN,
-      }));
-
-    const hasInvalidHours = days.some(
-      (day) =>
-        !Number.isFinite(day.hours) ||
-        day.hours < MIN_HOURS ||
-        day.hours > MAX_HOURS,
-    );
-    const hasInvalidStartTime = days.some(
-      (day) => !Number.isInteger(day.start_hour),
-    );
-
-    if (hasInvalidHours) {
-      setValidationError(t.availability.form.hoursError);
-      return;
-    }
-    if (hasInvalidStartTime) {
-      setValidationError(t.availability.form.startTimeError);
-      return;
-    }
-
-    setValidationError("");
+    const days: DayAvailability[] = [...selectedDays].sort().map((day) => ({
+      day_of_week: day,
+      hours: getDayHours(day),
+      start_hour: getDayStartHour(day),
+    }));
     onSubmit({ days });
     submitFeedback.trigger("saved");
   };
@@ -150,281 +92,280 @@ export function AvailabilityForm({ availability, onSubmit }: Props) {
         {t.availability.form.heading}
       </h3>
 
-      <div
-        class="planner-preset-group"
-        aria-label={t.availability.form.presets}
-      >
-        <p class="section-eyebrow">{t.availability.form.presets}</p>
-        <div class="planner-preset-actions">
-          {[
-            { label: t.availability.form.weeknights, days: [0, 1, 2, 3, 4] },
-            { label: t.availability.form.weekends, days: [5, 6] },
-            {
-              label: t.availability.form.everyDay,
-              days: [0, 1, 2, 3, 4, 5, 6],
-            },
-            { label: t.availability.form.clear, days: [] },
-          ].map((preset) => (
-            <Button
-              key={preset.label}
-              type="button"
-              size="sm"
-              onClick={() => setDays(preset.days)}
-            >
-              {preset.label}
-            </Button>
-          ))}
-        </div>
-      </div>
-
       <fieldset class="planner-toggle-grid">
-        <legend class="sr-only">{t.availability.form.scheduleMode}</legend>
+        <legend class="sr-only">{t.availability.form.mode}</legend>
         <label
           class={`planner-option-card ${
-            scheduleMode === "uniform" ? "planner-option-card--active" : ""
-          } ${scheduleModeFeedback.active === "uniform" ? "planner-choice--confirmed" : ""}`}
+            hoursMode === "uniform" ? "planner-option-card--active" : ""
+          } ${hoursModeFeedback.active === "uniform" ? "planner-choice--confirmed" : ""}`}
         >
           <input
             type="radio"
-            name="schedule-mode"
-            checked={scheduleMode === "uniform"}
+            checked={hoursMode === "uniform"}
             onChange={() => {
-              setScheduleMode("uniform");
-              scheduleModeFeedback.trigger("uniform");
+              setHoursMode("uniform");
+              hoursModeFeedback.trigger("uniform");
             }}
             class="planner-choice-input"
           />
           <div class="planner-option-card__body">
             <div class="planner-choice-row">
               <p class="planner-option-card__label">
-                {t.availability.form.sameSchedule}
+                {t.availability.form.uniform}
               </p>
-              {scheduleMode === "uniform" && (
-                <Check
+              {hoursMode === "uniform" && (
+                <CheckIcon
                   class="planner-icon planner-choice-indicator"
                   aria-hidden="true"
                 />
               )}
             </div>
-            <p class="planner-option-card__text">
-              {t.availability.form.sameScheduleCopy}
-            </p>
           </div>
         </label>
 
         <label
           class={`planner-option-card ${
-            scheduleMode === "custom" ? "planner-option-card--active" : ""
-          } ${scheduleModeFeedback.active === "custom" ? "planner-choice--confirmed" : ""}`}
+            hoursMode === "custom" ? "planner-option-card--active" : ""
+          } ${hoursModeFeedback.active === "custom" ? "planner-choice--confirmed" : ""}`}
         >
           <input
             type="radio"
-            name="schedule-mode"
-            checked={scheduleMode === "custom"}
+            checked={hoursMode === "custom"}
             onChange={() => {
-              setScheduleMode("custom");
-              scheduleModeFeedback.trigger("custom");
+              setHoursMode("custom");
+              hoursModeFeedback.trigger("custom");
             }}
             class="planner-choice-input"
           />
           <div class="planner-option-card__body">
             <div class="planner-choice-row">
               <p class="planner-option-card__label">
-                {t.availability.form.customSchedule}
+                {t.availability.form.custom}
               </p>
-              {scheduleMode === "custom" && (
-                <Check
+              {hoursMode === "custom" && (
+                <CheckIcon
                   class="planner-icon planner-choice-indicator"
                   aria-hidden="true"
                 />
               )}
             </div>
-            <p class="planner-option-card__text">
-              {t.availability.form.customScheduleCopy}
-            </p>
           </div>
         </label>
       </fieldset>
 
-      {scheduleMode === "uniform" ? (
-        <div class="planner-availability-controls">
-          <Field
-            label={t.availability.form.hoursPerDay}
-            hint={t.availability.form.hoursHint}
-            controlId="uniform-hours"
-            class="max-w-xs"
-          >
-            <Input
-              id="uniform-hours"
-              type="number"
-              min={MIN_HOURS}
-              max={MAX_HOURS}
-              step={0.5}
-              value={uniformHours}
-              aria-invalid={validationError === t.availability.form.hoursError}
-              onInput={(event) => {
-                setUniformHours(
-                  Number((event.target as HTMLInputElement).value),
-                );
-                setValidationError("");
-              }}
-            />
-          </Field>
-          <Field
-            label={t.availability.form.startTime}
-            hint={t.availability.form.startTimeHint}
-            controlId="uniform-start-time"
-            class="max-w-xs"
-          >
-            <Input
-              id="uniform-start-time"
-              type="time"
-              min={formatHour(MIN_START_HOUR)}
-              max={formatHour(MAX_START_HOUR)}
-              step={3600}
-              value={uniformStartTime}
-              aria-invalid={
-                validationError === t.availability.form.startTimeError
-              }
-              onInput={(event) => {
-                setUniformStartTime((event.target as HTMLInputElement).value);
-                setValidationError("");
-              }}
-            />
-          </Field>
-        </div>
-      ) : (
-        <p class="planner-section-heading__text">
-          {t.availability.form.customScheduleHint}
-        </p>
+      {hoursMode === "uniform" && (
+        <Field
+          label={t.availability.form.hoursPerDay}
+          controlId="uniform-hours"
+          class="max-w-xs"
+        >
+          <Input
+            id="uniform-hours"
+            type="number"
+            min={0.5}
+            max={16}
+            step={0.5}
+            value={uniformHours}
+            onInput={(event) =>
+              setUniformHours(Number((event.target as HTMLInputElement).value))
+            }
+          />
+        </Field>
+      )}
+
+      <fieldset class="planner-toggle-grid">
+        <legend class="sr-only">{t.availability.form.startHourMode}</legend>
+        <label
+          class={`planner-option-card ${
+            startHourMode === "uniform" ? "planner-option-card--active" : ""
+          } ${startHourModeFeedback.active === "uniform" ? "planner-choice--confirmed" : ""}`}
+        >
+          <input
+            type="radio"
+            checked={startHourMode === "uniform"}
+            onChange={() => {
+              setStartHourMode("uniform");
+              startHourModeFeedback.trigger("uniform");
+            }}
+            class="planner-choice-input"
+          />
+          <div class="planner-option-card__body">
+            <div class="planner-choice-row">
+              <p class="planner-option-card__label">
+                {t.availability.form.uniform}
+              </p>
+              {startHourMode === "uniform" && (
+                <CheckIcon
+                  class="planner-icon planner-choice-indicator"
+                  aria-hidden="true"
+                />
+              )}
+            </div>
+          </div>
+        </label>
+
+        <label
+          class={`planner-option-card ${
+            startHourMode === "custom" ? "planner-option-card--active" : ""
+          } ${startHourModeFeedback.active === "custom" ? "planner-choice--confirmed" : ""}`}
+        >
+          <input
+            type="radio"
+            checked={startHourMode === "custom"}
+            onChange={() => {
+              setStartHourMode("custom");
+              startHourModeFeedback.trigger("custom");
+            }}
+            class="planner-choice-input"
+          />
+          <div class="planner-option-card__body">
+            <div class="planner-choice-row">
+              <p class="planner-option-card__label">
+                {t.availability.form.custom}
+              </p>
+              {startHourMode === "custom" && (
+                <CheckIcon
+                  class="planner-icon planner-choice-indicator"
+                  aria-hidden="true"
+                />
+              )}
+            </div>
+          </div>
+        </label>
+      </fieldset>
+
+      {startHourMode === "uniform" && (
+        <Field
+          label={t.availability.form.startHour}
+          controlId="uniform-start-hour"
+          class="max-w-xs"
+        >
+          <Input
+            id="uniform-start-hour"
+            type="time"
+            min="06:00"
+            max="23:00"
+            step="3600"
+            value={formatHour(uniformStartHour)}
+            onInput={(event) =>
+              setUniformStartHour(
+                parseHour((event.target as HTMLInputElement).value),
+              )
+            }
+          />
+        </Field>
       )}
 
       <div class="space-y-3">
-        <div class="planner-section-heading">
-          <p class="section-eyebrow">{t.availability.form.weeklyDays}</p>
-          <p class="planner-section-heading__text">
-            {t.availability.form.daysCopy}
-          </p>
-        </div>
-
+        <p class="section-eyebrow">{t.availability.form.weeklyDays}</p>
         <div class="planner-day-grid">
           {t.availability.days.map((name, index) => {
             const selected = selectedDays.has(index);
-            const dayId = `availability-day-${index}`;
 
             return (
-              <div
+              <label
                 key={name}
                 class={`planner-day-card ${
                   selected ? "planner-day-card--active" : ""
                 } ${dayFeedback.active === index ? "planner-choice--confirmed" : ""}`}
               >
-                <label class="planner-day-card__header" htmlFor={dayId}>
+                <div class="planner-day-card__header">
                   <input
-                    id={dayId}
                     type="checkbox"
                     checked={selected}
-                    aria-label={name}
                     onChange={() => toggleDay(index)}
                     class="planner-choice-input"
                   />
-                  <span class="planner-day-card__copy">
-                    <span class="planner-choice-row">
-                      <span class="planner-day-card__label">{name}</span>
+                  <div class="planner-day-card__copy">
+                    <div class="planner-choice-row">
+                      <p class="planner-day-card__label">{name}</p>
                       {selected && (
-                        <Check
+                        <CheckIcon
                           class="planner-icon planner-choice-indicator"
                           aria-hidden="true"
                         />
                       )}
-                    </span>
-                    <span class="planner-day-card__text">
+                    </div>
+                    <p class="planner-day-card__text">
                       {t.availability.form.hoursAt(
                         getDayHours(index),
-                        getDayStartTime(index),
+                        formatHour(getDayStartHour(index)),
                       )}
-                    </span>
-                  </span>
-                </label>
-
-                {scheduleMode === "custom" && selected && (
-                  <div class="planner-day-card__controls">
-                    <Field
-                      label={t.availability.form.dayHours(name)}
-                      hint={t.availability.form.hoursHint}
-                      controlId={`custom-hours-${index}`}
-                    >
-                      <Input
-                        id={`custom-hours-${index}`}
-                        type="number"
-                        min={MIN_HOURS}
-                        max={MAX_HOURS}
-                        step={0.5}
-                        value={customHours[index] ?? uniformHours}
-                        onInput={(event) => {
-                          setCustomHours({
-                            ...customHours,
-                            [index]: Number(
-                              (event.target as HTMLInputElement).value,
-                            ),
-                          });
-                          setValidationError("");
-                        }}
-                      />
-                    </Field>
-                    <Field
-                      label={t.availability.form.dayStartTime(name)}
-                      controlId={`custom-start-time-${index}`}
-                    >
-                      <Input
-                        id={`custom-start-time-${index}`}
-                        type="time"
-                        min={formatHour(MIN_START_HOUR)}
-                        max={formatHour(MAX_START_HOUR)}
-                        step={3600}
-                        value={customStartTimes[index] ?? uniformStartTime}
-                        onInput={(event) => {
-                          setCustomStartTimes({
-                            ...customStartTimes,
-                            [index]: (event.target as HTMLInputElement).value,
-                          });
-                          setValidationError("");
-                        }}
-                      />
-                    </Field>
+                    </p>
                   </div>
-                )}
-              </div>
+                </div>
+
+                {(hoursMode === "custom" || startHourMode === "custom") &&
+                  selected && (
+                    <div class="planner-day-card__controls">
+                      {hoursMode === "custom" && (
+                        <Field
+                          label={t.availability.form.dayHours(name)}
+                          controlId={`custom-hours-${index}`}
+                        >
+                          <Input
+                            id={`custom-hours-${index}`}
+                            type="number"
+                            min={0.5}
+                            max={16}
+                            step={0.5}
+                            value={customHours[index] ?? 1}
+                            onInput={(event) =>
+                              setCustomHours({
+                                ...customHours,
+                                [index]: Number(
+                                  (event.target as HTMLInputElement).value,
+                                ),
+                              })
+                            }
+                          />
+                        </Field>
+                      )}
+
+                      {startHourMode === "custom" && (
+                        <Field
+                          label={t.availability.form.dayStart(name)}
+                          controlId={`custom-start-${index}`}
+                        >
+                          <Input
+                            id={`custom-start-${index}`}
+                            type="time"
+                            min="06:00"
+                            max="23:00"
+                            step="3600"
+                            value={formatHour(getDayStartHour(index))}
+                            onInput={(event) =>
+                              setCustomStartHours({
+                                ...customStartHours,
+                                [index]: parseHour(
+                                  (event.target as HTMLInputElement).value,
+                                ),
+                              })
+                            }
+                          />
+                        </Field>
+                      )}
+                    </div>
+                  )}
+              </label>
             );
           })}
         </div>
       </div>
 
-      <output class="planner-availability-summary" aria-live="polite">
-        <span>{t.availability.form.weeklyTotal(formatHours(weeklyHours))}</span>
-        {submitFeedback.active === "saved" && (
-          <span>{t.availability.form.saved}</span>
-        )}
-      </output>
-
-      {validationError && (
-        <p id="availability-error" role="alert" class="planner-form-error">
-          {validationError}
-        </p>
-      )}
-
       <div class="planner-form-actions">
         <Button
           type="button"
           onClick={handleSubmit}
+          disabled={selectedDays.size === 0}
           variant="primary"
           size="sm"
           feedbackState={submitFeedback.active === "saved" ? "success" : "idle"}
         >
           {submitFeedback.active === "saved" ? (
-            <Check class="planner-icon" aria-hidden="true" />
+            <CheckIcon class="planner-icon" aria-hidden="true" />
           ) : (
-            <Save class="planner-icon" aria-hidden="true" />
+            <FloppyDiskIcon class="planner-icon" aria-hidden="true" />
           )}
           {submitFeedback.active === "saved"
             ? t.availability.form.saved

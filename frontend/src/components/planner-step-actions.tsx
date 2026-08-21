@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight } from "lucide-preact";
+import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
 import { useLanguage } from "../i18n/i18n";
 import type { PlannerTab } from "./planner-tabs";
 import { Button } from "./ui";
@@ -26,9 +26,9 @@ export function PlannerStepActions({
     availability: t.tabs.availability,
     schedule: t.tabs.schedule,
   };
+  const backHelp = previousTab === null ? t.tabs.firstStep : "";
   const backHelpId = "planner-stage-back-help";
   const continueHelpId = "planner-stage-continue-help";
-  const backHelp = previousTab === null ? t.tabs.firstStep : "";
   const continueHelp =
     nextTab === null
       ? t.tabs.lastStep
@@ -44,40 +44,29 @@ export function PlannerStepActions({
         variant="ghost"
         size="sm"
         disabled={previousTab === null}
+        title={backHelp || undefined}
         aria-describedby={backHelp ? backHelpId : undefined}
         onClick={() => {
           if (previousTab) onChange(previousTab);
         }}
       >
-        <ArrowLeft class="planner-icon" aria-hidden="true" />
+        <ArrowLeftIcon class="planner-icon" aria-hidden="true" />
         {t.tabs.backTo(previousTab ? tabLabels[previousTab] : tabLabels.games)}
       </Button>
-
-      <div class="planner-step-actions__status">
-        {backHelp && (
-          <p id={backHelpId} class="planner-step-actions__help">
-            {backHelp}
-          </p>
-        )}
-        {continueHelp && (
-          <p id={continueHelpId} class="planner-step-actions__help">
-            {continueHelp}
-          </p>
-        )}
-      </div>
 
       <Button
         class="planner-step-actions__continue"
         variant={nextTab && canContinue ? "primary" : "outline"}
         size="sm"
         disabled={nextTab === null || !canContinue}
+        title={continueHelp || undefined}
         aria-describedby={continueHelp ? continueHelpId : undefined}
         onClick={() => {
           if (nextTab && canContinue) onChange(nextTab);
         }}
       >
         {nextTab ? t.tabs.continueTo(tabLabels[nextTab]) : t.tabs.continue}
-        <ArrowRight class="planner-icon" aria-hidden="true" />
+        <ArrowRightIcon class="planner-icon" aria-hidden="true" />
       </Button>
     </div>
   );

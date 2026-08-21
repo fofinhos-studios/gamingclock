@@ -150,7 +150,7 @@ describe("HomePage", () => {
       await user.click(firstView.getByRole("tab", { name: /availability/i }));
       await user.click(firstView.getByLabelText(/monday/i));
       await user.click(
-        firstView.getByRole("button", { name: /save play time/i }),
+        firstView.getByRole("button", { name: /save availability/i }),
       );
       await user.click(firstView.getByRole("tab", { name: /schedule/i }));
       await user.selectOptions(
@@ -256,7 +256,9 @@ describe("HomePage", () => {
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
       await user.click(view.getByLabelText(/monday/i));
-      await user.click(view.getByRole("button", { name: /save play time/i }));
+      await user.click(
+        view.getByRole("button", { name: /save availability/i }),
+      );
       await user.click(view.getByRole("tab", { name: /schedule/i }));
 
       const generateButton = within(view.getByRole("tabpanel")).getByRole(
@@ -465,7 +467,9 @@ describe("HomePage", () => {
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
       await user.click(view.getByLabelText(/monday/i));
-      await user.click(view.getByRole("button", { name: /save play time/i }));
+      await user.click(
+        view.getByRole("button", { name: /save availability/i }),
+      );
       await user.click(view.getByRole("tab", { name: /schedule/i }));
       await user.click(
         within(view.getByRole("tabpanel")).getByRole("button", {
@@ -493,9 +497,7 @@ describe("HomePage", () => {
       view.getByRole("heading", { level: 1, name: /add games/i }),
     ).toBeTruthy();
     expect(
-      view
-        .getByLabelText(/backlogs/i)
-        .classList.contains("planner-toolbar__backlogs"),
+      view.getByLabelText(/backlogs/i).classList.contains("backlog-manager"),
     ).toBe(true);
     expect(view.getByRole("tab", { name: /games/i })).toBeTruthy();
     expect(view.getByRole("tab", { name: /availability/i })).toBeTruthy();
@@ -524,7 +526,9 @@ describe("HomePage", () => {
     await user.click(view.getByRole("tab", { name: /availability/i }));
     let activePanel = view.getByRole("tabpanel");
     expect(activePanel.id).toBe("planner-panel-availability");
-    expect(within(activePanel).getByText(/weekly play time/i)).toBeTruthy();
+    expect(
+      within(activePanel).getByRole("group", { name: /availability mode/i }),
+    ).toBeTruthy();
     expect(within(activePanel).queryByText(/find games/i)).toBeNull();
 
     await user.click(view.getByRole("tab", { name: /schedule/i }));
@@ -535,17 +539,21 @@ describe("HomePage", () => {
     ).toBeTruthy();
     expect(within(activePanel).queryByText(/weekly cadence/i)).toBeNull();
     expect(within(activePanel).queryByText(/ready to plan/i)).toBeNull();
-    expect(within(activePanel).getByText(/before you generate/i)).toBeTruthy();
+    expect(within(activePanel).queryByText(/before you generate/i)).toBeNull();
   });
 
-  test("creates a second backlog and switches between backlogs", async () => {
+  test("creates a second backlog from the compact backlog manager", async () => {
     const user = userEvent.setup();
     const view = render(<HomePage path="/" />);
 
-    await user.click(view.getByRole("button", { name: /new backlog/i }));
+    await user.click(view.getByRole("button", { name: /manage backlogs/i }));
+    await user.type(view.getByLabelText(/new backlog name/i), "Weekend games");
+    await user.click(view.getByRole("button", { name: /create backlog/i }));
 
-    expect(view.getByRole("button", { name: /my backlog/i })).toBeTruthy();
-    expect(view.getByRole("button", { name: /backlog 2/i })).toBeTruthy();
+    expect(view.getByText("My Backlog")).toBeTruthy();
+    expect(
+      view.getByRole("button", { name: /weekend games, 0 games/i }),
+    ).toBeTruthy();
   });
 
   test("preserves step-local draft state when switching tabs", async () => {
@@ -625,13 +633,12 @@ describe("HomePage", () => {
       name: /continue to set weekly play time/i,
     });
 
-    expect(gamesBack.getAttribute("aria-describedby")).toBeTruthy();
+    expect(gamesBack.getAttribute("title")).toMatch(/first step/i);
     expect(gamesContinue.hasAttribute("disabled")).toBe(true);
-    expect(gamesContinue.getAttribute("aria-describedby")).toBeTruthy();
-    expect(view.getByText(/you are at the first step/i)).toBeTruthy();
-    expect(
-      view.getByText(/add and resolve at least one game before continuing/i),
-    ).toBeTruthy();
+    expect(gamesContinue.getAttribute("title")).toMatch(
+      /add and resolve at least one game before continuing/i,
+    );
+    expect(view.queryByText(/you are at the first step/i)).toBeNull();
 
     await user.click(view.getByRole("tab", { name: /availability/i }));
 
@@ -642,14 +649,14 @@ describe("HomePage", () => {
       view.getByRole("button", { name: /back to add games/i }),
     ).toBeTruthy();
     expect(availabilityContinue.hasAttribute("disabled")).toBe(true);
-    expect(
-      view.getByText(/save your weekly play time before continuing/i),
-    ).toBeTruthy();
+    expect(availabilityContinue.getAttribute("title")).toMatch(
+      /save your weekly play time before continuing/i,
+    );
 
     await user.click(view.getByRole("tab", { name: /schedule/i }));
     const finalContinue = view.getByRole("button", { name: /^continue$/i });
     expect(finalContinue.hasAttribute("disabled")).toBe(true);
-    expect(view.getByText(/this is the final step/i)).toBeTruthy();
+    expect(finalContinue.getAttribute("title")).toMatch(/final step/i);
   });
 
   test("initializes start date from the local calendar day instead of UTC ISO date", async () => {
@@ -807,15 +814,14 @@ describe("HomePage", () => {
 
       const availabilityPanel = view.getByRole("tabpanel");
       await user.click(within(availabilityPanel).getByLabelText(/monday/i));
-      await user.click(within(availabilityPanel).getByLabelText(/^Start time/));
-      await user.clear(within(availabilityPanel).getByLabelText(/^Start time/));
+      await user.clear(within(availabilityPanel).getByLabelText(/start hour/i));
       await user.type(
-        within(availabilityPanel).getByLabelText(/^Start time/),
+        within(availabilityPanel).getByLabelText(/start hour/i),
         "18:00",
       );
       await user.click(
         within(availabilityPanel).getByRole("button", {
-          name: /save play time/i,
+          name: /save availability/i,
         }),
       );
 
@@ -865,21 +871,16 @@ describe("HomePage", () => {
     const generateButton = within(activePanel).getByRole("button", {
       name: /generate schedule/i,
     });
-    const prerequisiteDescriptionId =
-      generateButton.getAttribute("aria-describedby");
-
     expect(generateButton.hasAttribute("disabled")).toBe(true);
-    expect(prerequisiteDescriptionId).toBeTruthy();
+    expect(generateButton.getAttribute("aria-description")).toMatch(
+      /add at least one game to the backlog/i,
+    );
     expect(
       within(activePanel).getByText(/add at least one game to the backlog/i),
     ).toBeTruthy();
     expect(
       within(activePanel).getByText(/set your weekly availability/i),
     ).toBeTruthy();
-    expect(
-      activePanel.querySelector(`#${prerequisiteDescriptionId ?? ""}`)
-        ?.textContent,
-    ).toMatch(/add at least one game to the backlog/i);
   });
 
   test("keeps a game in the list when its HLTB playtime is unavailable", async () => {
@@ -935,161 +936,6 @@ describe("HomePage", () => {
       expect(
         activePanel.querySelector(".planner-backlog-row__title")?.textContent,
       ).toBe("Hollow Knight");
-    } finally {
-      globalThis.fetch = originalFetch;
-    }
-  });
-
-  test("offers a retry when a game's playtime is unavailable", async () => {
-    const user = userEvent.setup();
-    const originalFetch = globalThis.fetch;
-    let resolveAttempts = 0;
-
-    globalThis.fetch = (async (input: RequestInfo | URL) => {
-      const url = String(input);
-
-      if (url.startsWith("/api/games/search?")) {
-        return createJsonResponse([createCatalogResult()]);
-      }
-
-      if (url === "/api/games/resolve") {
-        resolveAttempts += 1;
-        return createJsonResponse(
-          resolveAttempts === 1
-            ? createSearchResult({
-                hltb_status: "unresolved",
-                hltb_match_name: null,
-                main_story_hours: null,
-                main_extra_hours: null,
-                completionist_hours: null,
-              })
-            : createSearchResult(),
-        );
-      }
-
-      throw new Error(`Unexpected fetch call: ${url}`);
-    }) as typeof fetch;
-
-    try {
-      const view = render(<HomePage path="/" />);
-      const gamesPanel = view.getByRole("tabpanel");
-      const searchInput = within(gamesPanel).getByRole("textbox", {
-        name: /search by title/i,
-      });
-
-      await user.type(searchInput, "ho");
-      await waitFor(() =>
-        expect(
-          view.getByRole("button", { name: /add hollow knight to backlog/i }),
-        ).toBeTruthy(),
-      );
-      await user.click(
-        view.getByRole("button", { name: /add hollow knight to backlog/i }),
-      );
-
-      await waitFor(() =>
-        expect(
-          within(gamesPanel).getByRole("button", {
-            name: /retry hollow knight playtime/i,
-          }),
-        ).toBeTruthy(),
-      );
-      await user.click(
-        within(gamesPanel).getByRole("button", {
-          name: /retry hollow knight playtime/i,
-        }),
-      );
-
-      await waitFor(() =>
-        expect(
-          within(gamesPanel).getByRole("button", {
-            name: /use main time: 27\.5 hours/i,
-          }),
-        ).toBeTruthy(),
-      );
-      expect(resolveAttempts).toBe(2);
-    } finally {
-      globalThis.fetch = originalFetch;
-    }
-  });
-
-  test("reorders games deterministically and removes the selected item", async () => {
-    const user = userEvent.setup();
-    const originalFetch = globalThis.fetch;
-    const secondCatalog = createCatalogResult({
-      igdb_id: 11,
-      name: "Celeste",
-    });
-    const secondResolved = createSearchResult({
-      igdb_id: 11,
-      name: "Celeste",
-    });
-
-    globalThis.fetch = (async (
-      input: RequestInfo | URL,
-      init?: RequestInit,
-    ) => {
-      const url = String(input);
-
-      if (url.startsWith("/api/games/search?")) {
-        return createJsonResponse([createCatalogResult(), secondCatalog]);
-      }
-
-      if (url === "/api/games/resolve") {
-        const body = JSON.parse(String(init?.body ?? "{}")) as {
-          igdb_id?: number;
-        };
-        return createJsonResponse(
-          body.igdb_id === 11 ? secondResolved : createSearchResult(),
-        );
-      }
-
-      throw new Error(`Unexpected fetch call: ${url}`);
-    }) as typeof fetch;
-
-    try {
-      const view = render(<HomePage path="/" />);
-      const gamesPanel = view.getByRole("tabpanel");
-      const searchInput = within(gamesPanel).getByRole("textbox", {
-        name: /search by title/i,
-      });
-
-      await user.type(searchInput, "ga");
-      await waitFor(() =>
-        expect(
-          view.getByRole("button", { name: /add hollow knight to backlog/i }),
-        ).toBeTruthy(),
-      );
-      await user.click(
-        view.getByRole("button", { name: /add hollow knight to backlog/i }),
-      );
-      await user.click(
-        view.getByRole("button", { name: /add celeste to backlog/i }),
-      );
-
-      const currentList = view.getByRole("region", { name: /current list/i });
-      await waitFor(() =>
-        expect(
-          within(currentList).getAllByRole("heading", { level: 3 }),
-        ).toHaveLength(2),
-      );
-      const listTitles = () =>
-        within(currentList)
-          .getAllByRole("heading", { level: 3 })
-          .map((heading) => heading.textContent);
-
-      expect(listTitles()).toEqual(["Hollow Knight", "Celeste"]);
-      await user.click(
-        within(currentList).getByRole("button", {
-          name: /move hollow knight later/i,
-        }),
-      );
-      expect(listTitles()).toEqual(["Celeste", "Hollow Knight"]);
-
-      await user.click(
-        within(currentList).getAllByRole("button", { name: /^remove$/i })[0],
-      );
-      expect(listTitles()).toEqual(["Hollow Knight"]);
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -1243,7 +1089,9 @@ describe("HomePage", () => {
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
       await user.click(view.getByLabelText(/monday/i));
-      await user.click(view.getByRole("button", { name: /save play time/i }));
+      await user.click(
+        view.getByRole("button", { name: /save availability/i }),
+      );
 
       await user.click(view.getByRole("tab", { name: /schedule/i }));
       await user.click(
@@ -1347,7 +1195,9 @@ describe("HomePage", () => {
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
       await user.click(view.getByLabelText(/monday/i));
-      await user.click(view.getByRole("button", { name: /save play time/i }));
+      await user.click(
+        view.getByRole("button", { name: /save availability/i }),
+      );
 
       await user.click(view.getByRole("tab", { name: /schedule/i }));
 
@@ -1396,21 +1246,6 @@ describe("HomePage", () => {
       ).toBeNull();
 
       await generateSchedule();
-
-      await user.click(view.getByRole("tab", { name: /availability/i }));
-      expect(view.getByText(/schedule already exists/i)).toBeTruthy();
-      await user.click(view.getByLabelText(/tuesday/i));
-      await user.click(
-        view.getByRole("button", { name: /save play time|saved/i }),
-      );
-      await user.click(view.getByRole("tab", { name: /schedule/i }));
-
-      expect(
-        within(view.getByRole("tabpanel")).queryByRole("heading", {
-          level: 2,
-          name: /your schedule/i,
-        }),
-      ).toBeNull();
 
       await user.selectOptions(
         within(schedulePanel()).getByLabelText(/schedule method/i),

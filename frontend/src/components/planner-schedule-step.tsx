@@ -1,10 +1,9 @@
 import {
-  AlertCircle,
-  CalendarRange,
-  Check,
-  LoaderCircle,
-  Sparkles,
-} from "lucide-preact";
+  CalendarIcon,
+  CheckIcon,
+  CircleNotchIcon,
+  SparkleIcon,
+} from "@phosphor-icons/react";
 import { useState } from "preact/hooks";
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
 import { useLanguage } from "../i18n/i18n";
@@ -13,29 +12,22 @@ import type {
   ScheduleResponse,
   WeeklyAvailability,
 } from "../types";
-import type { PlannerTab } from "./planner-tabs";
 import { ScheduleView } from "./schedule-view";
 import { Button, Field, Input, Select } from "./ui";
 
 interface PrerequisiteMessage {
   id: string;
   message: string;
-  target: Exclude<PlannerTab, "schedule">;
 }
 
 interface Props {
   availability: WeeklyAvailability | null;
-  gameListName: string;
-  gameCount: number;
-  totalSelectedHours: number;
-  weeklyHours: number;
   algorithm: ScheduleAlgorithm;
   startDate: string;
   schedule: ScheduleResponse | null;
   actionError: string;
   canGenerateSchedule: boolean;
   prerequisiteMessages: PrerequisiteMessage[];
-  onNavigate: (tab: Exclude<PlannerTab, "schedule">) => void;
   onAlgorithmChange: (algorithm: ScheduleAlgorithm) => void;
   onStartDateChange: (startDate: string) => void;
   onGenerateSchedule: () => Promise<boolean>;
@@ -44,27 +36,21 @@ interface Props {
 
 export function PlannerScheduleStep({
   availability,
-  gameListName,
-  gameCount,
-  totalSelectedHours,
-  weeklyHours,
   algorithm,
   startDate,
   schedule,
   actionError,
   canGenerateSchedule,
   prerequisiteMessages,
-  onNavigate,
   onAlgorithmChange,
   onStartDateChange,
   onGenerateSchedule,
   onDownloadIcal,
 }: Props) {
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   const prerequisitesDescriptionId = "schedule-prerequisites";
   const [isGenerating, setIsGenerating] = useState(false);
   const feedback = useTransientFeedback<"success">();
-  const readableStartDate = formatReadableDate(startDate, language);
 
   const handleGenerateClick = async () => {
     setIsGenerating(true);
@@ -89,7 +75,7 @@ export function PlannerScheduleStep({
               id="planner-schedule-heading"
               class="planner-panel__title planner-heading"
             >
-              <CalendarRange
+              <CalendarIcon
                 class="planner-icon planner-heading__icon"
                 aria-hidden="true"
               />
@@ -104,19 +90,20 @@ export function PlannerScheduleStep({
               id="schedule-start-date"
               type="date"
               value={startDate}
+              title={t.schedule.changeHint}
+              aria-description={t.schedule.changeHint}
               onInput={(event) =>
                 onStartDateChange((event.target as HTMLInputElement).value)
               }
             />
-            <span class="ui-hint">
-              {t.schedule.startsOn(readableStartDate)}
-            </span>
           </Field>
 
           <Field label={t.schedule.algorithm} controlId="schedule-algorithm">
             <Select
               id="schedule-algorithm"
               value={algorithm}
+              title={t.schedule.changeHint}
+              aria-description={t.schedule.changeHint}
               onChange={(event) =>
                 onAlgorithmChange(
                   (event.target as HTMLSelectElement)
@@ -139,6 +126,11 @@ export function PlannerScheduleStep({
                   ? prerequisitesDescriptionId
                   : undefined
               }
+              aria-description={
+                prerequisiteMessages.length > 0
+                  ? prerequisiteMessages.map(({ message }) => message).join(" ")
+                  : undefined
+              }
               variant="primary"
               size="sm"
               feedbackState={
@@ -150,14 +142,14 @@ export function PlannerScheduleStep({
               }
             >
               {isGenerating ? (
-                <LoaderCircle
+                <CircleNotchIcon
                   class="planner-icon planner-icon--spin"
                   aria-hidden="true"
                 />
               ) : feedback.active === "success" ? (
-                <Check class="planner-icon" aria-hidden="true" />
+                <CheckIcon class="planner-icon" aria-hidden="true" />
               ) : (
-                <Sparkles class="planner-icon" aria-hidden="true" />
+                <SparkleIcon class="planner-icon" aria-hidden="true" />
               )}
               {isGenerating
                 ? t.schedule.generating
@@ -168,106 +160,20 @@ export function PlannerScheduleStep({
           </div>
         </div>
 
-        <p class="planner-controls__hint">
-          {schedule
-            ? t.schedule.resultClearedHint
-            : availability
-              ? t.schedule.changeHint
-              : t.schedule.availabilityHint}
-        </p>
-
         {prerequisiteMessages.length > 0 && (
-          <div id={prerequisitesDescriptionId} class="planner-inline-notice">
-            <p class="planner-inline-notice__label">
-              <AlertCircle
-                class="planner-icon planner-inline-notice__icon"
-                aria-hidden="true"
-              />
-              <span>{t.schedule.before}</span>
-            </p>
+          <output id={prerequisitesDescriptionId} class="planner-inline-notice">
             <ul class="planner-inline-notice__list">
               {prerequisiteMessages.map((prerequisite) => (
-                <li key={prerequisite.id}>
-                  <a
-                    href={`#planner-panel-${prerequisite.target}`}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      onNavigate(prerequisite.target);
-                      const destinationTab = document.getElementById(
-                        `planner-tab-${prerequisite.target}`,
-                      );
-                      if (destinationTab instanceof HTMLButtonElement) {
-                        destinationTab.focus();
-                      }
-                    }}
-                  >
-                    {prerequisite.message}
-                  </a>
-                </li>
+                <li key={prerequisite.id}>{prerequisite.message}</li>
               ))}
             </ul>
-          </div>
+          </output>
         )}
 
         {actionError && (
           <p role="alert" class="planner-error">
             {actionError}
           </p>
-        )}
-
-        <div class="planner-algorithm-explanations">
-          <div>
-            <p class="planner-option-card__label">{t.schedule.sequential}</p>
-            <p class="planner-section-heading__text">
-              {t.schedule.sequentialCopy}
-            </p>
-          </div>
-          <div>
-            <p class="planner-option-card__label">{t.schedule.alternating}</p>
-            <p class="planner-section-heading__text">
-              {t.schedule.alternatingCopy}
-            </p>
-          </div>
-        </div>
-
-        {canGenerateSchedule && (
-          <section
-            class="planner-schedule-preview"
-            aria-labelledby="schedule-preview-heading"
-          >
-            <p class="section-eyebrow">{t.schedule.ready}</p>
-            <h3 id="schedule-preview-heading">{t.schedule.previewHeading}</h3>
-            <dl class="planner-preview-list">
-              <div>
-                <dt>{t.schedule.previewList}</dt>
-                <dd>{gameListName}</dd>
-              </div>
-              <div>
-                <dt>{t.schedule.previewGames}</dt>
-                <dd>{t.schedule.games(gameCount)}</dd>
-              </div>
-              <div>
-                <dt>{t.schedule.previewTotal}</dt>
-                <dd>{t.schedule.hours(totalSelectedHours)}</dd>
-              </div>
-              <div>
-                <dt>{t.schedule.previewWeekly}</dt>
-                <dd>{t.schedule.hoursPerWeek(weeklyHours)}</dd>
-              </div>
-              <div>
-                <dt>{t.schedule.previewStart}</dt>
-                <dd>{readableStartDate}</dd>
-              </div>
-              <div>
-                <dt>{t.schedule.previewMethod}</dt>
-                <dd>
-                  {algorithm === "sequential"
-                    ? t.schedule.sequential
-                    : t.schedule.alternating}
-                </dd>
-              </div>
-            </dl>
-          </section>
         )}
       </div>
 
@@ -278,16 +184,4 @@ export function PlannerScheduleStep({
       )}
     </section>
   );
-}
-
-function formatReadableDate(date: string, language: string): string {
-  const parsedDate = new Date(`${date}T12:00:00`);
-  if (Number.isNaN(parsedDate.getTime())) {
-    return date;
-  }
-  return new Intl.DateTimeFormat(language, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(parsedDate);
 }

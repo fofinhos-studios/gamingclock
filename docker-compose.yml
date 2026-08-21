@@ -7,6 +7,7 @@ services:
       - PYTHONUNBUFFERED=1
       - IGDB_CLIENT_ID=${IGDB_CLIENT_ID:-}
       - IGDB_CLIENT_SECRET=${IGDB_CLIENT_SECRET:-}
+      - STEAMGRIDDB_API_KEY=${STEAMGRIDDB_API_KEY:-}
 
   frontend:
     build: ./frontend

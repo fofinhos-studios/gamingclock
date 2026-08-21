@@ -13,6 +13,8 @@ export interface CatalogGame {
 }
 
 export interface ListGame extends CatalogGame {
+  logo_url?: string;
+  hero_url?: string;
   hltb_status: HLTBStatus;
   hltb_error?: string | null;
   hltb_match_name: string | null;

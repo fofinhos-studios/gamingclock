@@ -286,7 +286,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    min-height: 2.75rem;
+    min-height: 2rem;
     border: 1px solid var(--foreground-22);
     background: var(--foreground-04);
     padding: 0.35rem 0.5rem;
@@ -312,7 +312,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    min-height: 2.75rem;
+    min-height: 2rem;
     color: var(--muted-foreground);
     font-family: var(--font-mono);
     font-size: 0.66rem;
@@ -322,7 +322,7 @@
   }
 
   .language-chooser select {
-    min-height: 2.75rem;
+    min-height: 2rem;
     border: 1px solid var(--foreground-22);
     background: var(--foreground-04);
     padding: 0.35rem 0.45rem;
@@ -332,11 +332,7 @@
   }
 
   .planner-stepper {
-    display: grid;
-    align-content: start;
-    gap: 0.65rem;
-    padding: 0.25rem 0 0.9rem;
-    border-bottom: 1px solid var(--foreground-12);
+    padding: 0;
     min-width: 0;
   }
 
@@ -365,9 +361,8 @@
 
   .planner-stepper__list {
     display: grid;
-    align-content: start;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.65rem;
+    border-bottom: 1px solid var(--foreground-16);
     min-width: 0;
   }
 
@@ -378,15 +373,15 @@
 
   .planner-stepper__tab {
     display: grid;
-    grid-template-columns: 2rem minmax(0, 1fr);
-    gap: 0.5rem;
+    grid-template-columns: 1.6rem minmax(0, 1fr);
+    gap: 0.45rem;
     align-items: center;
     width: 100%;
-    min-height: 4rem;
-    border: 1px solid var(--foreground-16);
-    border-left: 3px solid transparent;
-    background: var(--foreground-04);
-    padding: 0.5rem 0.65rem;
+    min-height: 3.25rem;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    padding: 0.5rem;
     color: var(--foreground);
     text-align: left;
     cursor: pointer;
@@ -399,14 +394,12 @@
 
   .planner-stepper__tab--active,
   .planner-stepper__tab--active:hover {
-    border-color: var(--foreground-16);
-    border-left-color: var(--step-active);
-    background: var(--step-active-soft);
+    border-bottom-color: var(--step-active);
+    background: var(--foreground-04);
     color: var(--foreground);
   }
 
   .planner-stepper__tab--complete {
-    border-left-color: var(--step-complete);
     color: var(--step-complete);
   }
 
@@ -434,9 +427,7 @@
   }
 
   .planner-stepper__tab-content {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
+    display: grid;
     min-width: 0;
   }
 
@@ -445,8 +436,6 @@
   }
 
   .planner-stepper__tab-content > span:last-child {
-    display: grid;
-    gap: 0.1rem;
     min-width: 0;
   }
 
@@ -457,11 +446,12 @@
   }
 
   .planner-stepper__tab-status {
-    color: var(--muted-foreground);
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 
   .planner-stepper__tab--active .planner-stepper__tab-status,
@@ -511,36 +501,167 @@
     line-height: 1.05;
   }
 
-  .planner-toolbar__backlogs {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: end;
-    gap: 0.45rem 0.6rem;
-    align-items: center;
-    max-width: 100%;
+  .backlog-manager {
+    position: relative;
+    width: min(100%, 31rem);
+    margin-left: auto;
   }
 
-  .planner-toolbar__backlogs button {
-    min-height: 2.75rem;
-    border: 1px solid var(--foreground);
+  .backlog-manager__summary {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border: 1px solid var(--border-light);
+    border-left: 0.3rem solid var(--heat-marker);
     background: var(--surface);
-    padding: 0.4rem 0.55rem;
-    color: var(--foreground);
-    cursor: pointer;
+    padding: 0.55rem 0.6rem 0.55rem 0.75rem;
+  }
+
+  .backlog-manager__actions {
+    display: flex;
+    align-items: stretch;
+    gap: 0.35rem;
+  }
+
+  .backlog-manager__actions .ui-button:first-child {
+    width: 2.35rem;
+    padding-inline: 0;
+  }
+
+  .backlog-manager__current {
+    display: grid;
+    min-width: 0;
+    gap: 0.08rem;
+  }
+
+  .backlog-manager__label,
+  .backlog-manager__meta,
+  .backlog-manager__total,
+  .backlog-manager__select small,
+  .backlog-manager__hint {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.04em;
+  }
+
+  .backlog-manager__label,
+  .backlog-manager__meta,
+  .backlog-manager__total,
+  .backlog-manager__hint,
+  .backlog-manager__select small {
+    color: var(--muted-foreground);
+  }
+
+  .backlog-manager__current strong {
+    overflow: hidden;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 400;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .planner-toolbar__backlogs button[aria-pressed="true"] {
-    background: var(--foreground);
-    color: var(--surface);
+  .backlog-manager__total {
+    display: flex;
+    justify-content: end;
+    gap: 0.55rem;
+    margin-top: 0.35rem;
+    text-align: right;
   }
 
-  .planner-toolbar__backlogs p {
-    flex-basis: 100%;
+  .backlog-manager__panel {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 0.55rem;
+    border: 1px solid var(--border-light);
+    background: var(--muted);
+    padding: 0.75rem;
+    box-shadow: 0.3rem 0.3rem 0 var(--foreground-12);
+  }
+
+  .backlog-manager__panel-heading h2 {
+    margin-top: 0.12rem;
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 400;
+  }
+
+  .backlog-manager__collection {
+    display: grid;
+    max-height: 15rem;
+    overflow-y: auto;
+    border-top: 1px solid var(--foreground-12);
+  }
+
+  .backlog-manager__item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    border-bottom: 1px solid var(--foreground-12);
+  }
+
+  .backlog-manager__select {
+    display: grid;
+    gap: 0.18rem;
+    min-width: 0;
+    padding: 0.65rem 0.5rem;
+    color: var(--foreground);
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .backlog-manager__select > span {
+    overflow: hidden;
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .backlog-manager__item:hover,
+  .backlog-manager__item--active {
+    background: var(--surface-hover);
+  }
+
+  .backlog-manager__item--active .backlog-manager__select > span::before {
+    content: "> ";
+    color: var(--heat-marker);
+  }
+
+  .backlog-manager__delete {
+    display: grid;
+    align-self: center;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-right: 0.35rem;
+    border: 1px solid transparent;
     color: var(--muted-foreground);
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    text-align: end;
+    cursor: pointer;
+  }
+
+  .backlog-manager__delete:hover:not(:disabled) {
+    border-color: var(--error);
+    color: var(--error);
+  }
+
+  .backlog-manager__delete:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  .backlog-manager__hint {
+    border-left: 2px solid var(--heat-marker);
+    padding-left: 0.5rem;
+  }
+
+  .backlog-manager__create {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 0.6rem;
+    border-top: 1px solid var(--foreground-12);
+    padding-top: 0.75rem;
   }
 
   .planner-workspace__body,
@@ -557,7 +678,7 @@
 
   .planner-step-actions {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(12rem, 1.6fr) minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.75rem;
     align-items: center;
     padding-top: 0.35rem;
@@ -821,23 +942,8 @@
   }
 
   .planner-backlog-row__actions {
-    display: grid;
-    gap: 0.45rem;
-    align-items: start;
-    justify-items: end;
-  }
-
-  .planner-backlog-row__reorder,
-  .planner-backlog-row__action-group {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    justify-content: end;
-  }
-
-  .planner-reorder-button {
-    padding-right: 0.55rem;
-    padding-left: 0.55rem;
+    align-items: start;
   }
 
   .planner-inline-feedback {
@@ -850,10 +956,6 @@
     color: var(--muted-foreground);
     font-size: 0.72rem;
     line-height: 1.35;
-  }
-
-  .planner-search-clear {
-    justify-self: start;
   }
 
   .planner-inline-stats {
@@ -939,7 +1041,6 @@
   .planner-hltb-option {
     display: inline-flex;
     align-items: center;
-    min-height: 2.75rem;
     border: 1px solid var(--foreground-12);
     padding: 0.2rem 0.45rem;
     background: var(--surface-8);
@@ -1115,46 +1216,6 @@
     gap: 0.65rem;
   }
 
-  .planner-preset-group,
-  .planner-availability-controls,
-  .planner-availability-summary {
-    display: grid;
-    gap: 0.65rem;
-  }
-
-  .planner-preset-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  .planner-availability-controls {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
-  }
-
-  .planner-availability-summary {
-    grid-template-columns: repeat(2, minmax(0, max-content));
-    justify-content: space-between;
-    border-top: 1px solid var(--foreground-12);
-    padding-top: 0.8rem;
-    color: var(--foreground);
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .planner-availability-summary span:last-child {
-    color: var(--success, var(--foreground));
-  }
-
-  .planner-form-error {
-    color: var(--danger, var(--foreground));
-    font-size: 0.82rem;
-    line-height: 1.4;
-  }
-
   .planner-hour-fieldset {
     display: grid;
     gap: 0.4rem;
@@ -1188,7 +1249,6 @@
   .planner-hour-chip {
     display: grid;
     justify-items: center;
-    min-height: 2.75rem;
     width: 100%;
     border: 0;
     padding: 0.55rem 0.4rem;
@@ -1267,8 +1327,52 @@
 
   .planner-controls__actions {
     display: grid;
+    justify-items: stretch;
+  }
+
+  .planner-pane--availability .space-y-4 {
+    display: grid;
+    gap: 1.15rem;
+  }
+
+  .planner-pane--availability .planner-toggle-grid {
+    grid-template-columns: repeat(2, minmax(0, 12rem));
     gap: 0.35rem;
-    justify-items: start;
+  }
+
+  .planner-pane--availability .planner-option-card {
+    min-height: 2.75rem;
+    padding: 0.55rem 0.65rem;
+  }
+
+  .planner-pane--availability .planner-option-card__body {
+    align-self: center;
+  }
+
+  .planner-pane--availability .planner-option-card__label {
+    font-size: 0.68rem;
+  }
+
+  .planner-pane--availability .planner-day-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
+  .planner-pane--availability .planner-day-card {
+    min-height: 5.25rem;
+    padding: 0.55rem;
+  }
+
+  .planner-pane--availability .planner-day-card__label {
+    font-size: 0.66rem;
+  }
+
+  .planner-pane--availability .planner-day-card__text {
+    font-size: 0.7rem;
+  }
+
+  .planner-controls__actions .ui-button {
+    width: 100%;
   }
 
   .planner-controls__hint {
@@ -1278,10 +1382,9 @@
   }
 
   .planner-inline-notice {
-    display: grid;
-    gap: 0.4rem;
-    margin-top: 0.8rem;
-    padding: 0.8rem 0.9rem;
+    margin-top: 0.65rem;
+    border-left: 2px solid var(--heat-marker);
+    padding: 0.55rem 0.75rem;
     background: var(--foreground-04);
   }
 
@@ -1301,66 +1404,10 @@
   }
 
   .planner-inline-notice__list {
-    display: grid;
-    gap: 0.3rem;
     margin: 0;
-    padding-left: 1rem;
-    font-size: 0.84rem;
+    padding-left: 0.9rem;
+    font-size: 0.78rem;
     line-height: 1.35;
-  }
-
-  .planner-inline-notice__list a {
-    color: var(--foreground);
-    text-decoration: underline;
-    text-underline-offset: 0.18em;
-  }
-
-  .planner-algorithm-explanations,
-  .planner-schedule-preview {
-    display: grid;
-    gap: 0.75rem;
-    border-top: 1px solid var(--foreground-12);
-    padding-top: 0.9rem;
-  }
-
-  .planner-algorithm-explanations {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .planner-schedule-preview {
-    background: var(--foreground-04);
-    padding: 0.9rem;
-  }
-
-  .planner-schedule-preview h3 {
-    font-family: var(--font-display);
-    font-size: 1rem;
-    font-weight: 400;
-  }
-
-  .planner-preview-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.65rem;
-    margin: 0;
-  }
-
-  .planner-preview-list div {
-    display: grid;
-    gap: 0.2rem;
-  }
-
-  .planner-preview-list dt {
-    color: var(--muted-foreground);
-    font-size: 0.68rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .planner-preview-list dd {
-    margin: 0;
-    font-family: var(--font-mono);
-    font-size: 0.82rem;
   }
 
   .planner-error {
@@ -1466,7 +1513,7 @@
 
   .ui-input,
   .ui-select {
-    min-height: 2.75rem;
+    min-height: 2.65rem;
     width: 100%;
     border: 1px solid var(--foreground-16);
     background: var(--surface-92);
@@ -1498,7 +1545,6 @@
   }
 
   .ui-button {
-    min-height: 2.75rem;
     transition:
       transform 140ms ease,
       background-color 140ms ease,
@@ -1622,19 +1668,46 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-  }
-
   .planner-brand__title {
     background: none;
     color: var(--foreground);
     animation: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .planner-app__workspace {
+    grid-template-columns: 14rem minmax(0, 1fr);
+    column-gap: clamp(1.25rem, 3vw, 2.5rem);
+    row-gap: 1.25rem;
+  }
+
+  .planner-toolbar {
+    grid-column: 1 / -1;
+  }
+
+  .planner-stepper {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: start;
+    padding: 0 1.25rem 0 0;
+    border-right: 1px solid var(--foreground-12);
+    border-bottom: 0;
+  }
+
+  .planner-stepper__list {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.45rem;
+  }
+
+  .planner-stepper__tab {
+    min-height: 3.5rem;
+  }
+
+  .planner-workspace__main {
+    grid-column: 2;
+    grid-row: 2;
+    gap: 1.25rem;
   }
 }
 
@@ -1655,12 +1728,18 @@
     width: 100%;
   }
 
-  .planner-toolbar__backlogs {
-    justify-content: start;
+  .backlog-manager {
+    width: 100%;
+    margin-left: 0;
   }
 
-  .planner-toolbar__backlogs p {
-    text-align: start;
+  .planner-pane--availability {
+    padding: clamp(0.9rem, 2vw, 1.25rem);
+  }
+
+  .backlog-manager__total {
+    justify-content: start;
+    text-align: left;
   }
 
   .planner-toolbar__controls {
@@ -1678,18 +1757,12 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .planner-algorithm-explanations,
-  .planner-preview-list {
-    grid-template-columns: minmax(0, 1fr);
+  .planner-pane--availability .planner-toggle-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .planner-availability-controls {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .planner-availability-summary {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.35rem;
+  .planner-pane--availability .planner-day-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -1759,15 +1832,27 @@
 
   .planner-backlog-row__actions {
     grid-column: 1 / -1;
-    justify-items: start;
-  }
-
-  .planner-backlog-row__reorder,
-  .planner-backlog-row__action-group {
-    justify-content: start;
   }
 
   .planner-chip-group {
     justify-content: start;
+  }
+
+  .backlog-manager__summary,
+  .backlog-manager__create {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .backlog-manager__summary {
+    display: grid;
+  }
+
+  .backlog-manager__summary .ui-button,
+  .backlog-manager__create .ui-button {
+    width: 100%;
+  }
+
+  .planner-pane--availability .planner-day-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
