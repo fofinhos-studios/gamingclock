@@ -109,6 +109,17 @@ test("keeps the planner in its single-column layout until there is room for its 
   );
 });
 
+test("does not leave a detached frame around the desktop stepper", async () => {
+  const stylesheet = await readStylesheet();
+
+  expect(stylesheet).toMatch(
+    /@media \(min-width: 1280px\)\s*\{[\s\S]*?\.planner-stepper\s*\{[\s\S]*?border-right:\s*0;/,
+  );
+  expect(stylesheet).toMatch(
+    /@media \(min-width: 1280px\)\s*\{[\s\S]*?\.planner-stepper__list\s*\{[\s\S]*?border-bottom:\s*0;/,
+  );
+});
+
 test("uses larger shared icons and an accessible animated brand title", async () => {
   const stylesheet = await readStylesheet();
 
