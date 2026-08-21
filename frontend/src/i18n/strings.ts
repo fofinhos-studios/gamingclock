@@ -91,6 +91,7 @@ export const strings = {
     list: {
       title: "Current list",
       backlogName: "Backlog name",
+      renameBacklog: (name: string) => `Rename ${name}`,
       emptyTitle: "No games in this backlog yet.",
       emptyCopy: "Search for a game, then add it to this list.",
       noImage: "No image",
@@ -296,6 +297,7 @@ export const strings = {
     list: {
       title: "Lista atual",
       backlogName: "Nome da lista",
+      renameBacklog: (name: string) => `Renomear ${name}`,
       emptyTitle: "Ainda não há jogos nesta lista.",
       emptyCopy: "Busque um jogo e adicione-o a esta lista.",
       noImage: "Sem imagem",

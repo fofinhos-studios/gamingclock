@@ -26,7 +26,7 @@ describe("i18n", () => {
     expect(
       view.getByRole("heading", { name: "O que você quer jogar?" }),
     ).toBeTruthy();
-    expect(view.getByDisplayValue("Minha lista")).toBeTruthy();
+    expect(view.getByRole("heading", { name: "Minha lista" })).toBeTruthy();
     expect(
       view.getByRole("button", {
         name: /continuar para definir rotina/i,
@@ -44,10 +44,11 @@ describe("i18n", () => {
     expect(
       view.getByRole("heading", { name: "What do you want to play?" }),
     ).toBeTruthy();
-    expect(view.getByDisplayValue("My Backlog")).toBeTruthy();
+    expect(view.getByRole("heading", { name: "My Backlog" })).toBeTruthy();
     expect(window.localStorage.getItem("gaming-clock.language")).toBe("en");
 
-    const backlogName = view.getByDisplayValue("My Backlog");
+    await user.click(view.getByRole("button", { name: "Rename My Backlog" }));
+    const backlogName = view.getByLabelText("Backlog name");
     await user.clear(backlogName);
     await user.type(backlogName, "Weekend games");
     await user.selectOptions(
@@ -55,7 +56,7 @@ describe("i18n", () => {
       "pt-BR",
     );
 
-    expect(view.getByDisplayValue("Weekend games")).toBeTruthy();
+    expect(view.getByRole("heading", { name: "Weekend games" })).toBeTruthy();
   });
 
   test("omits redundant planner subtitles in each language", () => {

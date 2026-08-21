@@ -5,13 +5,15 @@ import {
   CircleNotchIcon,
   ClockIcon,
   ListBulletsIcon,
+  PencilSimpleIcon,
   TrashIcon,
   TrophyIcon,
 } from "@phosphor-icons/react";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { useLanguage } from "../i18n/i18n";
 import type { HLTBCategory, ListGame } from "../types";
 import { GameCartridge } from "./game-cartridge";
-import { Button, Field } from "./ui";
+import { Button } from "./ui";
 
 interface Props {
   name: string;
@@ -33,42 +35,93 @@ export function GameListView({
   onRenameList,
 }: Props) {
   const { t } = useLanguage();
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [draftName, setDraftName] = useState(name);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isRenaming) {
+      renameInputRef.current?.focus();
+    }
+  }, [isRenaming]);
+
+  const saveListName = () => {
+    const trimmedName = draftName.trim();
+    if (trimmedName) {
+      onRenameList(trimmedName);
+    } else {
+      setDraftName(name);
+    }
+    setIsRenaming(false);
+  };
+
+  const cancelRename = () => {
+    setDraftName(name);
+    setIsRenaming(false);
+  };
+
   return (
-    <section aria-labelledby="current-list-heading" class="space-y-4">
+    <section aria-label={name} class="space-y-4">
       <div class="planner-pane__header">
-        <div class="space-y-1">
-          <h2
-            id="current-list-heading"
-            class="planner-panel__title planner-heading"
-          >
-            <ListBulletsIcon
-              class="planner-icon planner-heading__icon"
-              aria-hidden="true"
-            />
-            <span>{t.list.title}</span>
-          </h2>
+        <div class="planner-list-name">
+          {isRenaming ? (
+            <form
+              class="planner-list-name__form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                saveListName();
+              }}
+            >
+              <label class="sr-only" for="active-list-name">
+                {t.list.backlogName}
+              </label>
+              <input
+                id="active-list-name"
+                type="text"
+                value={draftName}
+                ref={renameInputRef}
+                class="ui-input planner-list-name__input"
+                onInput={(event) =>
+                  setDraftName((event.target as HTMLInputElement).value)
+                }
+                onBlur={saveListName}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    event.preventDefault();
+                    cancelRename();
+                  }
+                }}
+              />
+            </form>
+          ) : (
+            <>
+              <h2 class="planner-panel__title planner-heading">
+                <ListBulletsIcon
+                  class="planner-icon planner-heading__icon"
+                  aria-hidden="true"
+                />
+                <span>{name}</span>
+              </h2>
+              <Button
+                unstyled
+                class="planner-list-name__rename"
+                aria-label={t.list.renameBacklog(name)}
+                title={t.list.renameBacklog(name)}
+                onClick={() => {
+                  setDraftName(name);
+                  setIsRenaming(true);
+                }}
+              >
+                <PencilSimpleIcon class="planner-icon" aria-hidden="true" />
+              </Button>
+            </>
+          )}
         </div>
         <div class="planner-inline-stats">
           <span>{t.list.count(games.length)}</span>
           {games.length === 0 && <span>0.0h</span>}
         </div>
       </div>
-
-      <Field
-        label={t.list.backlogName}
-        controlId="active-list-name"
-        class="max-w-md"
-      >
-        <input
-          id="active-list-name"
-          type="text"
-          value={name}
-          onInput={(event) =>
-            onRenameList((event.target as HTMLInputElement).value)
-          }
-          class="ui-input"
-        />
-      </Field>
 
       {games.length === 0 ? (
         <div class="planner-empty-state">

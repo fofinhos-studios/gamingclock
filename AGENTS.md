@@ -56,8 +56,9 @@ gamingclock/
 
 ### Working on Tasks
 
-1. **Follow TDD**: write the failing test first, verify it fails, implement, verify it passes
-2. **One task at a time**: complete it fully before moving on
+1. **Use tests proportionally**: add or update tests for behavior changes, bugs, data handling, APIs, and algorithms. Do not write regression tests for small visual, copy, spacing, or styling-only edits unless they carry meaningful behavioral risk.
+2. **Batch related edits before validating**: avoid running the test suite after every small edit. Use focused checks only when they meaningfully reduce risk; let the required commit hooks provide the full validation gate.
+3. **One task at a time**: complete it fully before moving on
 
 ### Committing Changes
 
@@ -94,7 +95,7 @@ git commit -S -m "docs(backend): update service layer patterns"
 ### General Rules
 
 - **DRY, YAGNI**: Don't over-abstract. Don't build for hypothetical futures.
-- **TDD**: Test first, always.
+- **Tests**: Cover meaningful behavior and regressions; keep visual-only changes lean.
 - **Small commits**: One logical change per commit.
 - **No secrets**: Never commit `.env` files, API keys, or credentials.
 - **Pydantic everywhere** on the backend: all data shapes are Pydantic models.
