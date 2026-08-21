@@ -116,20 +116,6 @@ export const strings = {
     },
     availability: {
       heading: "Weekly play time",
-      status: "Status",
-      saved: "Availability set",
-      notSet: "Availability not set",
-      configured: (days: number) =>
-        `${days} day${days === 1 ? "" : "s"} selected. Changes update the schedule automatically.`,
-      scheduleWarning:
-        "A schedule already exists and updates automatically as you change your play time.",
-      prompt:
-        "Set your weekly time and start hour. You can also add games first.",
-      currentBacklog: "Current backlog",
-      games: (count: number) =>
-        `${count} game${count === 1 ? "" : "s"} in this backlog`,
-      addGame: "Add a game before you create a schedule.",
-      changeTime: "Change your play time before you create another schedule.",
       form: {
         heading: "Availability",
         presets: "Quick presets",
@@ -145,19 +131,21 @@ export const strings = {
         customScheduleCopy:
           "Choose a different duration or start time for each day",
         customScheduleHint: "Select a day to edit its duration and start time.",
-        hoursPerDay: "Hours per selected day",
-        hoursHint: "Use 0.5 to 16 hours in half-hour steps.",
+        durationPerDay: "Duration per selected day",
+        durationHint: "Set any positive duration in hours and minutes.",
+        durationHours: "Hours",
+        durationMinutes: "Minutes",
         startTime: "Start time",
         startTimeHint: "Whole hours from 06:00 to 23:00.",
         weeklyDays: "Weekly days",
         daysCopy: "Pick the days you usually play.",
         dayHours: (day: string) => `${day} hours`,
+        dayMinutes: (day: string) => `${day} minutes`,
         dayStartTime: (day: string) => `${day} start time`,
-        hoursAt: (hours: number, time: string) =>
-          `${hours} hour${hours === 1 ? "" : "s"} / ${time}`,
-        weeklyTotal: (hours: string) => `${hours} hours per week`,
+        hoursAt: (duration: string, time: string) => `${duration} / ${time}`,
+        weeklyTotal: (duration: string) => `${duration} per week`,
         selectDayError: "Choose at least one play day before saving.",
-        hoursError: "Set each duration between 0.5 and 16 hours.",
+        hoursError: "Set each duration to more than zero.",
         startTimeError: "Choose a whole-hour start time from 06:00 to 23:00.",
         saved: "Saved",
         save: "Save play time",
@@ -181,11 +169,6 @@ export const strings = {
       generating: "Generating",
       generated: "Generated",
       generate: "Generate Schedule",
-      changeHint: "Changes update this schedule automatically.",
-      resultClearedHint:
-        "Your schedule updates automatically when you change the date, method, or play time.",
-      availabilityHint: "Set weekly availability to update your schedule.",
-      before: "Before your schedule can update",
       ready: "Ready to plan",
       previewHeading: "Plan preview",
       previewList: "List",
@@ -338,20 +321,6 @@ export const strings = {
     },
     availability: {
       heading: "Tempo semanal de jogo",
-      status: "Status",
-      saved: "Disponibilidade definida",
-      notSet: "Disponibilidade não definida",
-      configured: (days: number) =>
-        `${days} dia${days === 1 ? "" : "s"} selecionado${days === 1 ? "" : "s"}. As mudanças atualizam o cronograma automaticamente.`,
-      scheduleWarning:
-        "Já existe um cronograma e ele atualiza automaticamente quando você muda seu tempo de jogo.",
-      prompt:
-        "Defina seu tempo semanal e horário de início. Você também pode adicionar jogos primeiro.",
-      currentBacklog: "Lista atual",
-      games: (count: number) =>
-        `${count} jogo${count === 1 ? "" : "s"} nesta lista`,
-      addGame: "Adicione um jogo antes de criar um cronograma.",
-      changeTime: "Altere seu tempo de jogo antes de criar outro cronograma.",
       form: {
         heading: "Disponibilidade",
         presets: "Atalhos rápidos",
@@ -368,19 +337,21 @@ export const strings = {
           "Escolha uma duração ou horário de início diferente para cada dia",
         customScheduleHint:
           "Selecione um dia para editar sua duração e horário de início.",
-        hoursPerDay: "Horas por dia selecionado",
-        hoursHint: "Use de 0,5 a 16 horas em passos de meia hora.",
+        durationPerDay: "Duração por dia selecionado",
+        durationHint: "Defina qualquer duração positiva em horas e minutos.",
+        durationHours: "Horas",
+        durationMinutes: "Minutos",
         startTime: "Horário de início",
         startTimeHint: "Horas inteiras entre 06:00 e 23:00.",
         weeklyDays: "Dias da semana",
         daysCopy: "Escolha os dias em que você costuma jogar.",
         dayHours: (day: string) => `Horas de ${day}`,
+        dayMinutes: (day: string) => `Minutos de ${day}`,
         dayStartTime: (day: string) => `Horário de início de ${day}`,
-        hoursAt: (hours: number, time: string) =>
-          `${hours} hora${hours === 1 ? "" : "s"} / ${time}`,
-        weeklyTotal: (hours: string) => `${hours} horas por semana`,
+        hoursAt: (duration: string, time: string) => `${duration} / ${time}`,
+        weeklyTotal: (duration: string) => `${duration} por semana`,
         selectDayError: "Escolha pelo menos um dia antes de salvar.",
-        hoursError: "Defina cada duração entre 0,5 e 16 horas.",
+        hoursError: "Defina cada duração como maior que zero.",
         startTimeError: "Escolha um horário inteiro entre 06:00 e 23:00.",
         saved: "Salvo",
         save: "Salvar tempo de jogo",
@@ -404,12 +375,6 @@ export const strings = {
       generating: "Gerando",
       generated: "Gerado",
       generate: "Gerar cronograma",
-      changeHint: "As mudanças atualizam este cronograma automaticamente.",
-      resultClearedHint:
-        "Seu cronograma atualiza automaticamente quando você muda a data, o método ou o tempo de jogo.",
-      availabilityHint:
-        "Defina a disponibilidade semanal para atualizar seu cronograma.",
-      before: "Antes que seu cronograma possa atualizar",
       ready: "Pronto para planejar",
       previewHeading: "Prévia do plano",
       previewList: "Lista",

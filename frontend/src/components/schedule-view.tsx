@@ -50,7 +50,18 @@ function formatReadableDate(date: string, language: string): string {
   }).format(parsedDate);
 }
 
-function getCalendarDays(sessions: PlaySession[]) {
+interface CalendarDay {
+  date: string;
+  isCurrentMonth: boolean;
+  sessions: PlaySession[];
+}
+
+interface CalendarMonth {
+  month: Date;
+  days: CalendarDay[];
+}
+
+function getCalendarMonths(sessions: PlaySession[]): CalendarMonth[] {
   const sessionsByDate = new Map<string, PlaySession[]>();
   for (const session of sessions) {
     sessionsByDate.set(session.date, [
@@ -59,26 +70,54 @@ function getCalendarDays(sessions: PlaySession[]) {
     ]);
   }
 
-  const first = new Date(`${sessions[0].date}T12:00:00Z`);
-  const last = new Date(`${sessions.at(-1)?.date}T12:00:00Z`);
-  const firstMonday = new Date(first);
-  firstMonday.setUTCDate(first.getUTCDate() - ((first.getUTCDay() + 6) % 7));
-  const lastSunday = new Date(last);
-  lastSunday.setUTCDate(
-    last.getUTCDate() + (7 - ((last.getUTCDay() + 6) % 7) - 1),
+  const sessionDates = [...sessionsByDate.keys()].sort();
+  const first = new Date(`${sessionDates[0]}T12:00:00Z`);
+  const last = new Date(`${sessionDates.at(-1)}T12:00:00Z`);
+  const firstMonth = new Date(
+    Date.UTC(first.getUTCFullYear(), first.getUTCMonth(), 1),
   );
+  const lastMonth = new Date(
+    Date.UTC(last.getUTCFullYear(), last.getUTCMonth(), 1),
+  );
+  const months: CalendarMonth[] = [];
 
-  const days: Array<{ date: string; sessions: PlaySession[] }> = [];
   for (
-    const day = new Date(firstMonday);
-    day <= lastSunday;
-    day.setUTCDate(day.getUTCDate() + 1)
+    const month = new Date(firstMonth);
+    month <= lastMonth;
+    month.setUTCMonth(month.getUTCMonth() + 1)
   ) {
-    const date = day.toISOString().slice(0, 10);
-    days.push({ date, sessions: sessionsByDate.get(date) ?? [] });
+    const firstMonday = new Date(month);
+    firstMonday.setUTCDate(month.getUTCDate() - ((month.getUTCDay() + 6) % 7));
+    const lastDayOfMonth = new Date(
+      Date.UTC(month.getUTCFullYear(), month.getUTCMonth() + 1, 0),
+    );
+    const lastSunday = new Date(lastDayOfMonth);
+    lastSunday.setUTCDate(
+      lastDayOfMonth.getUTCDate() +
+        (6 - ((lastDayOfMonth.getUTCDay() + 6) % 7)),
+    );
+
+    const days: CalendarDay[] = [];
+    for (
+      const day = new Date(firstMonday);
+      day <= lastSunday;
+      day.setUTCDate(day.getUTCDate() + 1)
+    ) {
+      const date = day.toISOString().slice(0, 10);
+      days.push({
+        date,
+        isCurrentMonth: day.getUTCMonth() === month.getUTCMonth(),
+        sessions:
+          day.getUTCMonth() === month.getUTCMonth()
+            ? (sessionsByDate.get(date) ?? [])
+            : [],
+      });
+    }
+
+    months.push({ month: new Date(month), days });
   }
 
-  return days;
+  return months;
 }
 
 export function ScheduleView({ schedule, games = [], onDownloadIcal }: Props) {
@@ -95,11 +134,20 @@ export function ScheduleView({ schedule, games = [], onDownloadIcal }: Props) {
   }
 
   const totalElapsedDays = calculateElapsedDays(schedule);
-  const calendarDays = getCalendarDays(schedule.sessions);
+  const calendarMonths = getCalendarMonths(schedule.sessions);
   const weekDayFormatter = new Intl.DateTimeFormat(language, {
     weekday: "short",
     timeZone: "UTC",
   });
+  const monthFormatter = new Intl.DateTimeFormat(language, {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+  const weekdayDates = Array.from(
+    { length: 7 },
+    (_, index) => new Date(Date.UTC(2024, 0, index + 1)),
+  );
 
   const handleDownloadClick = async () => {
     setIsDownloading(true);
@@ -214,16 +262,30 @@ export function ScheduleView({ schedule, games = [], onDownloadIcal }: Props) {
       <div class="schedule-calendar-section">
         <p class="section-eyebrow">{t.schedule.timeline}</p>
         <div class="schedule-calendar" aria-label={t.schedule.timeline}>
-          {calendarDays.map((day) => {
-            const date = new Date(`${day.date}T12:00:00Z`);
-            const dayContents = (
-              <div class="schedule-calendar__day-content">
-                <div class="schedule-calendar__date">
-                  <span>{weekDayFormatter.format(date)}</span>
-                  <strong>{date.getUTCDate()}</strong>
-                </div>
-                <div class="schedule-calendar__sessions">
-                  {day.sessions.map((session, index) => {
+          {calendarMonths.map(({ month, days }) => (
+            <section
+              key={month.toISOString()}
+              class="schedule-calendar__month"
+              aria-labelledby={`schedule-month-${month.getUTCFullYear()}-${month.getUTCMonth()}`}
+            >
+              <h3
+                id={`schedule-month-${month.getUTCFullYear()}-${month.getUTCMonth()}`}
+                class="schedule-calendar__month-title"
+              >
+                {monthFormatter.format(month)}
+              </h3>
+              <div class="schedule-calendar__grid">
+                {weekdayDates.map((date) => (
+                  <div
+                    key={date.toISOString()}
+                    class="schedule-calendar__weekday"
+                  >
+                    {weekDayFormatter.format(date)}
+                  </div>
+                ))}
+                {days.map((day) => {
+                  const date = new Date(`${day.date}T12:00:00Z`);
+                  const gameSessions = day.sessions.map((session, index) => {
                     const game = games.find(
                       (candidate) =>
                         candidate.name.toLocaleLowerCase() ===
@@ -246,24 +308,38 @@ export function ScheduleView({ schedule, games = [], onDownloadIcal }: Props) {
                         <span>{session.duration_hours.toFixed(1)}h</span>
                       </div>
                     );
-                  })}
-                </div>
-              </div>
-            );
+                  });
 
-            return (
-              <div
-                key={day.date}
-                class={`schedule-calendar__day${
-                  day.sessions.length === 0
-                    ? " schedule-calendar__day--empty"
-                    : ""
-                }`}
-              >
-                {dayContents}
+                  return (
+                    <div
+                      key={day.date}
+                      class={`schedule-calendar__day${
+                        day.sessions.length === 0
+                          ? " schedule-calendar__day--empty"
+                          : ""
+                      }${
+                        day.isCurrentMonth
+                          ? ""
+                          : " schedule-calendar__day--adjacent"
+                      }`}
+                    >
+                      <div class="schedule-calendar__date">
+                        <time
+                          dateTime={day.date}
+                          aria-label={formatReadableDate(day.date, language)}
+                        >
+                          {date.getUTCDate()}
+                        </time>
+                      </div>
+                      <div class="schedule-calendar__sessions">
+                        {gameSessions}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
+            </section>
+          ))}
         </div>
       </div>
     </section>

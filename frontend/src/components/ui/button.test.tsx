@@ -11,4 +11,13 @@ describe("Button", () => {
     expect(button.className).toContain("whitespace-nowrap");
     expect(button.className).not.toMatch(/(?:bg|text|border)-(?:black|white)/);
   });
+
+  test("keeps the primary border aligned with its hover surface", () => {
+    const view = render(<Button variant="primary">Continue</Button>);
+    const button = view.getByRole("button", { name: "Continue" });
+
+    expect(button.className).toContain(
+      "hover:border-[var(--muted-foreground)]",
+    );
+  });
 });

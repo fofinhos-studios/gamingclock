@@ -1,11 +1,6 @@
 import { CalendarIcon } from "@phosphor-icons/react";
 import { useLanguage } from "../i18n/i18n";
-import type {
-  ListGame,
-  ScheduleAlgorithm,
-  ScheduleResponse,
-  WeeklyAvailability,
-} from "../types";
+import type { ListGame, ScheduleAlgorithm, ScheduleResponse } from "../types";
 import type { PlannerTab } from "./planner-tabs";
 import { ScheduleView } from "./schedule-view";
 import { Field, Input, Select } from "./ui";
@@ -17,7 +12,6 @@ interface PrerequisiteMessage {
 }
 
 interface Props {
-  availability: WeeklyAvailability | null;
   gameListName: string;
   games?: ListGame[];
   gameCount: number;
@@ -37,7 +31,6 @@ interface Props {
 }
 
 export function PlannerScheduleStep({
-  availability,
   gameListName,
   games = [],
   gameCount,
@@ -57,11 +50,6 @@ export function PlannerScheduleStep({
 }: Props) {
   const { language, t } = useLanguage();
   const prerequisitesDescriptionId = "schedule-prerequisites";
-  const changeHelp = schedule
-    ? t.schedule.resultClearedHint
-    : availability
-      ? t.schedule.changeHint
-      : t.schedule.availabilityHint;
   const readableStartDate = formatReadableDate(startDate, language);
 
   return (
@@ -84,23 +72,12 @@ export function PlannerScheduleStep({
             </h2>
           </div>
         </div>
-
-        <p class="planner-controls__hint">
-          {schedule
-            ? t.schedule.resultClearedHint
-            : availability
-              ? t.schedule.changeHint
-              : t.schedule.availabilityHint}
-        </p>
-
         <div class="planner-controls">
           <Field label={t.schedule.startDate} controlId="schedule-start-date">
             <Input
               id="schedule-start-date"
               type="date"
               value={startDate}
-              title={changeHelp}
-              aria-description={changeHelp}
               onInput={(event) =>
                 onStartDateChange((event.target as HTMLInputElement).value)
               }
@@ -111,8 +88,6 @@ export function PlannerScheduleStep({
             <Select
               id="schedule-algorithm"
               value={algorithm}
-              title={changeHelp}
-              aria-description={changeHelp}
               onChange={(event) =>
                 onAlgorithmChange(
                   (event.target as HTMLSelectElement)
@@ -132,7 +107,6 @@ export function PlannerScheduleStep({
 
         {prerequisiteMessages.length > 0 && (
           <output id={prerequisitesDescriptionId} class="planner-inline-notice">
-            <p class="planner-inline-notice__label">{t.schedule.before}</p>
             <ul class="planner-inline-notice__list">
               {prerequisiteMessages.map((prerequisite) => (
                 <li key={prerequisite.id}>

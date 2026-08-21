@@ -597,8 +597,6 @@ export function HomePage() {
                 >
                   <PlannerAvailabilityStep
                     availability={availability}
-                    gameCount={games.length}
-                    hasSchedule={schedule !== null}
                     onChange={handleSetAvailability}
                   />
                 </section>
@@ -611,7 +609,6 @@ export function HomePage() {
                   class="planner-panel"
                 >
                   <PlannerScheduleStep
-                    availability={availability}
                     gameListName={backlogName}
                     games={games}
                     gameCount={games.length}

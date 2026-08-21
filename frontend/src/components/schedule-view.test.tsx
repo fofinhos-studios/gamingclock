@@ -62,7 +62,7 @@ const games: ListGame[] = [
 ];
 
 describe("ScheduleView", () => {
-  test("renders sessions in a calendar instead of the old table layout", () => {
+  test("renders sessions in month calendars instead of the old table layout", () => {
     const view = render(
       <ScheduleView schedule={schedule} onDownloadIcal={() => {}} />,
     );
@@ -70,15 +70,20 @@ describe("ScheduleView", () => {
     expect(view.getAllByText(/play sessions/i).length).toBeGreaterThan(0);
     expect(view.queryByRole("table")).toBeNull();
     expect(view.container.querySelector(".schedule-calendar")).toBeTruthy();
+    expect(view.getByRole("heading", { name: "March 2026" })).toBeTruthy();
+    expect(view.getByRole("heading", { name: "April 2026" })).toBeTruthy();
+    expect(
+      view.container.querySelectorAll(".schedule-calendar__month"),
+    ).toHaveLength(2);
+    expect(
+      view.container.querySelectorAll(".schedule-calendar__weekday"),
+    ).toHaveLength(14);
     expect(
       view.container.querySelectorAll(".schedule-calendar__day"),
-    ).toHaveLength(7);
-    expect(
-      view.container.querySelectorAll(".schedule-calendar__day--empty"),
-    ).toHaveLength(5);
+    ).toHaveLength(77);
   });
 
-  test("lays sessions out in a weekly calendar with their game cartridges", () => {
+  test("lays sessions out in month calendars with their game cartridges", () => {
     const view = render(
       <ScheduleView
         schedule={schedule}
@@ -110,7 +115,11 @@ describe("ScheduleView", () => {
       />,
     );
 
-    expect(view.getByText("30")).toBeTruthy();
+    expect(
+      view.container.querySelector(
+        ".schedule-calendar__day:not(.schedule-calendar__day--adjacent) time[datetime='2026-03-30']",
+      ),
+    ).toBeTruthy();
     expect(view.queryByText("2026-03-30")).toBeNull();
 
     view.rerender(

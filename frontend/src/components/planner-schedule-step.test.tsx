@@ -3,15 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 
 import { LanguageProvider } from "../i18n/i18n";
-import type { ScheduleResponse, WeeklyAvailability } from "../types";
+import type { ScheduleResponse } from "../types";
 import { PlannerScheduleStep } from "./planner-schedule-step";
-
-const availability: WeeklyAvailability = {
-  days: [
-    { day_of_week: 0, hours: 2, start_hour: 20 },
-    { day_of_week: 5, hours: 3, start_hour: 10 },
-  ],
-};
 
 const schedule: ScheduleResponse = {
   sessions: [],
@@ -23,7 +16,6 @@ function renderStep(
   overrides: Partial<Parameters<typeof PlannerScheduleStep>[0]> = {},
 ) {
   const props: Parameters<typeof PlannerScheduleStep>[0] = {
-    availability: null,
     algorithm: "sequential",
     startDate: "2026-03-30",
     schedule: null,
@@ -78,6 +70,23 @@ describe("PlannerScheduleStep", () => {
     expect(onNavigate).toHaveBeenCalledWith("availability");
   });
 
+  test("keeps prerequisite links without schedule-status narration", () => {
+    const view = renderStep({
+      schedule,
+      prerequisiteMessages: [
+        {
+          id: "games-required",
+          message: "Add games before generating.",
+          target: "games",
+        },
+      ],
+    });
+
+    expect(view.getByRole("link", { name: /add games/i })).toBeTruthy();
+    expect(view.queryByText(/updates automatically/i)).toBeNull();
+    expect(view.queryByText(/before your schedule can update/i)).toBeNull();
+  });
+
   test("restores focus to the destination step after prerequisite navigation", async () => {
     const user = userEvent.setup();
     const destinationTab = document.createElement("button");
@@ -105,7 +114,6 @@ describe("PlannerScheduleStep", () => {
 
   test("shows a ready preview with both algorithm explanations and a localized date", () => {
     const view = renderStep({
-      availability,
       algorithm: "alternating",
       canGenerateSchedule: true,
       gameListName: "Weekend games",
