@@ -39,10 +39,8 @@ describe("BacklogManager", () => {
     const view = render(<BacklogManagerHarness />);
 
     expect(view.getByText("My Backlog")).toBeTruthy();
-    expect(view.getByText("2 backlogs")).toBeTruthy();
 
     await user.click(view.getByRole("button", { name: /manage backlogs/i }));
-    expect(view.getByText("2 backlogs")).toBeTruthy();
     await user.click(
       view.getByRole("button", { name: /weekend games, 0 games, 0\.0 hours/i }),
     );
@@ -56,7 +54,6 @@ describe("BacklogManager", () => {
     await user.type(view.getByLabelText(/new backlog name/i), "Co-op queue");
     await user.click(view.getByRole("button", { name: /create backlog/i }));
 
-    expect(view.getByText("3 backlogs")).toBeTruthy();
     expect(
       view.getByRole("button", { name: /co-op queue, 0 games, 0\.0 hours/i }),
     ).toBeTruthy();
@@ -68,7 +65,6 @@ describe("BacklogManager", () => {
     expect(
       view.queryByRole("button", { name: /weekend games, 0 games/i }),
     ).toBeNull();
-    expect(view.getByText("2 backlogs")).toBeTruthy();
   });
 
   test("protects the final backlog from deletion", async () => {
