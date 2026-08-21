@@ -94,7 +94,7 @@ hooks {
   }
   ["pre-push"] {
     fix = false
-    steps = ci_steps
+    steps = pre_commit_steps
   }
   ["check"] {
     fix = false
