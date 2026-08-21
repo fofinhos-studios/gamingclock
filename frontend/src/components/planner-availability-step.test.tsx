@@ -20,7 +20,7 @@ describe("PlannerAvailabilityStep", () => {
       </LanguageProvider>,
     );
 
-    expect(view.getByRole("group", { name: /weekly schedule/i })).toBeTruthy();
+    expect(view.getByRole("region", { name: /availability/i })).toBeTruthy();
     expect(view.queryByText(/^status$/i)).toBeNull();
     expect(view.queryByText(/availability set/i)).toBeNull();
     expect(view.queryByText(/updates automatically as you change/i)).toBeNull();

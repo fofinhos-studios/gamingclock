@@ -118,11 +118,16 @@ export const strings = {
       heading: "Days and times",
       form: {
         heading: "Availability",
+        weeklyCalendar: "Your week",
+        calendarCopy:
+          "Click a time to add one hour. Drag a block to move it, or pull its lower edge to change the duration.",
+        calendarLabel: "Weekly play calendar",
         presets: "Quick presets",
         weeknights: "Weeknights",
         weekends: "Weekends",
         everyDay: "Every day",
         clear: "Clear",
+        clearWeek: "Clear week",
         scheduleMode: "Weekly schedule",
         sameSchedule: "Same schedule",
         customSchedule: "Customize by day",
@@ -325,11 +330,16 @@ export const strings = {
       heading: "Dias e horários",
       form: {
         heading: "Disponibilidade",
+        weeklyCalendar: "Sua semana",
+        calendarCopy:
+          "Clique em um horário para adicionar uma hora. Arraste um bloco para movê-lo ou puxe a borda inferior para ajustar a duração.",
+        calendarLabel: "Calendário semanal de jogo",
         presets: "Atalhos rápidos",
         weeknights: "Dias úteis",
         weekends: "Fins de semana",
         everyDay: "Todos os dias",
         clear: "Limpar",
+        clearWeek: "Limpar semana",
         scheduleMode: "Rotina semanal",
         sameSchedule: "Mesma rotina",
         customSchedule: "Personalizar por dia",
