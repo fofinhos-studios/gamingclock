@@ -1,14 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from fastapi.responses import Response
 
 from gamingclock.calendar.ical import generate_ical
-from gamingclock.models.catalog import HLTBCategory, HLTBStatus, ScheduleErrorDetail
+from gamingclock.models.catalog import HLTBCategory, HLTBStatus
 from gamingclock.models.game import Game
-from gamingclock.models.schedule import (
-    ScheduleErrorResponse,
-    ScheduleRequest,
-    ScheduleResponse,
-)
+from gamingclock.models.schedule import ScheduleRequest, ScheduleResponse
 from gamingclock.services.scheduler import SchedulerService
 
 router = APIRouter(prefix="/schedule", tags=["schedule"])
@@ -17,23 +13,9 @@ scheduler_service = SchedulerService()
 
 
 def _build_schedule_games(request: ScheduleRequest) -> list[Game]:
-    unresolved_games = [
-        ScheduleErrorDetail(igdb_id=game.igdb_id, name=game.name)
-        for game in request.games
-        if game.hltb_status != HLTBStatus.RESOLVED or game.main_story_hours is None
-    ]
-    if unresolved_games:
-        raise HTTPException(
-            status_code=400,
-            detail=ScheduleErrorResponse(
-                message="Cannot generate schedule with unresolved games",
-                unresolved_games=unresolved_games,
-            ).model_dump(),
-        )
-
     schedule_games: list[Game] = []
     for game in request.games:
-        if game.main_story_hours is None:
+        if game.hltb_status != HLTBStatus.RESOLVED or game.main_story_hours is None:
             continue
         selected_hours = {
             HLTBCategory.MAIN: game.main_story_hours,

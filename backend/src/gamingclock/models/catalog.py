@@ -62,11 +62,6 @@ class ResolveGameRequest(BaseModel):
     rating: float | None = None
 
 
-class ScheduleErrorDetail(BaseModel):
-    igdb_id: int
-    name: str
-
-
 def release_year_from_epoch(epoch_seconds: int | None) -> int | None:
     if epoch_seconds is None:
         return None

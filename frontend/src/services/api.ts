@@ -2,8 +2,6 @@ import type {
   CatalogGame,
   ListGame,
   ScheduleAlgorithm,
-  ScheduleErrorDetail,
-  ScheduleErrorResponse,
   ScheduleResponse,
   WeeklyAvailability,
 } from "../types";
@@ -17,14 +15,12 @@ interface ApiErrorOptions {
   kind: ApiErrorKind;
   operation: ApiOperation;
   status?: number;
-  unresolvedGames?: ScheduleErrorDetail[];
 }
 
 export class ApiError extends Error {
   readonly kind: ApiErrorKind;
   readonly operation: ApiOperation;
   readonly status: number | undefined;
-  readonly unresolvedGames: ScheduleErrorDetail[];
 
   constructor(message: string, options: ApiErrorOptions) {
     super(message);
@@ -32,17 +28,11 @@ export class ApiError extends Error {
     this.kind = options.kind;
     this.operation = options.operation;
     this.status = options.status;
-    this.unresolvedGames = options.unresolvedGames ?? [];
   }
 }
 
 export function getApiErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof ApiError) {
-    if (error.unresolvedGames.length > 0) {
-      return `${error.message}: ${error.unresolvedGames
-        .map((game) => game.name)
-        .join(", ")}`;
-    }
     return error.message;
   }
   return error instanceof Error && error.message ? error.message : fallback;
@@ -54,22 +44,12 @@ async function parseError(
   operation: ApiOperation,
 ): Promise<ApiError> {
   try {
-    const data = (await response.json()) as {
-      detail?: ScheduleErrorResponse | string;
-    };
+    const data = (await response.json()) as { detail?: string };
     if (typeof data.detail === "string") {
       return new ApiError(data.detail, {
         kind: "backend",
         operation,
         status: response.status,
-      });
-    }
-    if (data.detail?.message) {
-      return new ApiError(data.detail.message, {
-        kind: "backend",
-        operation,
-        status: response.status,
-        unresolvedGames: data.detail.unresolved_games,
       });
     }
   } catch {

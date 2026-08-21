@@ -85,12 +85,27 @@ def test_generate_schedule_empty_games(client):
     assert data["total_hours"] == 0
 
 
-def test_generate_schedule_blocks_unresolved_games(client):
+def test_generate_schedule_skips_unresolved_games(client):
     response = client.post(
         "/schedule/generate",
         json={
             "game_list_name": "Blocked",
             "games": [
+                {
+                    "igdb_id": 10,
+                    "name": "FF7",
+                    "cover_url": "https://example.com/ff7.png",
+                    "summary": "Classic RPG",
+                    "genres": ["RPG"],
+                    "platforms": ["PlayStation"],
+                    "release_year": 1997,
+                    "rating": 95.0,
+                    "hltb_status": "resolved",
+                    "hltb_match_name": "Final Fantasy VII",
+                    "main_story_hours": 4.0,
+                    "main_extra_hours": 6.0,
+                    "completionist_hours": 10.0,
+                },
                 {
                     "igdb_id": 11,
                     "name": "Unknown Game",
@@ -113,10 +128,6 @@ def test_generate_schedule_blocks_unresolved_games(client):
         },
     )
 
-    assert response.status_code == 400
-    assert response.json() == {
-        "detail": {
-            "message": "Cannot generate schedule with unresolved games",
-            "unresolved_games": [{"igdb_id": 11, "name": "Unknown Game"}],
-        }
-    }
+    assert response.status_code == 200
+    assert response.json()["total_hours"] == 4.0
+    assert {session["game_name"] for session in response.json()["sessions"]} == {"FF7"}

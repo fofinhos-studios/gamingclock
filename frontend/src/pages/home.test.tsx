@@ -874,9 +874,10 @@ describe("HomePage", () => {
     ).toBeTruthy();
   });
 
-  test("keeps a game in the list when its HLTB playtime is unavailable", async () => {
+  test("schedules available games while naming games without HLTB playtime", async () => {
     const user = userEvent.setup();
     const originalFetch = globalThis.fetch;
+    let scheduleGenerated = false;
 
     const unresolvedGame = createSearchResult({
       hltb_status: "unresolved",
@@ -895,6 +896,15 @@ describe("HomePage", () => {
 
       if (url === "/api/games/resolve") {
         return createJsonResponse(unresolvedGame);
+      }
+
+      if (url === "/api/schedule/generate") {
+        scheduleGenerated = true;
+        return createJsonResponse({
+          sessions: [],
+          total_hours: 0,
+          estimated_end_date: null,
+        });
       }
 
       throw new Error(`Unexpected fetch call: ${url}`);
@@ -927,6 +937,17 @@ describe("HomePage", () => {
       expect(
         activePanel.querySelector(".planner-backlog-row__title")?.textContent,
       ).toBe("Hollow Knight");
+
+      await user.click(view.getByRole("tab", { name: /availability/i }));
+      await user.click(view.getByLabelText(/monday/i));
+      await user.click(view.getByRole("tab", { name: /schedule/i }));
+
+      await waitFor(() => expect(scheduleGenerated).toBe(true));
+      expect(
+        within(view.getByRole("tabpanel")).getByText(
+          /hollow knight does not have hltb playtime data/i,
+        ),
+      ).toBeTruthy();
     } finally {
       globalThis.fetch = originalFetch;
     }
