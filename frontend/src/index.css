@@ -1633,7 +1633,9 @@
 
   .planner-backlog-row {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.6rem;
+    align-items: stretch;
     padding: 0;
     border: 0;
     background: transparent;
@@ -1651,6 +1653,29 @@
     padding: 0 0.15rem;
   }
 
+  .planner-backlog-row .planner-chip-group {
+    width: 100%;
+    justify-content: start;
+  }
+
+  .planner-backlog-row .planner-hltb-onboarding {
+    text-align: left;
+  }
+
+  .planner-backlog-row__actions {
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0 0.15rem;
+  }
+
+  .planner-backlog-row__reorder,
+  .planner-backlog-row__action-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
   .schedule-calendar-section {
     display: grid;
     gap: 0.55rem;
@@ -1658,8 +1683,8 @@
 
   .schedule-calendar {
     display: grid;
-    grid-template-columns: repeat(7, minmax(8.5rem, 1fr));
-    min-width: 59.5rem;
+    grid-template-columns: repeat(7, minmax(11rem, 1fr));
+    min-width: 77rem;
     overflow: hidden;
     border: 1px solid var(--foreground-22);
     background: var(--foreground-08);
@@ -1674,7 +1699,7 @@
     display: grid;
     grid-template-rows: auto 1fr;
     gap: 0.45rem;
-    min-height: 13rem;
+    min-height: 14rem;
     padding: 0.45rem;
     border-right: 1px solid var(--foreground-16);
     border-bottom: 1px solid var(--foreground-16);
@@ -1706,8 +1731,8 @@
   }
 
   .game-cartridge--calendar {
-    grid-template-columns: 2.9rem minmax(0, 1fr);
-    min-height: 5.5rem;
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+    min-height: 6.4rem;
     box-shadow: none;
   }
 
@@ -1720,28 +1745,28 @@
   }
 
   .game-cartridge--calendar .game-cartridge__cover {
-    min-height: 4.9rem;
+    min-height: 5.75rem;
   }
 
   .game-cartridge--calendar .game-cartridge__content {
-    gap: 0.32rem;
-    padding: 0.42rem 0.45rem 0.38rem;
+    gap: 0.42rem;
+    padding: 0.5rem 0.55rem 0.45rem;
   }
 
   .game-cartridge--calendar .game-cartridge__logo {
-    max-height: 1.65rem;
-    max-width: 8rem;
+    max-height: 1.9rem;
+    max-width: 100%;
   }
 
   .game-cartridge--calendar .game-cartridge__title {
-    font-size: 0.72rem;
+    font-size: 0.78rem;
   }
 
   .game-cartridge--calendar .game-cartridge__label {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .game-cartridge--calendar .game-cartridge__label div:nth-child(n + 3) {
+  .game-cartridge--calendar .game-cartridge__label div:nth-child(n + 2) {
     display: none;
   }
 
