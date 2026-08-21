@@ -116,6 +116,9 @@ describe("release journey", () => {
       const firstView = render(<HomePage path="/" />);
 
       await user.click(firstView.getByRole("button", { name: /new backlog/i }));
+      await user.click(
+        firstView.getByRole("button", { name: /rename backlog 2/i }),
+      );
       const listName = firstView.getByLabelText(/^backlog name$/i);
       await user.clear(listName);
       await user.type(listName, "Weekend rotation");
@@ -214,7 +217,12 @@ describe("release journey", () => {
 
       firstView.unmount();
       const reloadedView = render(<HomePage path="/" />);
-      expect(reloadedView.getByDisplayValue("Weekend rotation")).toBeTruthy();
+      expect(
+        reloadedView.getByRole("heading", {
+          name: "Weekend rotation",
+          hidden: true,
+        }),
+      ).toBeTruthy();
       expect(
         reloadedView.getByRole("button", { name: /download \.ics/i }),
       ).toBeTruthy();

@@ -161,8 +161,14 @@ describe("HomePage", () => {
         ).toBeTruthy(),
       );
 
-      await user.clear(firstView.getByDisplayValue("My Backlog"));
-      await user.type(firstView.getByDisplayValue(""), "Weekend games");
+      await user.click(
+        firstView.getByRole("button", { name: /rename my backlog/i }),
+      );
+      await user.clear(firstView.getByLabelText(/backlog name/i));
+      await user.type(
+        firstView.getByLabelText(/backlog name/i),
+        "Weekend games",
+      );
       await user.click(firstView.getByRole("tab", { name: /availability/i }));
       await user.click(firstView.getByLabelText(/monday/i));
       await user.click(firstView.getByRole("tab", { name: /schedule/i }));
@@ -185,7 +191,12 @@ describe("HomePage", () => {
           .getByRole("tab", { name: /schedule/i })
           .getAttribute("aria-selected"),
       ).toBe("true");
-      expect(reloadedView.getByDisplayValue("Weekend games")).toBeTruthy();
+      expect(
+        reloadedView.getByRole("heading", {
+          name: "Weekend games",
+          hidden: true,
+        }),
+      ).toBeTruthy();
       await user.click(reloadedView.getByRole("tab", { name: /games/i }));
       expect(
         reloadedView.getByRole("button", {
@@ -497,7 +508,9 @@ describe("HomePage", () => {
     expect(
       within(activePanel).queryByText(/enter at least 2 characters/i),
     ).toBeNull();
-    expect(within(activePanel).getByText(/current list/i)).toBeTruthy();
+    expect(
+      within(activePanel).getByRole("heading", { name: /my backlog/i }),
+    ).toBeTruthy();
     expect(within(activePanel).queryByText(/^backlog$/i)).toBeNull();
     expect(within(activePanel).queryByText(/weekly cadence/i)).toBeNull();
     expect(within(activePanel).queryByText(/your schedule/i)).toBeNull();
@@ -965,7 +978,7 @@ describe("HomePage", () => {
       );
 
       await waitFor(() =>
-        expect(view.getAllByDisplayValue(/my backlog/i).length).toBe(1),
+        expect(view.getByRole("heading", { name: /my backlog/i })).toBeTruthy(),
       );
 
       await user.type(searchInput, "ho");
@@ -981,7 +994,7 @@ describe("HomePage", () => {
       );
 
       expect(view.getAllByText(/hollow knight/i).length).toBeGreaterThan(0);
-      expect(view.getAllByDisplayValue(/my backlog/i)).toHaveLength(1);
+      expect(view.getByRole("heading", { name: /my backlog/i })).toBeTruthy();
       expect(
         consoleErrors.some((args) =>
           args.some((arg) => String(arg).toLowerCase().includes("key")),
@@ -1062,7 +1075,7 @@ describe("HomePage", () => {
       );
 
       await waitFor(() =>
-        expect(view.getByDisplayValue(/my backlog/i)).toBeTruthy(),
+        expect(view.getByRole("heading", { name: /my backlog/i })).toBeTruthy(),
       );
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
@@ -1163,7 +1176,7 @@ describe("HomePage", () => {
       );
 
       await waitFor(() =>
-        expect(view.getByDisplayValue(/my backlog/i)).toBeTruthy(),
+        expect(view.getByRole("heading", { name: /my backlog/i })).toBeTruthy(),
       );
 
       await user.click(view.getByRole("tab", { name: /availability/i }));

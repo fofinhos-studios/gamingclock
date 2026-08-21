@@ -109,7 +109,6 @@ export function createFontReadyDraw(draw: () => void) {
     },
   };
 }
-
 function compileShader(
   context: WebGLRenderingContext,
   type: number,
