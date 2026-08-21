@@ -1250,12 +1250,6 @@
     line-height: 1.35;
   }
 
-  .planner-search-attribution {
-    color: var(--muted-foreground);
-    font-size: 0.72rem;
-    line-height: 1.35;
-  }
-
   .planner-inline-stats {
     display: flex;
     flex-wrap: wrap;
