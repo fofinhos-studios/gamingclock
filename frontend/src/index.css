@@ -1306,6 +1306,60 @@
     line-height: 1.35;
   }
 
+  .planner-inline-notice__list a {
+    color: var(--foreground);
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+  }
+
+  .planner-algorithm-explanations,
+  .planner-schedule-preview {
+    display: grid;
+    gap: 0.75rem;
+    border-top: 1px solid var(--foreground-12);
+    padding-top: 0.9rem;
+  }
+
+  .planner-algorithm-explanations {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .planner-schedule-preview {
+    background: var(--foreground-04);
+    padding: 0.9rem;
+  }
+
+  .planner-schedule-preview h3 {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 400;
+  }
+
+  .planner-preview-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+    margin: 0;
+  }
+
+  .planner-preview-list div {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .planner-preview-list dt {
+    color: var(--muted-foreground);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .planner-preview-list dd {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+  }
+
   .planner-error {
     margin-top: 0.75rem;
     color: var(--error);
@@ -1608,6 +1662,11 @@
   .planner-day-grid,
   .planner-hour-grid,
   .planner-hour-grid--compact {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .planner-algorithm-explanations,
+  .planner-preview-list {
     grid-template-columns: minmax(0, 1fr);
   }
 
