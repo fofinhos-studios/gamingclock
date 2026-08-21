@@ -2413,7 +2413,7 @@
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   .planner-app__workspace {
     grid-template-columns: 14rem minmax(0, 1fr);
     column-gap: clamp(1.25rem, 3vw, 2.5rem);
@@ -2449,7 +2449,7 @@
   }
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 1279px) {
   .planner-app {
     padding: 0.6rem;
   }
@@ -2491,6 +2491,11 @@
   .planner-day-grid,
   .planner-hour-grid,
   .planner-hour-grid--compact {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .planner-algorithm-explanations,
+  .planner-preview-list {
     grid-template-columns: minmax(0, 1fr);
   }
 
