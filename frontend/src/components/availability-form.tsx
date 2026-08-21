@@ -1,5 +1,5 @@
 import { MoonIcon, SunIcon } from "@phosphor-icons/react";
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 import { useLanguage } from "../i18n/i18n";
 import type { DayAvailability, WeeklyAvailability } from "../types";
@@ -18,12 +18,20 @@ type CalendarEvent = {
 
 type CalendarEvents = Record<number, CalendarEvent>;
 
-type DragState = {
+type EventDragState = {
   day: number;
   durationMinutes: number;
   mode: "move" | "resize";
   offsetMinutes: number;
 };
+
+type CreateDragState = {
+  day: number;
+  mode: "create";
+  startMinutes: number;
+};
+
+type DragState = CreateDragState | EventDragState;
 
 interface Props {
   availability: WeeklyAvailability | null;
@@ -109,6 +117,7 @@ export function AvailabilityForm({ availability, onChange }: Props) {
     eventsFromAvailability(availability),
   );
   const [dragState, setDragState] = useState<DragState | null>(null);
+  const didCreateDrag = useRef(false);
   const slots = Array.from(
     { length: (END_MINUTES - START_MINUTES) / SLOT_MINUTES },
     (_, index) => START_MINUTES + index * SLOT_MINUTES,
@@ -138,6 +147,28 @@ export function AvailabilityForm({ availability, onChange }: Props) {
       }
 
       setEvents((current) => {
+        if (dragState.mode === "create") {
+          if (
+            targetDay !== dragState.day ||
+            pointerMinutes === dragState.startMinutes
+          ) {
+            return current;
+          }
+
+          didCreateDrag.current = true;
+          const startMinutes = Math.min(dragState.startMinutes, pointerMinutes);
+          const durationMinutes = Math.max(
+            SLOT_MINUTES,
+            Math.abs(pointerMinutes - dragState.startMinutes),
+          );
+          const next = {
+            ...current,
+            [dragState.day]: { durationMinutes, startMinutes },
+          };
+          onChange(availabilityFromEvents(next));
+          return next;
+        }
+
         const source = current[dragState.day];
         if (!source) {
           return current;
@@ -257,6 +288,21 @@ export function AvailabilityForm({ availability, onChange }: Props) {
     });
   };
 
+  const startCreating = (
+    event: PointerEvent,
+    day: number,
+    startMinutes: number,
+  ) => {
+    if (events[day]) {
+      return;
+    }
+
+    (event.currentTarget as HTMLElement).focus();
+    event.preventDefault();
+    didCreateDrag.current = false;
+    setDragState({ day, mode: "create", startMinutes });
+  };
+
   const moveWithKeyboard = (day: number, direction: -1 | 1, resize = false) => {
     const calendarEvent = events[day];
     if (!calendarEvent) {
@@ -368,7 +414,16 @@ export function AvailabilityForm({ availability, onChange }: Props) {
                       type="button"
                       class="availability-week__slot"
                       aria-label={`${day} at ${formatTime(minutes)}`}
-                      onClick={() => addEvent(dayIndex, minutes)}
+                      onClick={() => {
+                        if (didCreateDrag.current) {
+                          didCreateDrag.current = false;
+                          return;
+                        }
+                        addEvent(dayIndex, minutes);
+                      }}
+                      onPointerDown={(event) =>
+                        startCreating(event, dayIndex, minutes)
+                      }
                     />
                   ))}
                 </div>
