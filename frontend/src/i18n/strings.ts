@@ -132,7 +132,7 @@ export const strings = {
           "Choose a different duration or start time for each day",
         customScheduleHint: "Select a day to edit its duration and start time.",
         durationPerDay: "Duration per selected day",
-        durationHint: "Set any positive duration in hours and minutes.",
+        durationHint: "Choose how long you want to play each day.",
         durationHours: "Hours",
         durationMinutes: "Minutes",
         startTime: "Start time",
@@ -338,7 +338,7 @@ export const strings = {
         customScheduleHint:
           "Selecione um dia para editar sua duração e horário de início.",
         durationPerDay: "Duração por dia selecionado",
-        durationHint: "Defina qualquer duração positiva em horas e minutos.",
+        durationHint: "Escolha por quanto tempo jogar em cada dia.",
         durationHours: "Horas",
         durationMinutes: "Minutos",
         startTime: "Horário de início",

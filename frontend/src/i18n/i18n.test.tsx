@@ -94,4 +94,10 @@ describe("i18n", () => {
     );
     expect(strings["pt-BR"].availability.heading).toBe("Dias e horários");
   });
+
+  test("explains the duration choice without exposing validation rules", () => {
+    expect(strings["pt-BR"].availability.form.durationHint).toBe(
+      "Escolha por quanto tempo jogar em cada dia.",
+    );
+  });
 });
