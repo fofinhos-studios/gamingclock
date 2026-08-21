@@ -34,6 +34,17 @@ function BacklogManagerHarness() {
 }
 
 describe("BacklogManager", () => {
+  test("keeps the create action inside the opened helper menu", async () => {
+    const user = userEvent.setup();
+    const view = render(<BacklogManagerHarness />);
+
+    expect(view.queryByRole("button", { name: /^new backlog$/i })).toBeNull();
+
+    await user.click(view.getByRole("button", { name: /manage backlogs/i }));
+
+    expect(view.getByRole("button", { name: /create backlog/i })).toBeTruthy();
+  });
+
   test("keeps backlog selection, creation, and deletion in one manageable collection", async () => {
     const user = userEvent.setup();
     const view = render(<BacklogManagerHarness />);

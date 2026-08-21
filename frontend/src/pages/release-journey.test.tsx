@@ -115,7 +115,16 @@ describe("release journey", () => {
     try {
       const firstView = render(<HomePage path="/" />);
 
-      await user.click(firstView.getByRole("button", { name: /new backlog/i }));
+      await user.click(
+        firstView.getByRole("button", { name: /manage backlogs/i }),
+      );
+      await user.type(
+        firstView.getByLabelText(/new backlog name/i),
+        "Backlog 2",
+      );
+      await user.click(
+        firstView.getByRole("button", { name: /create backlog/i }),
+      );
       await user.click(
         firstView.getByRole("button", { name: /rename backlog 2/i }),
       );

@@ -63,19 +63,6 @@ export function BacklogManager({
             )}
           </span>
         </Button>
-        <div class="backlog-manager__actions">
-          <Button
-            aria-label={t.app.newBacklog}
-            title={t.app.newBacklog}
-            onClick={() => {
-              onCreate(t.app.newBacklogName(backlogs.length + 1));
-            }}
-            size="sm"
-            variant="outline"
-          >
-            <PlusIcon aria-hidden="true" />
-          </Button>
-        </div>
       </div>
 
       {isOpen && (
