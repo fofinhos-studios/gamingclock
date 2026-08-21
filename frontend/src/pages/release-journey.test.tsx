@@ -171,9 +171,7 @@ describe("release journey", () => {
         firstView.getByRole("tab", { name: /set your routine/i }),
       );
       await user.click(firstView.getByLabelText(/monday/i));
-      await user.click(
-        firstView.getByRole("tab", { name: /create your schedule/i }),
-      );
+      await user.click(firstView.getByRole("tab", { name: /plan sessions/i }));
 
       await waitFor(() =>
         expect(

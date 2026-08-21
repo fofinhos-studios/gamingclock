@@ -1,4 +1,4 @@
-import { render, waitFor, within } from "@testing-library/preact";
+import { fireEvent, render, waitFor, within } from "@testing-library/preact";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "vitest";
 
@@ -82,6 +82,7 @@ describe("HomePage", () => {
 
     expect(title?.textContent).toContain("Gaming Clock");
     expect(title?.querySelector(".planner-brand__shader canvas")).toBeTruthy();
+    expect(view.container.querySelector(".planner-brand__emblem")).toBeTruthy();
   });
 
   test("guides people through the planner with a clickable progress stepper", async () => {
@@ -94,7 +95,7 @@ describe("HomePage", () => {
       }),
     ).toBeTruthy();
     expect(
-      view.getByRole("tab", { name: /add games.*current step/i }),
+      view.getByRole("tab", { name: /build your list.*current step/i }),
     ).toBeTruthy();
     expect(
       view.getByRole("tab", {
@@ -474,7 +475,10 @@ describe("HomePage", () => {
     expect(view.getByRole("main")).toBeTruthy();
     expect(view.getByText(/gaming clock/i)).toBeTruthy();
     expect(
-      view.getByRole("heading", { level: 1, name: /add games/i }),
+      view.getByRole("heading", {
+        level: 1,
+        name: /what do you want to play/i,
+      }),
     ).toBeTruthy();
     expect(
       view.getByLabelText(/backlogs/i).classList.contains("backlog-manager"),
@@ -484,7 +488,7 @@ describe("HomePage", () => {
     expect(view.getByRole("tab", { name: /schedule/i })).toBeTruthy();
     expect(view.queryByText(/gaming backlog planner/i)).toBeNull();
     expect(view.queryByText(/^overview$/i)).toBeNull();
-    expect(within(activePanel).getByText(/find games/i)).toBeTruthy();
+    expect(within(activePanel).getByText(/find your games/i)).toBeTruthy();
     expect(within(activePanel).queryByText(/^search$/i)).toBeNull();
     expect(
       within(activePanel).queryByText(/enter at least 2 characters/i),
@@ -509,13 +513,13 @@ describe("HomePage", () => {
     expect(
       within(activePanel).getByRole("group", { name: /weekly schedule/i }),
     ).toBeTruthy();
-    expect(within(activePanel).queryByText(/find games/i)).toBeNull();
+    expect(within(activePanel).queryByText(/find your games/i)).toBeNull();
 
     await user.click(view.getByRole("tab", { name: /schedule/i }));
     activePanel = view.getByRole("tabpanel");
     expect(activePanel.id).toBe("planner-panel-schedule");
     expect(
-      within(activePanel).getByRole("heading", { name: /your schedule/i }),
+      within(activePanel).getByRole("heading", { name: /date and method/i }),
     ).toBeTruthy();
     expect(within(activePanel).queryByText(/weekly cadence/i)).toBeNull();
     expect(within(activePanel).queryByText(/ready to plan/i)).toBeNull();
@@ -609,7 +613,7 @@ describe("HomePage", () => {
 
     const view = render(<HomePage path="/" />);
     const gamesBack = view.getByRole("button", {
-      name: /back to add games/i,
+      name: /back to build your list/i,
     });
     const gamesContinue = view.getByRole("button", {
       name: /continue to set your routine/i,
@@ -625,10 +629,10 @@ describe("HomePage", () => {
     await user.click(view.getByRole("tab", { name: /availability/i }));
 
     const availabilityContinue = view.getByRole("button", {
-      name: /continue to create your schedule/i,
+      name: /continue to plan sessions/i,
     });
     expect(
-      view.getByRole("button", { name: /back to add games/i }),
+      view.getByRole("button", { name: /back to build your list/i }),
     ).toBeTruthy();
     expect(availabilityContinue.hasAttribute("disabled")).toBe(true);
     expect(availabilityContinue.getAttribute("title")).toMatch(
@@ -722,7 +726,7 @@ describe("HomePage", () => {
     }
   });
 
-  test("sends the selected weekly start hour when the live schedule updates", async () => {
+  test("sends the selected weekly start time when the live schedule updates", async () => {
     const user = userEvent.setup();
     const originalFetch = globalThis.fetch;
     let scheduleRequest: Record<string, unknown> | null = null;
@@ -734,7 +738,7 @@ describe("HomePage", () => {
         {
           game_name: "Hollow Knight",
           date: "2026-03-30",
-          start_time: "18:00:00",
+          start_time: "18:30:00",
           duration_hours: 2.5,
         },
       ],
@@ -796,9 +800,9 @@ describe("HomePage", () => {
 
       const availabilityPanel = view.getByRole("tabpanel");
       await user.click(within(availabilityPanel).getByLabelText(/monday/i));
-      await user.selectOptions(
+      fireEvent.input(
         within(availabilityPanel).getByLabelText(/^start time/i),
-        "18:00",
+        { target: { value: "18:30" } },
       );
 
       await user.click(view.getByRole("tab", { name: /schedule/i }));
@@ -806,7 +810,12 @@ describe("HomePage", () => {
       await waitFor(() => expect(scheduleRequest).not.toBeNull());
 
       const requestAvailability = scheduleRequest?.availability as {
-        days: Array<{ day_of_week: number; hours: number; start_hour: number }>;
+        days: Array<{
+          day_of_week: number;
+          hours: number;
+          start_hour: number;
+          start_minute: number;
+        }>;
       };
 
       expect(requestAvailability.days).toEqual([
@@ -814,10 +823,11 @@ describe("HomePage", () => {
           day_of_week: 0,
           hours: 2,
           start_hour: 18,
+          start_minute: 30,
         },
       ]);
       expect(
-        within(view.getByRole("tabpanel")).getByText(/^18:00$/),
+        within(view.getByRole("tabpanel")).getByText(/^18:30$/),
       ).toBeTruthy();
     } finally {
       globalThis.fetch = originalFetch;
