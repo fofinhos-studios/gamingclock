@@ -4,6 +4,7 @@ import { useLayoutEffect, useState } from "preact/hooks";
 import { PlannerAvailabilityStep } from "../components/planner-availability-step";
 import { PlannerGamesStep } from "../components/planner-games-step";
 import { PlannerScheduleStep } from "../components/planner-schedule-step";
+import { PlannerStepActions } from "../components/planner-step-actions";
 import { type PlannerTab, PlannerTabs } from "../components/planner-tabs";
 import { useLanguage } from "../i18n/i18n";
 import { strings } from "../i18n/strings";
@@ -118,11 +119,15 @@ export function HomePage() {
   const hasUnresolvedGames = games.some(
     (game) => game.hltb_status === "unresolved",
   );
-  const canGenerateSchedule =
-    availability !== null &&
-    games.length > 0 &&
-    !hasLoadingGames &&
-    !hasUnresolvedGames;
+  const gamesReady =
+    games.length > 0 && !hasLoadingGames && !hasUnresolvedGames;
+  const canGenerateSchedule = availability !== null && gamesReady;
+  const canContinue =
+    activeTab === "games"
+      ? gamesReady
+      : activeTab === "availability"
+        ? availability !== null
+        : false;
   const schedulePrerequisites = [
     ...(games.length === 0
       ? [
@@ -498,6 +503,11 @@ export function HomePage() {
                   />
                 </section>
               </div>
+              <PlannerStepActions
+                activeTab={activeTab}
+                canContinue={canContinue}
+                onChange={setActiveTab}
+              />
             </div>
           </div>
         </div>

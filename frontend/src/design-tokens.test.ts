@@ -32,23 +32,26 @@ test("gives native select options an explicit themed surface", async () => {
   );
 });
 
-test("uses spacious, prominent stepper connectors", async () => {
+test("uses the locked industrial palette and type pairing", async () => {
   const stylesheet = await readStylesheet();
 
-  expect(stylesheet).toMatch(
-    /\.planner-stepper__connector\s*\{[\s\S]*?min-height:\s*3\.25rem;/,
-  );
-  expect(stylesheet).toMatch(
-    /\.planner-stepper__connector \.planner-icon\s*\{[\s\S]*?width:\s*1\.5rem;[\s\S]*?height:\s*1\.5rem;/,
-  );
+  expect(stylesheet).toMatch(/--iron-core:\s*#222a2a/i);
+  expect(stylesheet).toMatch(/--industrial-aqua:\s*#4fbbbc/i);
+  expect(stylesheet).toMatch(/--rust-signal:\s*#ec4624/i);
+  expect(stylesheet).toMatch(/--heat-marker:\s*#f39120/i);
+  expect(stylesheet).toMatch(/--architectural-cream:\s*#e2dac2/i);
+  expect(stylesheet).toMatch(/--font-display:\s*"DotGothic16"/);
+  expect(stylesheet).toMatch(/--font-body:\s*"Space Mono"/);
 });
 
-test("frames inactive planner stages with a subtle border", async () => {
+test("uses a compact horizontal stage navigation instead of a sidebar", async () => {
   const stylesheet = await readStylesheet();
 
   expect(stylesheet).toMatch(
-    /\.planner-stepper__tab\s*\{[^}]*?border:\s*1px solid var\(--foreground-16\);/,
+    /\.planner-stepper__list\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3,/,
   );
+  expect(stylesheet).not.toMatch(/"sidebar main"/);
+  expect(stylesheet).toMatch(/\.planner-step-actions\s*\{/);
 });
 
 test("uses distinct raised surfaces for planner panes and empty states", async () => {

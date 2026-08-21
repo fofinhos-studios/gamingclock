@@ -574,7 +574,7 @@ describe("HomePage", () => {
     expect((restoredSearchInput as HTMLInputElement).value).toBe("z");
   });
 
-  test("supports vertical keyboard navigation for the sidebar tablist", async () => {
+  test("supports horizontal keyboard navigation for the stage tablist", async () => {
     const user = userEvent.setup();
 
     const view = render(<HomePage path="/" />);
@@ -583,7 +583,7 @@ describe("HomePage", () => {
     const scheduleTab = view.getByRole("tab", { name: /schedule/i });
 
     expect(view.getByRole("tablist").getAttribute("aria-orientation")).toBe(
-      "vertical",
+      "horizontal",
     );
 
     expect(gamesTab.getAttribute("tabindex")).toBe("0");
@@ -593,7 +593,7 @@ describe("HomePage", () => {
     gamesTab.focus();
     expect(document.activeElement).toBe(gamesTab);
 
-    await user.keyboard("{ArrowDown}");
+    await user.keyboard("{ArrowRight}");
     expect(document.activeElement).toBe(availabilityTab);
     expect(availabilityTab.getAttribute("aria-selected")).toBe("true");
     expect(availabilityTab.getAttribute("tabindex")).toBe("0");
@@ -611,11 +611,49 @@ describe("HomePage", () => {
     expect(gamesTab.getAttribute("tabindex")).toBe("0");
     expect(view.getByRole("tabpanel").id).toBe("planner-panel-games");
 
-    await user.keyboard("{ArrowUp}");
+    await user.keyboard("{ArrowLeft}");
     expect(document.activeElement).toBe(scheduleTab);
     expect(scheduleTab.getAttribute("aria-selected")).toBe("true");
     expect(scheduleTab.getAttribute("tabindex")).toBe("0");
     expect(view.getByRole("tabpanel").id).toBe("planner-panel-schedule");
+  });
+
+  test("shows stage actions with prerequisite guidance", async () => {
+    const user = userEvent.setup();
+
+    const view = render(<HomePage path="/" />);
+    const gamesBack = view.getByRole("button", {
+      name: /back to add games/i,
+    });
+    const gamesContinue = view.getByRole("button", {
+      name: /continue to set weekly play time/i,
+    });
+
+    expect(gamesBack.getAttribute("aria-describedby")).toBeTruthy();
+    expect(gamesContinue.hasAttribute("disabled")).toBe(true);
+    expect(gamesContinue.getAttribute("aria-describedby")).toBeTruthy();
+    expect(view.getByText(/you are at the first step/i)).toBeTruthy();
+    expect(
+      view.getByText(/add and resolve at least one game before continuing/i),
+    ).toBeTruthy();
+
+    await user.click(view.getByRole("tab", { name: /availability/i }));
+
+    const availabilityContinue = view.getByRole("button", {
+      name: /continue to create your schedule/i,
+    });
+    expect(
+      view.getByRole("button", { name: /back to add games/i }),
+    ).toBeTruthy();
+    expect(availabilityContinue.hasAttribute("disabled")).toBe(true);
+    expect(
+      view.getByText(/save your weekly play time before continuing/i),
+    ).toBeTruthy();
+
+    await user.click(view.getByRole("tab", { name: /schedule/i }));
+    const finalContinue = view.getByRole("button", { name: /^continue$/i });
+    expect(finalContinue.hasAttribute("disabled")).toBe(true);
+    expect(view.getByText(/this is the final step/i)).toBeTruthy();
   });
 
   test("initializes start date from the local calendar day instead of UTC ISO date", async () => {
