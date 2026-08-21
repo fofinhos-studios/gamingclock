@@ -1,6 +1,7 @@
 import { expect, test, vi } from "vitest";
 
 import {
+  createFontReadyDraw,
   fitWordmarkFontSize,
   prepareTransparentShaderSurface,
 } from "./surface-wordmark";
@@ -36,4 +37,18 @@ test("clears the wordmark canvas transparently before shading", () => {
     context.SRC_ALPHA,
     context.ONE_MINUS_SRC_ALPHA,
   );
+});
+
+test("waits for IntraNet before drawing the first shader frame", () => {
+  const draw = vi.fn();
+  const renderer = createFontReadyDraw(draw);
+
+  renderer.onResize();
+  expect(draw).not.toHaveBeenCalled();
+
+  renderer.onFontReady();
+  expect(draw).toHaveBeenCalledTimes(1);
+
+  renderer.onResize();
+  expect(draw).toHaveBeenCalledTimes(2);
 });
