@@ -534,6 +534,7 @@ export function HomePage() {
                   <PlannerAvailabilityStep
                     availability={availability}
                     gameCount={games.length}
+                    hasSchedule={schedule !== null}
                     onSubmit={handleSetAvailability}
                   />
                 </section>
