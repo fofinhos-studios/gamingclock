@@ -28,13 +28,13 @@ export const strings = {
       newBacklogName: (number: number) => `Backlog ${number}`,
       steps: {
         games: {
-          title: "Add games",
+          title: "What do you want to play?",
         },
         availability: {
           title: "When do you play?",
         },
         schedule: {
-          title: "Create your schedule",
+          title: "Build your game plan",
         },
       },
       prerequisites: {
@@ -55,9 +55,9 @@ export const strings = {
     tabs: {
       nav: "Plan your game time step by step",
       steps: "Planner steps",
-      addGames: "Add games",
+      addGames: "Build your list",
       availability: "Set your routine",
-      schedule: "Create your schedule",
+      schedule: "Plan sessions",
       complete: "Complete",
       current: "Current step",
       notStarted: "Not started",
@@ -72,7 +72,7 @@ export const strings = {
         `Step ${number}: ${label} (${id}), ${status}`,
     },
     search: {
-      title: "Find games",
+      title: "Find your games",
       label: "Search by title",
       placeholder: "Try “Hollow Knight” or “Mario Kart”",
       clear: "Clear search",
@@ -136,7 +136,7 @@ export const strings = {
         durationHours: "Hours",
         durationMinutes: "Minutes",
         startTime: "Start time",
-        startTimeHint: "Whole hours from 06:00 to 23:00.",
+        startTimeHint: "Choose a time from 06:00 to 23:59.",
         weeklyDays: "Weekly days",
         daysCopy: "Pick the days you usually play.",
         dayHours: (day: string) => `${day} hours`,
@@ -146,7 +146,7 @@ export const strings = {
         weeklyTotal: (duration: string) => `${duration} per week`,
         selectDayError: "Choose at least one play day before saving.",
         hoursError: "Set each duration to more than zero.",
-        startTimeError: "Choose a whole-hour start time from 06:00 to 23:00.",
+        startTimeError: "Choose a start time from 06:00 to 23:59.",
         saved: "Saved",
         save: "Save play time",
       },
@@ -161,7 +161,7 @@ export const strings = {
       ],
     },
     schedule: {
-      heading: "Your schedule",
+      heading: "Date and method",
       startDate: "Start date",
       algorithm: "Schedule method",
       sequential: "One game at a time",
@@ -230,13 +230,13 @@ export const strings = {
       newBacklogName: (number: number) => `Lista ${number}`,
       steps: {
         games: {
-          title: "Adicione jogos",
+          title: "O que você quer jogar?",
         },
         availability: {
           title: "Quando você joga?",
         },
         schedule: {
-          title: "Crie seu cronograma",
+          title: "Monte seu plano de jogo",
         },
       },
       prerequisites: {
@@ -259,9 +259,9 @@ export const strings = {
     tabs: {
       nav: "Planeje seu tempo de jogo passo a passo",
       steps: "Etapas do planejador",
-      addGames: "Adicionar jogos",
+      addGames: "Montar lista",
       availability: "Definir rotina",
-      schedule: "Criar cronograma",
+      schedule: "Planejar sessões",
       complete: "Concluída",
       current: "Etapa atual",
       notStarted: "Não iniciada",
@@ -277,7 +277,7 @@ export const strings = {
         `Etapa ${number}: ${label} (${id}), ${status}`,
     },
     search: {
-      title: "Encontrar jogos",
+      title: "Encontre seus jogos",
       label: "Buscar por título",
       placeholder: "Tente “Hollow Knight” ou “Mario Kart”",
       clear: "Limpar busca",
@@ -342,7 +342,7 @@ export const strings = {
         durationHours: "Horas",
         durationMinutes: "Minutos",
         startTime: "Horário de início",
-        startTimeHint: "Horas inteiras entre 06:00 e 23:00.",
+        startTimeHint: "Escolha um horário entre 06:00 e 23:59.",
         weeklyDays: "Dias da semana",
         daysCopy: "Escolha os dias em que você costuma jogar.",
         dayHours: (day: string) => `Horas de ${day}`,
@@ -352,7 +352,7 @@ export const strings = {
         weeklyTotal: (duration: string) => `${duration} por semana`,
         selectDayError: "Escolha pelo menos um dia antes de salvar.",
         hoursError: "Defina cada duração como maior que zero.",
-        startTimeError: "Escolha um horário inteiro entre 06:00 e 23:00.",
+        startTimeError: "Escolha um horário entre 06:00 e 23:59.",
         saved: "Salvo",
         save: "Salvar tempo de jogo",
       },
@@ -367,7 +367,7 @@ export const strings = {
       ],
     },
     schedule: {
-      heading: "Seu cronograma",
+      heading: "Data e método",
       startDate: "Data de início",
       algorithm: "Método de cronograma",
       sequential: "Um jogo por vez",

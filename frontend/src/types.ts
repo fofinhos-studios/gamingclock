@@ -34,6 +34,7 @@ export interface DayAvailability {
   day_of_week: number;
   hours: number;
   start_hour: number;
+  start_minute?: number;
 }
 
 export interface WeeklyAvailability {

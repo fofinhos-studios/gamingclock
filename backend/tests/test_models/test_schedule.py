@@ -27,6 +27,17 @@ def test_weekly_availability_uniform():
     assert avail.days[0].start_hour == 19
 
 
+def test_day_availability_accepts_start_minutes():
+    availability = DayAvailability(
+        day_of_week=0,
+        hours=2.0,
+        start_hour=20,
+        start_minute=30,
+    )
+
+    assert availability.start_minute == 30
+
+
 def test_weekly_availability_total_weekly_hours():
     avail = WeeklyAvailability(
         days=[

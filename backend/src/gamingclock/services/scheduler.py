@@ -62,7 +62,10 @@ class SchedulerService:
                     PlaySession(
                         game_name=game.name,
                         date=date,
-                        start_time=datetime.time(day_availability.start_hour, 0),
+                        start_time=datetime.time(
+                            day_availability.start_hour,
+                            day_availability.start_minute,
+                        ),
                         duration_hours=session_hours,
                     )
                 )
@@ -100,7 +103,10 @@ class SchedulerService:
                 PlaySession(
                     game_name=current_game.name,
                     date=date,
-                    start_time=datetime.time(day_availability.start_hour, 0),
+                    start_time=datetime.time(
+                        day_availability.start_hour,
+                        day_availability.start_minute,
+                    ),
                     duration_hours=session_hours,
                 )
             )

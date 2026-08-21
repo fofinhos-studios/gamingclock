@@ -9,10 +9,6 @@ import { Button, Field, Input, Select } from "./ui";
 const MINUTES_PER_HOUR = 60;
 const MIN_START_HOUR = 6;
 const MAX_START_HOUR = 23;
-const START_TIMES = Array.from(
-  { length: MAX_START_HOUR - MIN_START_HOUR + 1 },
-  (_, index) => formatHour(MIN_START_HOUR + index),
-);
 const MINUTES = Array.from({ length: MINUTES_PER_HOUR }, (_, index) => index);
 type ScheduleMode = "uniform" | "custom";
 
@@ -21,11 +17,15 @@ interface Props {
   onChange: (availability: WeeklyAvailability | null) => void;
 }
 
-function formatHour(hour: number): string {
-  return `${hour.toString().padStart(2, "0")}:00`;
+function formatStartTime(hour: number, minute = 0): string {
+  return `${hour.toString().padStart(2, "0")}:${minute
+    .toString()
+    .padStart(2, "0")}`;
 }
 
-function parseStartHour(value: string): number | null {
+function parseStartTime(
+  value: string,
+): { hour: number; minute: number } | null {
   const [hourText, minuteText] = value.split(":");
   const hour = Number(hourText);
   const minute = Number(minuteText);
@@ -33,14 +33,15 @@ function parseStartHour(value: string): number | null {
   if (
     !Number.isInteger(hour) ||
     !Number.isInteger(minute) ||
-    minute !== 0 ||
+    minute < 0 ||
+    minute >= MINUTES_PER_HOUR ||
     hour < MIN_START_HOUR ||
     hour > MAX_START_HOUR
   ) {
     return null;
   }
 
-  return hour;
+  return { hour, minute };
 }
 
 function splitDuration(duration: number) {
@@ -129,11 +130,15 @@ export function AvailabilityForm({ availability, onChange }: Props) {
   const { t } = useLanguage();
   const initialDays = availability?.days ?? [];
   const initialHours = initialDays[0]?.hours ?? 2;
-  const initialStartTime = formatHour(initialDays[0]?.start_hour ?? 20);
+  const initialStartTime = formatStartTime(
+    initialDays[0]?.start_hour ?? 20,
+    initialDays[0]?.start_minute ?? 0,
+  );
   const initialScheduleIsUniform = initialDays.every(
     (day) =>
       day.hours === initialHours &&
-      formatHour(day.start_hour) === initialStartTime,
+      formatStartTime(day.start_hour, day.start_minute ?? 0) ===
+        initialStartTime,
   );
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>(
     initialScheduleIsUniform ? "uniform" : "custom",
@@ -150,7 +155,10 @@ export function AvailabilityForm({ availability, onChange }: Props) {
     Record<number, string>
   >(
     Object.fromEntries(
-      initialDays.map((day) => [day.day_of_week, formatHour(day.start_hour)]),
+      initialDays.map((day) => [
+        day.day_of_week,
+        formatStartTime(day.start_hour, day.start_minute ?? 0),
+      ]),
     ),
   );
   const [validationError, setValidationError] = useState("");
@@ -184,24 +192,29 @@ export function AvailabilityForm({ availability, onChange }: Props) {
 
     const days: DayAvailability[] = [...selectedDays]
       .sort((left, right) => left - right)
-      .map((day) => ({
-        day_of_week: day,
-        hours:
+      .map((day) => {
+        const startTime = parseStartTime(
           scheduleMode === "uniform"
-            ? uniformHours
-            : (customHours[day] ?? uniformHours),
-        start_hour:
-          parseStartHour(
+            ? uniformStartTime
+            : (customStartTimes[day] ?? uniformStartTime),
+        );
+
+        return {
+          day_of_week: day,
+          hours:
             scheduleMode === "uniform"
-              ? uniformStartTime
-              : (customStartTimes[day] ?? uniformStartTime),
-          ) ?? Number.NaN,
-      }));
+              ? uniformHours
+              : (customHours[day] ?? uniformHours),
+          start_hour: startTime?.hour ?? Number.NaN,
+          start_minute: startTime?.minute ?? Number.NaN,
+        };
+      });
     const isValid = days.every(
       (day) =>
         Number.isFinite(day.hours) &&
         day.hours > 0 &&
-        Number.isInteger(day.start_hour),
+        Number.isInteger(day.start_hour) &&
+        Number.isInteger(day.start_minute),
     );
 
     onChange(isValid ? { days } : null);
@@ -361,23 +374,21 @@ export function AvailabilityForm({ availability, onChange }: Props) {
             controlId="uniform-start-time"
             class="max-w-xs"
           >
-            <Select
+            <Input
               id="uniform-start-time"
+              type="time"
+              min="06:00"
+              max="23:59"
+              step={60}
               value={uniformStartTime}
               aria-invalid={
                 validationError === t.availability.form.startTimeError
               }
-              onChange={(event) => {
-                setUniformStartTime((event.target as HTMLSelectElement).value);
+              onInput={(event) => {
+                setUniformStartTime((event.target as HTMLInputElement).value);
                 setValidationError("");
               }}
-            >
-              {START_TIMES.map((time) => (
-                <option key={time} value={time}>
-                  {time}
-                </option>
-              ))}
-            </Select>
+            />
           </Field>
         </div>
       ) : (
@@ -456,23 +467,21 @@ export function AvailabilityForm({ availability, onChange }: Props) {
                       label={t.availability.form.dayStartTime(name)}
                       controlId={`custom-start-time-${index}`}
                     >
-                      <Select
+                      <Input
                         id={`custom-start-time-${index}`}
+                        type="time"
+                        min="06:00"
+                        max="23:59"
+                        step={60}
                         value={customStartTimes[index] ?? uniformStartTime}
-                        onChange={(event) => {
+                        onInput={(event) => {
                           setCustomStartTimes({
                             ...customStartTimes,
-                            [index]: (event.target as HTMLSelectElement).value,
+                            [index]: (event.target as HTMLInputElement).value,
                           });
                           setValidationError("");
                         }}
-                      >
-                        {START_TIMES.map((time) => (
-                          <option key={time} value={time}>
-                            {time}
-                          </option>
-                        ))}
-                      </Select>
+                      />
                     </Field>
                   </div>
                 )}

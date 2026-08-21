@@ -1,4 +1,4 @@
-import { render } from "@testing-library/preact";
+import { fireEvent, render } from "@testing-library/preact";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 
@@ -80,7 +80,7 @@ describe("AvailabilityForm", () => {
     await user.selectOptions(view.getByLabelText("Minutes"), "15");
 
     expect(onChange).toHaveBeenLastCalledWith({
-      days: [{ day_of_week: 0, hours: 25.25, start_hour: 20 }],
+      days: [{ day_of_week: 0, hours: 25.25, start_hour: 20, start_minute: 0 }],
     });
   });
 
@@ -95,7 +95,7 @@ describe("AvailabilityForm", () => {
     expect(onChange).toHaveBeenLastCalledWith(null);
   });
 
-  test("uses the shared select for whole-hour start times", async () => {
+  test("accepts a start time with minutes", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     const view = renderForm(onChange);
@@ -103,37 +103,11 @@ describe("AvailabilityForm", () => {
     await user.click(view.getByLabelText("Monday"));
     const startTime = view.getByLabelText(/^Start time/);
 
-    expect(startTime.tagName).toBe("SELECT");
-    expect(startTime.classList.contains("ui-select")).toBe(true);
-    expect(
-      Array.from(
-        (startTime as HTMLSelectElement).options,
-        (option) => option.value,
-      ),
-    ).toEqual([
-      "06:00",
-      "07:00",
-      "08:00",
-      "09:00",
-      "10:00",
-      "11:00",
-      "12:00",
-      "13:00",
-      "14:00",
-      "15:00",
-      "16:00",
-      "17:00",
-      "18:00",
-      "19:00",
-      "20:00",
-      "21:00",
-      "22:00",
-      "23:00",
-    ]);
-    await user.selectOptions(startTime, "18:00");
+    expect(startTime.getAttribute("type")).toBe("time");
+    fireEvent.input(startTime, { target: { value: "18:30" } });
 
     expect(onChange).toHaveBeenLastCalledWith({
-      days: [{ day_of_week: 0, hours: 2, start_hour: 18 }],
+      days: [{ day_of_week: 0, hours: 2, start_hour: 18, start_minute: 30 }],
     });
   });
 });

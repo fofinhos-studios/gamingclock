@@ -319,7 +319,12 @@ function isDayAvailability(value: unknown): value is DayAvailability {
     typeof value.start_hour === "number" &&
     Number.isInteger(value.start_hour) &&
     value.start_hour >= 0 &&
-    value.start_hour <= 23
+    value.start_hour <= 23 &&
+    (value.start_minute === undefined ||
+      (typeof value.start_minute === "number" &&
+        Number.isInteger(value.start_minute) &&
+        value.start_minute >= 0 &&
+        value.start_minute <= 59))
   );
 }
 
