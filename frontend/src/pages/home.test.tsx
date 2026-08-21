@@ -98,14 +98,14 @@ describe("HomePage", () => {
     ).toBeTruthy();
     expect(
       view.getByRole("tab", {
-        name: /set weekly play time.*not started/i,
+        name: /set your routine.*not started/i,
       }),
     ).toBeTruthy();
 
-    await user.click(view.getByRole("tab", { name: /set weekly play time/i }));
+    await user.click(view.getByRole("tab", { name: /set your routine/i }));
 
     expect(
-      view.getByRole("heading", { name: /set your weekly play time/i }),
+      view.getByRole("heading", { name: /when do you play\?/i }),
     ).toBeTruthy();
   });
 
@@ -612,7 +612,7 @@ describe("HomePage", () => {
       name: /back to add games/i,
     });
     const gamesContinue = view.getByRole("button", {
-      name: /continue to set weekly play time/i,
+      name: /continue to set your routine/i,
     });
 
     expect(gamesBack.getAttribute("title")).toMatch(/first step/i);

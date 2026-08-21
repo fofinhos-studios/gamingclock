@@ -31,7 +31,7 @@ export const strings = {
           title: "Add games",
         },
         availability: {
-          title: "Set your weekly play time",
+          title: "When do you play?",
         },
         schedule: {
           title: "Create your schedule",
@@ -56,7 +56,7 @@ export const strings = {
       nav: "Plan your game time step by step",
       steps: "Planner steps",
       addGames: "Add games",
-      availability: "Set weekly play time",
+      availability: "Set your routine",
       schedule: "Create your schedule",
       complete: "Complete",
       current: "Current step",
@@ -115,7 +115,7 @@ export const strings = {
         `Use ${label} time: ${hours} hours`,
     },
     availability: {
-      heading: "Weekly play time",
+      heading: "Days and times",
       form: {
         heading: "Availability",
         presets: "Quick presets",
@@ -233,7 +233,7 @@ export const strings = {
           title: "Adicione jogos",
         },
         availability: {
-          title: "Defina seu tempo semanal",
+          title: "Quando você joga?",
         },
         schedule: {
           title: "Crie seu cronograma",
@@ -260,7 +260,7 @@ export const strings = {
       nav: "Planeje seu tempo de jogo passo a passo",
       steps: "Etapas do planejador",
       addGames: "Adicionar jogos",
-      availability: "Definir tempo semanal",
+      availability: "Definir rotina",
       schedule: "Criar cronograma",
       complete: "Concluída",
       current: "Etapa atual",
@@ -320,7 +320,7 @@ export const strings = {
         `Usar duração ${label}: ${hours} horas`,
     },
     availability: {
-      heading: "Tempo semanal de jogo",
+      heading: "Dias e horários",
       form: {
         heading: "Disponibilidade",
         presets: "Atalhos rápidos",

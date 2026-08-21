@@ -168,7 +168,7 @@ describe("release journey", () => {
       expect(listTitles()).toEqual(["Chrono Trigger", "Final Fantasy VII"]);
 
       await user.click(
-        firstView.getByRole("tab", { name: /weekly play time/i }),
+        firstView.getByRole("tab", { name: /set your routine/i }),
       );
       await user.click(firstView.getByLabelText(/monday/i));
       await user.click(
