@@ -1113,6 +1113,46 @@
     gap: 0.65rem;
   }
 
+  .planner-preset-group,
+  .planner-availability-controls,
+  .planner-availability-summary {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .planner-preset-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .planner-availability-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .planner-availability-summary {
+    grid-template-columns: repeat(2, minmax(0, max-content));
+    justify-content: space-between;
+    border-top: 1px solid var(--foreground-12);
+    padding-top: 0.8rem;
+    color: var(--foreground);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .planner-availability-summary span:last-child {
+    color: var(--success, var(--foreground));
+  }
+
+  .planner-form-error {
+    color: var(--danger, var(--foreground));
+    font-size: 0.82rem;
+    line-height: 1.4;
+  }
+
   .planner-hour-fieldset {
     display: grid;
     gap: 0.4rem;
@@ -1569,6 +1609,15 @@
   .planner-hour-grid,
   .planner-hour-grid--compact {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .planner-availability-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .planner-availability-summary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.35rem;
   }
 }
 

@@ -150,7 +150,7 @@ describe("HomePage", () => {
       await user.click(firstView.getByRole("tab", { name: /availability/i }));
       await user.click(firstView.getByLabelText(/monday/i));
       await user.click(
-        firstView.getByRole("button", { name: /save availability/i }),
+        firstView.getByRole("button", { name: /save play time/i }),
       );
       await user.click(firstView.getByRole("tab", { name: /schedule/i }));
       await user.selectOptions(
@@ -256,9 +256,7 @@ describe("HomePage", () => {
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
       await user.click(view.getByLabelText(/monday/i));
-      await user.click(
-        view.getByRole("button", { name: /save availability/i }),
-      );
+      await user.click(view.getByRole("button", { name: /save play time/i }));
       await user.click(view.getByRole("tab", { name: /schedule/i }));
 
       const generateButton = within(view.getByRole("tabpanel")).getByRole(
@@ -467,9 +465,7 @@ describe("HomePage", () => {
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
       await user.click(view.getByLabelText(/monday/i));
-      await user.click(
-        view.getByRole("button", { name: /save availability/i }),
-      );
+      await user.click(view.getByRole("button", { name: /save play time/i }));
       await user.click(view.getByRole("tab", { name: /schedule/i }));
       await user.click(
         within(view.getByRole("tabpanel")).getByRole("button", {
@@ -811,12 +807,15 @@ describe("HomePage", () => {
 
       const availabilityPanel = view.getByRole("tabpanel");
       await user.click(within(availabilityPanel).getByLabelText(/monday/i));
-      await user.click(
-        within(availabilityPanel).getByRole("button", { name: "18:00" }),
+      await user.click(within(availabilityPanel).getByLabelText(/^Start time/));
+      await user.clear(within(availabilityPanel).getByLabelText(/^Start time/));
+      await user.type(
+        within(availabilityPanel).getByLabelText(/^Start time/),
+        "18:00",
       );
       await user.click(
         within(availabilityPanel).getByRole("button", {
-          name: /save availability/i,
+          name: /save play time/i,
         }),
       );
 
@@ -1244,9 +1243,7 @@ describe("HomePage", () => {
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
       await user.click(view.getByLabelText(/monday/i));
-      await user.click(
-        view.getByRole("button", { name: /save availability/i }),
-      );
+      await user.click(view.getByRole("button", { name: /save play time/i }));
 
       await user.click(view.getByRole("tab", { name: /schedule/i }));
       await user.click(
@@ -1350,9 +1347,7 @@ describe("HomePage", () => {
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
       await user.click(view.getByLabelText(/monday/i));
-      await user.click(
-        view.getByRole("button", { name: /save availability/i }),
-      );
+      await user.click(view.getByRole("button", { name: /save play time/i }));
 
       await user.click(view.getByRole("tab", { name: /schedule/i }));
 
@@ -1401,6 +1396,21 @@ describe("HomePage", () => {
       ).toBeNull();
 
       await generateSchedule();
+
+      await user.click(view.getByRole("tab", { name: /availability/i }));
+      expect(view.getByText(/schedule already exists/i)).toBeTruthy();
+      await user.click(view.getByLabelText(/tuesday/i));
+      await user.click(
+        view.getByRole("button", { name: /save play time|saved/i }),
+      );
+      await user.click(view.getByRole("tab", { name: /schedule/i }));
+
+      expect(
+        within(view.getByRole("tabpanel")).queryByRole("heading", {
+          level: 2,
+          name: /your schedule/i,
+        }),
+      ).toBeNull();
 
       await user.selectOptions(
         within(schedulePanel()).getByLabelText(/schedule method/i),

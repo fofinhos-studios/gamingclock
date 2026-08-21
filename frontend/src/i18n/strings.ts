@@ -118,6 +118,8 @@ export const strings = {
       notSet: "Availability not set",
       configured: (days: number) =>
         `${days} day${days === 1 ? "" : "s"} saved. Saving again clears the schedule.`,
+      scheduleWarning:
+        "A schedule already exists. Saving new play time clears it so you can rebuild it.",
       prompt:
         "Set your weekly time and start hour. You can also add games first.",
       currentBacklog: "Current backlog",
@@ -127,26 +129,35 @@ export const strings = {
       changeTime: "Change your play time before you create another schedule.",
       form: {
         heading: "Availability",
-        mode: "Availability mode",
-        uniform: "Same each day",
-        custom: "Set each day",
-        sameHours: "Use the same hours on each selected day",
-        differentHours: "Set different hours for each day",
+        presets: "Quick presets",
+        weeknights: "Weeknights",
+        weekends: "Weekends",
+        everyDay: "Every day",
+        clear: "Clear",
+        scheduleMode: "Weekly schedule",
+        sameSchedule: "Same schedule",
+        customSchedule: "Customize by day",
+        sameScheduleCopy:
+          "Use one duration and start time on every selected day",
+        customScheduleCopy:
+          "Choose a different duration or start time for each day",
+        customScheduleHint: "Select a day to edit its duration and start time.",
         hoursPerDay: "Hours per selected day",
-        startHour: "Start hour",
-        startHourCopy:
-          "Use one start hour for the week. You can also set a time for each day.",
-        startHourMode: "Start hour mode",
-        sameStart: "Use the same start hour on each selected day",
-        differentStart: "Set a different start hour for each day",
-        uniformStart: "Same start hour",
+        hoursHint: "Use 0.5 to 16 hours in half-hour steps.",
+        startTime: "Start time",
+        startTimeHint: "Whole hours from 06:00 to 23:00.",
         weeklyDays: "Weekly days",
+        daysCopy: "Pick the days you usually play.",
         dayHours: (day: string) => `${day} hours`,
-        dayStart: (day: string) => `${day} start hour`,
+        dayStartTime: (day: string) => `${day} start time`,
         hoursAt: (hours: number, time: string) =>
           `${hours} hour${hours === 1 ? "" : "s"} / ${time}`,
+        weeklyTotal: (hours: string) => `${hours} hours per week`,
+        selectDayError: "Choose at least one play day before saving.",
+        hoursError: "Set each duration between 0.5 and 16 hours.",
+        startTimeError: "Choose a whole-hour start time from 06:00 to 23:00.",
         saved: "Saved",
-        save: "Save Availability",
+        save: "Save play time",
       },
       days: [
         "Monday",
@@ -309,6 +320,8 @@ export const strings = {
       notSet: "Disponibilidade não definida",
       configured: (days: number) =>
         `${days} dia${days === 1 ? "" : "s"} salvo${days === 1 ? "" : "s"}. Salvar novamente limpa o cronograma.`,
+      scheduleWarning:
+        "Já existe um cronograma. Salvar um novo tempo de jogo o limpa para que você possa recriá-lo.",
       prompt:
         "Defina seu tempo semanal e horário de início. Você também pode adicionar jogos primeiro.",
       currentBacklog: "Lista atual",
@@ -318,27 +331,36 @@ export const strings = {
       changeTime: "Altere seu tempo de jogo antes de criar outro cronograma.",
       form: {
         heading: "Disponibilidade",
-        mode: "Modo de disponibilidade",
-        uniform: "Igual em todos os dias",
-        custom: "Definir cada dia",
-        sameHours: "Use as mesmas horas em todos os dias selecionados",
-        differentHours: "Defina horas diferentes para cada dia",
+        presets: "Atalhos rápidos",
+        weeknights: "Dias úteis",
+        weekends: "Fins de semana",
+        everyDay: "Todos os dias",
+        clear: "Limpar",
+        scheduleMode: "Rotina semanal",
+        sameSchedule: "Mesma rotina",
+        customSchedule: "Personalizar por dia",
+        sameScheduleCopy:
+          "Use uma duração e um horário de início em todos os dias selecionados",
+        customScheduleCopy:
+          "Escolha uma duração ou horário de início diferente para cada dia",
+        customScheduleHint:
+          "Selecione um dia para editar sua duração e horário de início.",
         hoursPerDay: "Horas por dia selecionado",
-        startHour: "Horário de início",
-        startHourCopy:
-          "Use um horário de início para a semana. Você também pode definir um horário para cada dia.",
-        startHourMode: "Modo de horário de início",
-        sameStart:
-          "Use o mesmo horário de início em todos os dias selecionados",
-        differentStart: "Defina um horário de início diferente para cada dia",
-        uniformStart: "Mesmo horário de início",
+        hoursHint: "Use de 0,5 a 16 horas em passos de meia hora.",
+        startTime: "Horário de início",
+        startTimeHint: "Horas inteiras entre 06:00 e 23:00.",
         weeklyDays: "Dias da semana",
+        daysCopy: "Escolha os dias em que você costuma jogar.",
         dayHours: (day: string) => `Horas de ${day}`,
-        dayStart: (day: string) => `Horário de início de ${day}`,
+        dayStartTime: (day: string) => `Horário de início de ${day}`,
         hoursAt: (hours: number, time: string) =>
           `${hours} hora${hours === 1 ? "" : "s"} / ${time}`,
+        weeklyTotal: (hours: string) => `${hours} horas por semana`,
+        selectDayError: "Escolha pelo menos um dia antes de salvar.",
+        hoursError: "Defina cada duração entre 0,5 e 16 horas.",
+        startTimeError: "Escolha um horário inteiro entre 06:00 e 23:00.",
         saved: "Salvo",
-        save: "Salvar disponibilidade",
+        save: "Salvar tempo de jogo",
       },
       days: [
         "Segunda-feira",
