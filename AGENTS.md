@@ -61,33 +61,35 @@ gamingclock/
 
 ### Committing Changes
 
-Use **conventional commits** with pure git CLI. Stage specific files, never `git add -A`.
+Commit often, using small atomic commits that each contain one logical change. Use pure git CLI, stage specific files, and never use `git add -A`.
 
-Push each successful commit to the tracked remote unless the user explicitly says not to push.
+Every commit must be signed and use a conventional commit message with a scope: `type(scope): description`. Use `git commit -S`.
+
+Push small, self-contained changes directly to `main`. For larger changes, create a pull request. If a change is too large for one pull request, split it into a stack of pull requests using GitHub's stacked PR functionality.
 
 `hk` runs the same backend and frontend audit, lint, test, and build checks as GitHub Actions before every commit and push. Do not bypass it. Install the repository hooks with `hk install` and verify them with `hk run pre-commit`.
 
 ```bash
 # Feature
 git add backend/src/gamingclock/models/game.py backend/tests/test_models/test_game.py
-git commit -m "feat(models): add Game pydantic model with HLTB fields"
+git commit -S -m "feat(models): add Game pydantic model with HLTB fields"
 
 # Fix
-git commit -m "fix(hltb): handle missing duration in search results"
+git commit -S -m "fix(hltb): handle missing duration in search results"
 
 # Chore
-git commit -m "chore: add ruff config to pyproject.toml"
+git commit -S -m "chore(ci): add ruff config to pyproject.toml"
 
 # Test
-git commit -m "test(scheduling): add tests for alternating algorithm"
+git commit -S -m "test(scheduling): add tests for alternating algorithm"
 
 # Docs
-git commit -m "docs: update backend SKILL.md with service layer patterns"
+git commit -S -m "docs(backend): update service layer patterns"
 ```
 
 **Commit prefixes**: `feat`, `fix`, `chore`, `test`, `docs`, `refactor`, `ci`, `style`
 
-**Scope** (optional, in parentheses): the module or area, e.g. `models`, `hltb`, `scheduling`, `calendar`, `frontend`, `ci`
+**Scope** (required, in parentheses): the module or area, e.g. `models`, `hltb`, `scheduling`, `calendar`, `frontend`, `ci`
 
 ### General Rules
 
