@@ -1,113 +1,72 @@
-import { fireEvent, render } from "@testing-library/preact";
+import { render } from "@testing-library/preact";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 
 import { LanguageProvider } from "../i18n/i18n";
 import { AvailabilityForm } from "./availability-form";
 
-function renderForm(onChange = vi.fn()) {
+function renderForm(
+  onChange = vi.fn(),
+  availability: Parameters<typeof AvailabilityForm>[0]["availability"] = null,
+) {
   return {
     onChange,
     ...render(
       <LanguageProvider browserLanguages={["en"]}>
-        <AvailabilityForm availability={null} onChange={onChange} />
+        <AvailabilityForm availability={availability} onChange={onChange} />
       </LanguageProvider>,
     ),
   };
 }
 
 describe("AvailabilityForm", () => {
-  test("offers useful day presets and keeps them keyboard-operable", async () => {
-    const user = userEvent.setup();
-    const view = renderForm();
-
-    await user.click(view.getByRole("button", { name: "Weeknights" }));
-
-    for (const day of [
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-    ]) {
-      expect((view.getByLabelText(day) as HTMLInputElement).checked).toBe(true);
-    }
-    expect((view.getByLabelText("Saturday") as HTMLInputElement).checked).toBe(
-      false,
-    );
-
-    await user.click(view.getByRole("button", { name: "Clear" }));
-    expect((view.getByLabelText("Monday") as HTMLInputElement).checked).toBe(
-      false,
-    );
-  });
-
-  test("reveals per-day controls only after choosing a custom schedule", async () => {
-    const user = userEvent.setup();
-    const view = renderForm();
-
-    await user.click(view.getByLabelText("Monday"));
-    expect(view.queryByLabelText(/Monday hours/)).toBeNull();
-
-    await user.click(view.getByRole("radio", { name: /customize by day/i }));
-    expect(view.getByLabelText(/Monday hours/)).toBeTruthy();
-    expect(view.getByLabelText(/Monday start time/)).toBeTruthy();
-  });
-
-  test("updates the live weekly total for selected days and uniform duration", async () => {
-    const user = userEvent.setup();
-    const view = renderForm();
-
-    await user.click(view.getByLabelText("Monday"));
-    await user.click(view.getByLabelText("Tuesday"));
-    const hours = view.getByLabelText("Hours");
-    await user.clear(hours);
-    await user.type(hours, "2");
-    await user.selectOptions(view.getByLabelText("Minutes"), "30");
-
-    expect(view.getByRole("status").textContent).toContain("5h per week");
-  });
-
-  test("accepts durations beyond the former 16-hour limit", async () => {
+  test("shows the whole week and creates a one-hour event when an empty time is clicked", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     const view = renderForm(onChange);
 
-    await user.click(view.getByLabelText("Monday"));
-    const hours = view.getByLabelText("Hours");
-    await user.clear(hours);
-    await user.type(hours, "25");
-    await user.selectOptions(view.getByLabelText("Minutes"), "15");
+    expect(
+      view.container.querySelector(".availability-week__calendar"),
+    ).toBeTruthy();
+    await user.click(view.getByRole("button", { name: "Monday at 20:00" }));
 
     expect(onChange).toHaveBeenLastCalledWith({
-      days: [{ day_of_week: 0, hours: 25.25, start_hour: 20, start_minute: 0 }],
+      days: [{ day_of_week: 0, hours: 1, start_hour: 20, start_minute: 0 }],
     });
+    expect(view.getByLabelText("Monday, 1h from 20:00")).toBeTruthy();
   });
 
-  test("clears availability immediately when no play days are selected", async () => {
+  test("offers week presets and clears the weekly calendar", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     const view = renderForm(onChange);
 
     await user.click(view.getByRole("button", { name: "Weeknights" }));
-    await user.click(view.getByRole("button", { name: "Clear" }));
+    expect(onChange).toHaveBeenLastCalledWith({
+      days: [0, 1, 2, 3, 4].map((day_of_week) => ({
+        day_of_week,
+        hours: 2,
+        start_hour: 20,
+        start_minute: 0,
+      })),
+    });
 
+    await user.click(view.getByRole("button", { name: "Clear week" }));
     expect(onChange).toHaveBeenLastCalledWith(null);
   });
 
-  test("accepts a start time with minutes", async () => {
+  test("moves a selected block in half-hour increments from the keyboard", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    const view = renderForm(onChange);
+    const view = renderForm(onChange, {
+      days: [{ day_of_week: 0, hours: 2, start_hour: 18, start_minute: 30 }],
+    });
 
-    await user.click(view.getByLabelText("Monday"));
-    const startTime = view.getByLabelText(/^Start time/);
-
-    expect(startTime.getAttribute("type")).toBe("time");
-    fireEvent.input(startTime, { target: { value: "18:30" } });
+    await user.click(view.getByLabelText("Monday, 2h from 18:30"));
+    await user.keyboard("{ArrowDown}");
 
     expect(onChange).toHaveBeenLastCalledWith({
-      days: [{ day_of_week: 0, hours: 2, start_hour: 18, start_minute: 30 }],
+      days: [{ day_of_week: 0, hours: 2, start_hour: 19, start_minute: 0 }],
     });
   });
 });

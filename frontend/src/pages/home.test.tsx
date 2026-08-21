@@ -170,7 +170,9 @@ describe("HomePage", () => {
         "Weekend games",
       );
       await user.click(firstView.getByRole("tab", { name: /availability/i }));
-      await user.click(firstView.getByLabelText(/monday/i));
+      await user.click(
+        firstView.getByRole("button", { name: "Monday at 20:00" }),
+      );
       await user.click(firstView.getByRole("tab", { name: /schedule/i }));
       await user.selectOptions(
         firstView.getByLabelText(/schedule method/i),
@@ -207,8 +209,10 @@ describe("HomePage", () => {
         reloadedView.getByRole("tab", { name: /availability/i }),
       );
       expect(
-        (reloadedView.getByLabelText(/monday/i) as HTMLInputElement).checked,
-      ).toBe(true);
+        reloadedView.getByRole("button", {
+          name: "Monday, 1h from 20:00",
+        }),
+      ).toBeTruthy();
       await user.click(reloadedView.getByRole("tab", { name: /schedule/i }));
       expect(
         (reloadedView.getByLabelText(/schedule method/i) as HTMLSelectElement)
@@ -274,7 +278,7 @@ describe("HomePage", () => {
       ).toBeTruthy();
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
-      await user.click(view.getByLabelText(/monday/i));
+      await user.click(view.getByRole("button", { name: "Monday at 20:00" }));
       await user.click(view.getByRole("tab", { name: /schedule/i }));
       expect(
         within(view.getByRole("tabpanel")).getByText(
@@ -473,7 +477,7 @@ describe("HomePage", () => {
       expect(within(gamesPanel).getByText(/^60\.0h$/i)).toBeTruthy();
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
-      await user.click(view.getByLabelText(/monday/i));
+      await user.click(view.getByRole("button", { name: "Monday at 20:00" }));
       await user.click(view.getByRole("tab", { name: /schedule/i }));
 
       await waitFor(() => expect(scheduleRequest).not.toBeNull());
@@ -528,7 +532,7 @@ describe("HomePage", () => {
     let activePanel = view.getByRole("tabpanel");
     expect(activePanel.id).toBe("planner-panel-availability");
     expect(
-      within(activePanel).getByRole("group", { name: /weekly schedule/i }),
+      within(activePanel).getByRole("region", { name: /availability/i }),
     ).toBeTruthy();
     expect(within(activePanel).queryByText(/find your games/i)).toBeNull();
 
@@ -816,11 +820,17 @@ describe("HomePage", () => {
       await user.click(view.getByRole("tab", { name: /availability/i }));
 
       const availabilityPanel = view.getByRole("tabpanel");
-      await user.click(within(availabilityPanel).getByLabelText(/monday/i));
-      fireEvent.input(
-        within(availabilityPanel).getByLabelText(/^start time/i),
-        { target: { value: "18:30" } },
+      await user.click(
+        within(availabilityPanel).getByRole("button", {
+          name: "Monday at 18:30",
+        }),
       );
+      await user.click(
+        within(availabilityPanel).getByRole("button", {
+          name: "Monday, 1h from 18:30",
+        }),
+      );
+      await user.keyboard("{Shift>}{ArrowDown}{ArrowDown}{/Shift}");
 
       await user.click(view.getByRole("tab", { name: /schedule/i }));
 
@@ -939,7 +949,7 @@ describe("HomePage", () => {
       ).toBe("Hollow Knight");
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
-      await user.click(view.getByLabelText(/monday/i));
+      await user.click(view.getByRole("button", { name: "Monday at 20:00" }));
       await user.click(view.getByRole("tab", { name: /schedule/i }));
 
       await waitFor(() => expect(scheduleGenerated).toBe(true));
@@ -1100,7 +1110,7 @@ describe("HomePage", () => {
       );
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
-      await user.click(view.getByLabelText(/monday/i));
+      await user.click(view.getByRole("button", { name: "Monday at 20:00" }));
 
       await user.click(view.getByRole("tab", { name: /schedule/i }));
 
@@ -1201,7 +1211,7 @@ describe("HomePage", () => {
       );
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
-      await user.click(view.getByLabelText(/monday/i));
+      await user.click(view.getByRole("button", { name: "Monday at 20:00" }));
 
       await user.click(view.getByRole("tab", { name: /schedule/i }));
 
