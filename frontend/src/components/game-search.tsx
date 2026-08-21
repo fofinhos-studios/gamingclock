@@ -1,11 +1,11 @@
-import { Check, LoaderCircle, Search } from "lucide-preact";
+import { Check, LoaderCircle, Search, X } from "lucide-preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
 import { useLanguage } from "../i18n/i18n";
 import { searchGames } from "../services/api";
 import type { CatalogGame, ListGame } from "../types";
-import { Field, Input } from "./ui";
+import { Button, Field, Input } from "./ui";
 
 interface Props {
   games: ListGame[];
@@ -179,6 +179,23 @@ export function GameSearch({ games, onAddGame }: Props) {
           />
         </Field>
 
+        {query && (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            class="planner-search-clear"
+            onClick={() => {
+              setQuery("");
+              setIsDropdownOpen(false);
+              setHighlightedIndex(-1);
+            }}
+          >
+            <X class="planner-icon" aria-hidden="true" />
+            {t.search.clear}
+          </Button>
+        )}
+
         {error && !isDropdownOpen && (
           <p role="alert" class="planner-error">
             {error}
@@ -198,7 +215,10 @@ export function GameSearch({ games, onAddGame }: Props) {
             (!loading && query.trim().length >= 2 && results.length === 0)) && (
             <div class="planner-search-results">
               {loading && (
-                <p class="planner-search-results__message planner-search-results__message--loading">
+                <p
+                  class="planner-search-results__message planner-search-results__message--loading"
+                  aria-live="polite"
+                >
                   <LoaderCircle
                     class="planner-icon planner-icon--spin"
                     aria-hidden="true"
@@ -294,7 +314,10 @@ export function GameSearch({ games, onAddGame }: Props) {
 
                         {(addingId === game.igdb_id ||
                           addFeedback.active === game.igdb_id) && (
-                          <p class="planner-result__feedback">
+                          <p
+                            class="planner-result__feedback"
+                            aria-live="polite"
+                          >
                             {addingId === game.igdb_id ? (
                               <LoaderCircle
                                 class="planner-icon planner-icon--spin"

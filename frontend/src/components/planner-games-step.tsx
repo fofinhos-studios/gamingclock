@@ -8,6 +8,8 @@ interface Props {
   onAddGame: (game: CatalogGame) => void;
   onSelectGameTime: (index: number, category: HLTBCategory) => void;
   onRemoveGame: (igdbId: number) => void;
+  onRetryGame: (igdbId: number) => void;
+  onMoveGame: (index: number, direction: -1 | 1) => void;
   onRenameBacklog: (name: string) => void;
 }
 
@@ -17,6 +19,8 @@ export function PlannerGamesStep({
   onAddGame,
   onSelectGameTime,
   onRemoveGame,
+  onRetryGame,
+  onMoveGame,
   onRenameBacklog,
 }: Props) {
   return (
@@ -31,6 +35,8 @@ export function PlannerGamesStep({
           games={games}
           onRemoveGame={onRemoveGame}
           onSelectGameTime={onSelectGameTime}
+          onRetryGame={onRetryGame}
+          onMoveGame={onMoveGame}
           onRenameList={onRenameBacklog}
         />
       </div>
