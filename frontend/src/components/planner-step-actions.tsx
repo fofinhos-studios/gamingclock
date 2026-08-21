@@ -27,8 +27,7 @@ export function PlannerStepActions({
     schedule: t.tabs.schedule,
   };
   const backHelp = previousTab === null ? t.tabs.firstStep : "";
-  const backHelpId = "planner-stage-back-help";
-  const continueHelpId = "planner-stage-continue-help";
+  const backHelpId = backHelp ? "planner-step-actions-back-help" : undefined;
   const continueHelp =
     nextTab === null
       ? t.tabs.lastStep
@@ -37,6 +36,9 @@ export function PlannerStepActions({
         : activeTab === "games"
           ? t.tabs.gamesRequired
           : t.tabs.availabilityRequired;
+  const continueHelpId = continueHelp
+    ? "planner-step-actions-continue-help"
+    : undefined;
   return (
     <div class="planner-step-actions">
       <Button
@@ -45,7 +47,8 @@ export function PlannerStepActions({
         size="sm"
         disabled={previousTab === null}
         title={backHelp || undefined}
-        aria-describedby={backHelp ? backHelpId : undefined}
+        aria-description={backHelp || undefined}
+        aria-describedby={backHelpId}
         onClick={() => {
           if (previousTab) onChange(previousTab);
         }}
@@ -60,7 +63,8 @@ export function PlannerStepActions({
         size="sm"
         disabled={nextTab === null || !canContinue}
         title={continueHelp || undefined}
-        aria-describedby={continueHelp ? continueHelpId : undefined}
+        aria-description={continueHelp || undefined}
+        aria-describedby={continueHelpId}
         onClick={() => {
           if (nextTab && canContinue) onChange(nextTab);
         }}
@@ -68,6 +72,16 @@ export function PlannerStepActions({
         {nextTab ? t.tabs.continueTo(tabLabels[nextTab]) : t.tabs.continue}
         <ArrowRightIcon class="planner-icon" aria-hidden="true" />
       </Button>
+      {backHelp && (
+        <span id={backHelpId} class="sr-only">
+          {backHelp}
+        </span>
+      )}
+      {continueHelp && (
+        <span id={continueHelpId} class="sr-only">
+          {continueHelp}
+        </span>
+      )}
     </div>
   );
 }

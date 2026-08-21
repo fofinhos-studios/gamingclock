@@ -149,9 +149,6 @@ describe("HomePage", () => {
       await user.type(firstView.getByDisplayValue(""), "Weekend games");
       await user.click(firstView.getByRole("tab", { name: /availability/i }));
       await user.click(firstView.getByLabelText(/monday/i));
-      await user.click(
-        firstView.getByRole("button", { name: /save availability/i }),
-      );
       await user.click(firstView.getByRole("tab", { name: /schedule/i }));
       await user.selectOptions(
         firstView.getByLabelText(/schedule method/i),
@@ -190,11 +187,6 @@ describe("HomePage", () => {
         (reloadedView.getByLabelText(/schedule method/i) as HTMLSelectElement)
           .value,
       ).toBe("alternating");
-      expect(
-        reloadedView
-          .getByRole("button", { name: /generate schedule/i })
-          .hasAttribute("disabled"),
-      ).toBe(false);
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -256,16 +248,7 @@ describe("HomePage", () => {
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
       await user.click(view.getByLabelText(/monday/i));
-      await user.click(
-        view.getByRole("button", { name: /save availability/i }),
-      );
       await user.click(view.getByRole("tab", { name: /schedule/i }));
-
-      const generateButton = within(view.getByRole("tabpanel")).getByRole(
-        "button",
-        { name: /generate schedule/i },
-      );
-      expect(generateButton.hasAttribute("disabled")).toBe(true);
       expect(
         within(view.getByRole("tabpanel")).getByText(
           /getting playtime estimates/i,
@@ -274,9 +257,6 @@ describe("HomePage", () => {
 
       resolvePlaytime?.(createJsonResponse(resolvedResult));
 
-      await waitFor(() =>
-        expect(generateButton.hasAttribute("disabled")).toBe(false),
-      );
       await user.click(view.getByRole("tab", { name: /games/i }));
       await waitFor(() =>
         expect(
@@ -467,15 +447,7 @@ describe("HomePage", () => {
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
       await user.click(view.getByLabelText(/monday/i));
-      await user.click(
-        view.getByRole("button", { name: /save availability/i }),
-      );
       await user.click(view.getByRole("tab", { name: /schedule/i }));
-      await user.click(
-        within(view.getByRole("tabpanel")).getByRole("button", {
-          name: /generate schedule/i,
-        }),
-      );
 
       await waitFor(() => expect(scheduleRequest).not.toBeNull());
       const requestGames = scheduleRequest?.games as Array<{
@@ -527,7 +499,7 @@ describe("HomePage", () => {
     let activePanel = view.getByRole("tabpanel");
     expect(activePanel.id).toBe("planner-panel-availability");
     expect(
-      within(activePanel).getByRole("group", { name: /availability mode/i }),
+      within(activePanel).getByRole("group", { name: /weekly schedule/i }),
     ).toBeTruthy();
     expect(within(activePanel).queryByText(/find games/i)).toBeNull();
 
@@ -535,11 +507,13 @@ describe("HomePage", () => {
     activePanel = view.getByRole("tabpanel");
     expect(activePanel.id).toBe("planner-panel-schedule");
     expect(
-      within(activePanel).getByRole("button", { name: /generate schedule/i }),
+      within(activePanel).getByRole("heading", { name: /your schedule/i }),
     ).toBeTruthy();
     expect(within(activePanel).queryByText(/weekly cadence/i)).toBeNull();
     expect(within(activePanel).queryByText(/ready to plan/i)).toBeNull();
-    expect(within(activePanel).queryByText(/before you generate/i)).toBeNull();
+    expect(
+      within(activePanel).getByText(/before your schedule can update/i),
+    ).toBeTruthy();
   });
 
   test("creates a second backlog from the compact backlog manager", async () => {
@@ -638,7 +612,7 @@ describe("HomePage", () => {
     expect(gamesContinue.getAttribute("title")).toMatch(
       /add and resolve at least one game before continuing/i,
     );
-    expect(view.queryByText(/you are at the first step/i)).toBeNull();
+    expect(view.getByText(/you are at the first step/i)).toBeTruthy();
 
     await user.click(view.getByRole("tab", { name: /availability/i }));
 
@@ -650,7 +624,7 @@ describe("HomePage", () => {
     ).toBeTruthy();
     expect(availabilityContinue.hasAttribute("disabled")).toBe(true);
     expect(availabilityContinue.getAttribute("title")).toMatch(
-      /save your weekly play time before continuing/i,
+      /set your weekly play time before continuing/i,
     );
 
     await user.click(view.getByRole("tab", { name: /schedule/i }));
@@ -740,7 +714,7 @@ describe("HomePage", () => {
     }
   });
 
-  test("saves the selected weekly start hour and sends it when generating a schedule", async () => {
+  test("sends the selected weekly start hour when the live schedule updates", async () => {
     const user = userEvent.setup();
     const originalFetch = globalThis.fetch;
     let scheduleRequest: Record<string, unknown> | null = null;
@@ -814,23 +788,15 @@ describe("HomePage", () => {
 
       const availabilityPanel = view.getByRole("tabpanel");
       await user.click(within(availabilityPanel).getByLabelText(/monday/i));
-      await user.clear(within(availabilityPanel).getByLabelText(/start hour/i));
-      await user.type(
-        within(availabilityPanel).getByLabelText(/start hour/i),
-        "18:00",
+      await user.clear(
+        within(availabilityPanel).getByLabelText(/^start time/i),
       );
-      await user.click(
-        within(availabilityPanel).getByRole("button", {
-          name: /save availability/i,
-        }),
+      await user.type(
+        within(availabilityPanel).getByLabelText(/^start time/i),
+        "18:00",
       );
 
       await user.click(view.getByRole("tab", { name: /schedule/i }));
-      await user.click(
-        within(view.getByRole("tabpanel")).getByRole("button", {
-          name: /generate schedule/i,
-        }),
-      );
 
       await waitFor(() => expect(scheduleRequest).not.toBeNull());
 
@@ -846,7 +812,7 @@ describe("HomePage", () => {
         },
       ]);
       expect(
-        within(view.getByRole("tabpanel")).getByText(/at 18:00:00/i),
+        within(view.getByRole("tabpanel")).getByText(/^18:00$/),
       ).toBeTruthy();
     } finally {
       globalThis.fetch = originalFetch;
@@ -868,13 +834,6 @@ describe("HomePage", () => {
     await user.click(view.getByRole("tab", { name: /schedule/i }));
 
     const activePanel = view.getByRole("tabpanel");
-    const generateButton = within(activePanel).getByRole("button", {
-      name: /generate schedule/i,
-    });
-    expect(generateButton.hasAttribute("disabled")).toBe(true);
-    expect(generateButton.getAttribute("aria-description")).toMatch(
-      /add at least one game to the backlog/i,
-    );
     expect(
       within(activePanel).getByText(/add at least one game to the backlog/i),
     ).toBeTruthy();
@@ -1089,22 +1048,11 @@ describe("HomePage", () => {
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
       await user.click(view.getByLabelText(/monday/i));
-      await user.click(
-        view.getByRole("button", { name: /save availability/i }),
-      );
 
       await user.click(view.getByRole("tab", { name: /schedule/i }));
-      await user.click(
-        view.getByRole("button", { name: /generate schedule/i }),
-      );
 
       await waitFor(() =>
-        expect(
-          within(view.getByRole("tabpanel")).getByRole("heading", {
-            level: 2,
-            name: /your schedule/i,
-          }),
-        ).toBeTruthy(),
+        expect(view.container.querySelector("#schedule-heading")).toBeTruthy(),
       );
 
       const schedulePanel = view.getByRole("tabpanel");
@@ -1114,14 +1062,14 @@ describe("HomePage", () => {
       expect(within(schedulePanel).getByText(/estimated finish/i)).toBeTruthy();
       expect(within(schedulePanel).getByText(/^sessions$/i)).toBeTruthy();
       expect(within(schedulePanel).getByText(/days to finish/i)).toBeTruthy();
-      expect(within(schedulePanel).getByText(/^2$/)).toBeTruthy();
+      expect(within(schedulePanel).getAllByText(/^2$/)).toHaveLength(2);
       expect(within(schedulePanel).getByText(/3 days/i)).toBeTruthy();
     } finally {
       globalThis.fetch = originalFetch;
     }
   });
 
-  test("invalidates a generated schedule when start date or algorithm changes", async () => {
+  test("keeps the schedule current when start date or algorithm changes", async () => {
     const user = userEvent.setup();
     const originalFetch = globalThis.fetch;
 
@@ -1195,31 +1143,13 @@ describe("HomePage", () => {
 
       await user.click(view.getByRole("tab", { name: /availability/i }));
       await user.click(view.getByLabelText(/monday/i));
-      await user.click(
-        view.getByRole("button", { name: /save availability/i }),
-      );
 
       await user.click(view.getByRole("tab", { name: /schedule/i }));
 
       const schedulePanel = () => view.getByRole("tabpanel");
-      const generateSchedule = async () => {
-        await user.click(
-          within(schedulePanel()).getByRole("button", {
-            name: /generate schedule|generated/i,
-          }),
-        );
-
-        await waitFor(() =>
-          expect(
-            within(schedulePanel()).getByRole("heading", {
-              level: 2,
-              name: /your schedule/i,
-            }),
-          ).toBeTruthy(),
-        );
-      };
-
-      await generateSchedule();
+      await waitFor(() =>
+        expect(view.container.querySelector("#schedule-heading")).toBeTruthy(),
+      );
 
       await user.clear(
         within(schedulePanel()).getByLabelText(
@@ -1232,20 +1162,8 @@ describe("HomePage", () => {
       );
 
       await waitFor(() =>
-        expect(
-          within(schedulePanel()).queryByRole("heading", {
-            level: 2,
-            name: /your schedule/i,
-          }),
-        ).toBeNull(),
+        expect(view.container.querySelector("#schedule-heading")).toBeTruthy(),
       );
-      expect(
-        within(schedulePanel()).queryByRole("button", {
-          name: /download \.ics/i,
-        }),
-      ).toBeNull();
-
-      await generateSchedule();
 
       await user.selectOptions(
         within(schedulePanel()).getByLabelText(/schedule method/i),
@@ -1253,18 +1171,8 @@ describe("HomePage", () => {
       );
 
       await waitFor(() =>
-        expect(
-          within(schedulePanel()).queryByRole("heading", {
-            level: 2,
-            name: /your schedule/i,
-          }),
-        ).toBeNull(),
+        expect(view.container.querySelector("#schedule-heading")).toBeTruthy(),
       );
-      expect(
-        within(schedulePanel()).queryByRole("button", {
-          name: /download \.ics/i,
-        }),
-      ).toBeNull();
     } finally {
       globalThis.fetch = originalFetch;
     }

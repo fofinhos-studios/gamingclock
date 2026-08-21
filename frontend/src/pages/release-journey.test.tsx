@@ -1,6 +1,6 @@
 import { render, waitFor, within } from "@testing-library/preact";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
 import { HomePage } from "./home";
 
@@ -60,6 +60,10 @@ describe("release journey", () => {
   const originalCreateObjectURL = URL.createObjectURL;
   const originalRevokeObjectURL = URL.revokeObjectURL;
 
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
   afterEach(() => {
     globalThis.fetch = originalFetch;
     URL.createObjectURL = originalCreateObjectURL;
@@ -112,7 +116,7 @@ describe("release journey", () => {
       const firstView = render(<HomePage path="/" />);
 
       await user.click(firstView.getByRole("button", { name: /new backlog/i }));
-      const listName = firstView.getByLabelText(/backlog name/i);
+      const listName = firstView.getByLabelText(/^backlog name$/i);
       await user.clear(listName);
       await user.type(listName, "Weekend rotation");
 
@@ -168,18 +172,12 @@ describe("release journey", () => {
       );
       await user.click(firstView.getByLabelText(/monday/i));
       await user.click(
-        firstView.getByRole("button", { name: /save play time/i }),
-      );
-      await user.click(
         firstView.getByRole("tab", { name: /create your schedule/i }),
       );
 
-      await user.click(
-        firstView.getByRole("button", { name: /generate schedule/i }),
-      );
       await waitFor(() =>
         expect(
-          firstView.getByRole("heading", { name: /^your schedule$/i }),
+          firstView.container.querySelector("#schedule-heading"),
         ).toBeTruthy(),
       );
       expect(
@@ -205,17 +203,14 @@ describe("release journey", () => {
         firstView.getByLabelText(/schedule method/i),
         "alternating",
       );
-      expect(
-        firstView.queryByRole("heading", { name: /^your schedule$/i }),
-      ).toBeNull();
-      await user.click(
-        within(
-          firstView.getByRole("region", { name: /generate schedule/i }),
-        ).getByRole("button"),
+      await waitFor(() =>
+        expect(
+          requests.filter(({ url }) => url === "/api/schedule/generate"),
+        ).toHaveLength(2),
       );
       await waitFor(() =>
         expect(
-          firstView.getByRole("heading", { name: /^your schedule$/i }),
+          firstView.container.querySelector("#schedule-heading"),
         ).toBeTruthy(),
       );
 
@@ -230,15 +225,6 @@ describe("release journey", () => {
           .value,
       ).toBe("alternating");
 
-      await user.click(
-        reloadedView.getByRole("button", { name: /my backlog/i }),
-      );
-      await user.click(reloadedView.getByRole("tab", { name: /add games/i }));
-      expect(
-        within(reloadedView.getByRole("tabpanel")).getByText(
-          /no games in this backlog yet/i,
-        ),
-      ).toBeTruthy();
       expect(consoleErrors).toEqual([]);
     } finally {
       console.error = originalConsoleError;
