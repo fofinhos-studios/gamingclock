@@ -23,7 +23,9 @@ describe("i18n", () => {
 
     const chooser = view.getByRole("combobox", { name: "Idioma" });
     expect((chooser as HTMLSelectElement).value).toBe("pt-BR");
-    expect(view.getByRole("heading", { name: "Adicione jogos" })).toBeTruthy();
+    expect(
+      view.getByRole("heading", { name: "O que você quer jogar?" }),
+    ).toBeTruthy();
     expect(view.getByDisplayValue("Minha lista")).toBeTruthy();
     expect(
       view.getByRole("button", {
@@ -39,7 +41,9 @@ describe("i18n", () => {
     await user.selectOptions(chooser, "en");
 
     expect(view.getByRole("combobox", { name: "Language" })).toBeTruthy();
-    expect(view.getByRole("heading", { name: "Add games" })).toBeTruthy();
+    expect(
+      view.getByRole("heading", { name: "What do you want to play?" }),
+    ).toBeTruthy();
     expect(view.getByDisplayValue("My Backlog")).toBeTruthy();
     expect(window.localStorage.getItem("gaming-clock.language")).toBe("en");
 
@@ -93,6 +97,19 @@ describe("i18n", () => {
       "Quando você joga?",
     );
     expect(strings["pt-BR"].availability.heading).toBe("Dias e horários");
+  });
+
+  test("gives the games and schedule steps distinct navigation, page, and panel copy", () => {
+    expect(strings["pt-BR"].tabs.addGames).toBe("Montar lista");
+    expect(strings["pt-BR"].app.steps.games.title).toBe(
+      "O que você quer jogar?",
+    );
+    expect(strings["pt-BR"].search.title).toBe("Encontre seus jogos");
+    expect(strings["pt-BR"].tabs.schedule).toBe("Planejar sessões");
+    expect(strings["pt-BR"].app.steps.schedule.title).toBe(
+      "Monte seu plano de jogo",
+    );
+    expect(strings["pt-BR"].schedule.heading).toBe("Data e método");
   });
 
   test("explains the duration choice without exposing validation rules", () => {

@@ -1,4 +1,4 @@
-import { GameControllerIcon, MoonIcon, SunIcon } from "@phosphor-icons/react";
+import { MoonIcon, SunIcon } from "@phosphor-icons/react";
 import {
   useCallback,
   useEffect,
@@ -7,7 +7,7 @@ import {
 } from "preact/hooks";
 
 import { BacklogManager } from "../components/backlog-manager";
-import { BrandShader } from "../components/brand-shader";
+import { BrandEmblem, BrandShader } from "../components/brand-shader";
 import { PlannerAvailabilityStep } from "../components/planner-availability-step";
 import { PlannerGamesStep } from "../components/planner-games-step";
 import { PlannerScheduleStep } from "../components/planner-schedule-step";
@@ -500,10 +500,7 @@ export function HomePage() {
               <div class="planner-toolbar__topline">
                 <div class="planner-brand">
                   <p class="planner-brand__name">
-                    <GameControllerIcon
-                      class="planner-icon planner-brand__icon"
-                      aria-hidden="true"
-                    />
+                    <BrandEmblem />
                     <BrandShader text={t.app.brand} />
                   </p>
                 </div>

@@ -20,6 +20,17 @@
   --rust-signal: #ec4624;
   --heat-marker: #f39120;
   --architectural-cream: #e2dac2;
+  --brand-base: #e2dac2;
+  --panel-glass: var(--surface-82);
+  --panel-chassis: var(--surface-92);
+  --metal-highlight: var(--foreground-16);
+  --metal-shadow: var(--foreground-08);
+  --brushed-metal: repeating-linear-gradient(
+    105deg,
+    var(--foreground-0) 0 3px,
+    var(--foreground-035) 3px 4px,
+    var(--foreground-0) 4px 8px
+  );
   --background: var(--iron-core);
   --surface: #2d3837;
   --foreground: var(--architectural-cream);
@@ -82,6 +93,17 @@
   --step-active: #bd5a12;
   --step-active-soft: #f3d2af;
   --placeholder: #6c7469;
+  --brand-base: #222a2a;
+  --panel-glass: var(--surface-82);
+  --panel-chassis: var(--surface-92);
+  --metal-highlight: var(--foreground-16);
+  --metal-shadow: var(--foreground-08);
+  --brushed-metal: repeating-linear-gradient(
+    105deg,
+    var(--foreground-0) 0 3px,
+    var(--foreground-035) 3px 4px,
+    var(--foreground-0) 4px 8px
+  );
   --foreground-0: rgb(34 42 42 / 0);
   --foreground-035: rgb(34 42 42 / 0.035);
   --foreground-04: rgb(34 42 42 / 0.04);
@@ -128,11 +150,9 @@
   body {
     margin: 0;
     min-height: 100vh;
-    background: linear-gradient(
-      180deg,
-      var(--canvas-start) 0%,
-      var(--canvas-end) 100%
-    );
+    background:
+      var(--brushed-metal),
+      linear-gradient(180deg, var(--canvas-start) 0%, var(--canvas-end) 100%);
     color: var(--foreground);
     font-family: var(--font-body);
   }
@@ -232,16 +252,38 @@
   .planner-app__frame {
     display: grid;
     width: 100%;
-    max-width: none;
+    max-width: 112rem;
     margin: 0 auto;
   }
 
   .planner-app__workspace {
+    position: relative;
+    isolation: isolate;
     display: grid;
     gap: clamp(0.8rem, 2vw, 1.5rem);
     padding: clamp(0.8rem, 2vw, 1.5rem);
     min-width: 0;
-    background: var(--surface-82);
+    overflow: hidden;
+    border: 1px solid var(--metal-highlight);
+    background:
+      linear-gradient(135deg, var(--panel-chassis), var(--panel-glass)),
+      var(--brushed-metal);
+    box-shadow:
+      inset 1px 1px 0 var(--metal-highlight),
+      inset -1px -1px 0 var(--metal-shadow),
+      0 1.25rem 3rem var(--foreground-08);
+  }
+
+  .planner-app__workspace::before {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    content: "";
+    opacity: 0.5;
+    background:
+      linear-gradient(90deg, var(--foreground-0), var(--foreground-04), var(--foreground-0)),
+      var(--brushed-metal);
+    pointer-events: none;
   }
 
   .planner-brand {
@@ -258,9 +300,52 @@
     color: var(--foreground);
   }
 
-  .planner-brand__icon {
-    width: clamp(1.6rem, 2.2vw, 2rem);
-    height: clamp(1.6rem, 2.2vw, 2rem);
+  .planner-brand__emblem {
+    flex: 0 0 auto;
+    width: clamp(2.5rem, 4vw, 3.65rem);
+    height: clamp(2.5rem, 4vw, 3.65rem);
+    overflow: visible;
+    filter: drop-shadow(0 0 0.55rem var(--brand-glow));
+  }
+
+  .planner-brand__emblem-orbit,
+  .planner-brand__emblem-core,
+  .planner-brand__emblem-hand {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .planner-brand__emblem-orbit {
+    stroke: var(--industrial-aqua);
+    stroke-width: 3;
+    stroke-dasharray: 35 12;
+    transform-origin: 32px 32px;
+    animation: planner-brand-orbit 7s linear infinite;
+  }
+
+  .planner-brand__emblem-core {
+    fill: var(--surface);
+    stroke: var(--heat-marker);
+    stroke-width: 2.5;
+    transform-origin: 32px 32px;
+    animation: planner-brand-core 2.4s ease-in-out infinite;
+  }
+
+  .planner-brand__emblem-hand {
+    stroke: var(--foreground);
+    stroke-width: 2.75;
+  }
+
+  .planner-brand__emblem-play {
+    fill: var(--heat-marker);
+    opacity: 0.92;
+  }
+
+  .planner-brand__emblem-spark {
+    fill: var(--industrial-aqua);
+    transform-origin: 51px 18px;
+    animation: planner-brand-spark 1.2s ease-in-out infinite alternate;
   }
 
   .planner-brand__title {
@@ -270,7 +355,7 @@
     font-family: "Archivo", sans-serif;
     font-size: clamp(2rem, 3.3vw, 3rem);
     font-weight: 800;
-    letter-spacing: -0.065em;
+    letter-spacing: 0;
     line-height: 0.92;
   }
 
@@ -283,7 +368,7 @@
     display: block;
     width: 100%;
     height: 100%;
-    filter: drop-shadow(0 0 0.45rem var(--brand-glow));
+    filter: drop-shadow(0 0 0.65rem var(--brand-glow));
     opacity: 0;
     pointer-events: none;
   }
@@ -546,8 +631,12 @@
     gap: 0.75rem;
     border: 1px solid var(--border-light);
     border-left: 0.3rem solid var(--heat-marker);
-    background: var(--surface);
+    background: var(--panel-glass);
     padding: 0.55rem 0.6rem 0.55rem 0.75rem;
+    box-shadow:
+      inset 1px 1px 0 var(--metal-highlight),
+      inset -1px -1px 0 var(--metal-shadow),
+      0 0.3rem 0.8rem var(--foreground-06);
   }
 
   .backlog-manager__actions {
@@ -626,9 +715,12 @@
     gap: 0.75rem;
     margin-top: 0.55rem;
     border: 1px solid var(--border-light);
-    background: var(--muted);
+    background: var(--panel-glass);
     padding: 0.75rem;
-    box-shadow: 0.3rem 0.3rem 0 var(--foreground-12);
+    box-shadow:
+      inset 1px 1px 0 var(--metal-highlight),
+      inset -1px -1px 0 var(--metal-shadow),
+      0 0.3rem 0.8rem var(--foreground-08);
   }
 
   .backlog-manager__panel-heading h2 {
@@ -763,7 +855,15 @@
   .planner-pane {
     padding: 0.9rem;
     min-width: 0;
-    background: var(--muted);
+    border: 1px solid var(--foreground-16);
+    background:
+      linear-gradient(135deg, var(--panel-glass), var(--surface-68)),
+      var(--brushed-metal);
+    box-shadow:
+      inset 1px 1px 0 var(--metal-highlight),
+      inset -1px -1px 0 var(--metal-shadow),
+      0 0.7rem 1.4rem var(--foreground-06);
+    backdrop-filter: blur(10px) saturate(0.86);
   }
 
   .planner-pane__header {
@@ -801,7 +901,9 @@
   .planner-search-results {
     max-height: 34rem;
     overflow-y: auto;
+    border: 1px solid var(--foreground-12);
     background: var(--surface-68);
+    box-shadow: inset 0 0.2rem 0.7rem var(--foreground-08);
   }
 
   .planner-search-results__message {
@@ -1143,7 +1245,11 @@
   .planner-day-card {
     display: grid;
     gap: 0.55rem;
+    border: 1px solid var(--foreground-12);
     background: var(--foreground-04);
+    box-shadow:
+      inset 1px 1px 0 var(--foreground-08),
+      inset -1px -1px 0 var(--foreground-035);
     cursor: pointer;
     padding: 0.75rem;
     transform: translateY(0);
@@ -1287,9 +1393,12 @@
     display: grid;
     justify-items: center;
     width: 100%;
-    border: 0;
+    border: 1px solid var(--foreground-08);
     padding: 0.55rem 0.4rem;
     background: var(--foreground-05);
+    box-shadow:
+      inset 1px 1px 0 var(--foreground-08),
+      inset -1px -1px 0 var(--foreground-035);
     color: inherit;
     cursor: pointer;
     appearance: none;
@@ -2064,12 +2173,15 @@
   min-height: 2.75rem;
     width: 100%;
     border: 1px solid var(--foreground-16);
-    background: var(--surface-92);
+    background: var(--panel-chassis);
     color: var(--foreground);
     padding: 0.55rem 0.75rem;
     font-family: var(--font-mono);
     font-size: 0.82rem;
     letter-spacing: -0.01em;
+    box-shadow:
+      inset 1px 1px 0 var(--foreground-04),
+      inset 0 0.25rem 0.7rem var(--foreground-08);
   }
 
   .ui-input::placeholder {
@@ -2100,7 +2212,10 @@
       border-color 140ms ease,
       opacity 140ms ease,
       box-shadow 180ms ease;
-    box-shadow: inset 0 0 0 0 var(--foreground-0);
+    box-shadow:
+      inset 1px 1px 0 var(--foreground-12),
+      inset -1px -1px 0 var(--foreground-04),
+      0 0.18rem 0.45rem var(--foreground-08);
   }
 
   .ui-button:hover {
@@ -2109,6 +2224,9 @@
 
   .ui-button:active {
     transform: translateY(0) scale(0.985);
+    box-shadow:
+      inset 1px 1px 0 var(--foreground-04),
+      inset 0 0.25rem 0.55rem var(--foreground-12);
   }
 
   .ui-button[data-feedback="loading"] {
@@ -2211,6 +2329,35 @@
 
   50% {
     transform: translateY(-0.075rem);
+  }
+}
+
+@keyframes planner-brand-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes planner-brand-core {
+  0%,
+  100% {
+    transform: scale(0.92);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes planner-brand-spark {
+  from {
+    opacity: 0.3;
+    transform: scale(0.55);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1.15);
   }
 }
 

@@ -25,16 +25,26 @@ const fragmentShaderSource = `
   void main() {
     vec2 uv = gl_FragCoord.xy / u_resolution;
     float glyph = texture2D(u_text, vec2(uv.x, 1.0 - uv.y)).a;
-    float current = sin(uv.x * 6.0 - u_time * 0.7 + sin(uv.y * 8.0 + u_time * 0.45)) * 0.5 + 0.5;
-    float ripple = sin(uv.x * 13.0 + uv.y * 5.0 + u_time * 1.1) * 0.5 + 0.5;
-    float aqua = smoothstep(0.32, 0.82, current);
-    float amber = smoothstep(0.84, 0.98, ripple) * aqua;
-    vec3 colour = mix(u_ink, u_aqua, aqua * 0.76);
-    colour = mix(colour, u_heat, amber * 0.48);
+    float current = sin(uv.x * 4.8 - u_time * 0.72 + sin(uv.y * 5.0 + u_time * 0.4)) * 0.5 + 0.5;
+    float flare = sin(uv.x * 8.0 + uv.y * 3.4 + u_time * 0.55) * 0.5 + 0.5;
+    vec3 colour = mix(u_aqua, u_heat, 0.2 + current * 0.55);
+    colour = mix(colour, u_ink, flare * 0.16);
 
     gl_FragColor = vec4(colour * glyph, glyph);
   }
 `;
+
+export function BrandEmblem() {
+  return (
+    <svg class="planner-brand__emblem" viewBox="0 0 64 64" aria-hidden="true">
+      <circle class="planner-brand__emblem-orbit" cx="32" cy="32" r="25" />
+      <circle class="planner-brand__emblem-core" cx="32" cy="32" r="17" />
+      <path class="planner-brand__emblem-hand" d="M32 20v12l9 6" />
+      <path class="planner-brand__emblem-play" d="m27 24 13 8-13 8z" />
+      <circle class="planner-brand__emblem-spark" cx="51" cy="18" r="3" />
+    </svg>
+  );
+}
 
 function compileShader(
   context: WebGLRenderingContext,
@@ -185,10 +195,15 @@ export function BrandShader({ text }: BrandShaderProps) {
       }
 
       const styles = window.getComputedStyle(canvas);
-      textContext.font = styles.font;
+      textContext.font = `${styles.fontWeight} ${styles.fontSize} ${styles.fontFamily}`;
       textContext.fillStyle = "#ffffff";
-      textContext.textBaseline = "middle";
-      textContext.fillText(text, 0, height / 2);
+      textContext.textBaseline = "alphabetic";
+      const metrics = textContext.measureText(text);
+      const textHeight =
+        metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+      const baseline =
+        (height - textHeight) / 2 + metrics.actualBoundingBoxAscent;
+      textContext.fillText(text, 0, baseline);
       context.texImage2D(
         context.TEXTURE_2D,
         0,
@@ -212,7 +227,7 @@ export function BrandShader({ text }: BrandShaderProps) {
 
     const rootStyles = window.getComputedStyle(document.documentElement);
     const ink = parseColour(
-      rootStyles.getPropertyValue("--foreground"),
+      rootStyles.getPropertyValue("--brand-base"),
       [1, 1, 1],
     );
     const aqua = parseColour(
