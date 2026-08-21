@@ -609,14 +609,6 @@
     gap: 0.35rem;
   }
 
-  .backlog-manager__actions { display: flex; }
-
-  .backlog-manager__actions .ui-button {
-    width: 2.75rem;
-    min-height: 2.75rem;
-    padding-inline: 0;
-  }
-
   .backlog-manager__current {
     display: inline-flex;
     align-items: center;

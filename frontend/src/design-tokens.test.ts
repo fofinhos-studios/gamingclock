@@ -142,9 +142,6 @@ test("keeps touch controls large and disables motion when requested", async () =
     /\.theme-toggle\s*\{[\s\S]*?min-height:\s*2\.75rem;/,
   );
   expect(stylesheet).toMatch(
-    /\.backlog-manager__actions \.ui-button\s*\{[\s\S]*?min-height:\s*2\.75rem;/,
-  );
-  expect(stylesheet).toMatch(
     /\.ui-input,[\s\S]*?\.ui-select\s*\{[\s\S]*?min-height:\s*2\.75rem;/,
   );
   expect(stylesheet).toMatch(
