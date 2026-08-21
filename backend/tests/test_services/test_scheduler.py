@@ -166,3 +166,25 @@ def test_scheduler_preserves_start_minutes():
     )
 
     assert sessions[0].start_time == datetime.time(20, 30)
+
+
+def test_scheduler_uses_multiple_play_windows_on_the_same_day():
+    games = [_make_game("Game A", 2.0)]
+    availability = WeeklyAvailability(
+        days=[
+            DayAvailability(day_of_week=0, hours=1.0, start_hour=12),
+            DayAvailability(day_of_week=0, hours=1.0, start_hour=20),
+        ],
+    )
+
+    sessions = SchedulerService().generate(
+        games=games,
+        availability=availability,
+        algorithm=ScheduleAlgorithm.SEQUENTIAL,
+        start_date=datetime.date(2026, 3, 30),
+    )
+
+    assert [(session.date, session.start_time, session.duration_hours) for session in sessions] == [
+        (datetime.date(2026, 3, 30), datetime.time(12, 0), 1.0),
+        (datetime.date(2026, 3, 30), datetime.time(20, 0), 1.0),
+    ]

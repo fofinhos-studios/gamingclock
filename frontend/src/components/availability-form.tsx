@@ -1,5 +1,11 @@
 import { MoonIcon, SunIcon } from "@phosphor-icons/react";
-import { useEffect, useRef, useState } from "preact/hooks";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "preact/hooks";
 
 import { useLanguage } from "../i18n/i18n";
 import type { DayAvailability, WeeklyAvailability } from "../types";
@@ -12,21 +18,22 @@ const DEFAULT_DURATION_MINUTES = 60;
 const DEFAULT_START_MINUTES = 20 * 60;
 
 type CalendarEvent = {
+  day: number;
   durationMinutes: number;
+  id: string;
   startMinutes: number;
 };
 
-type CalendarEvents = Record<number, CalendarEvent>;
-
 type EventDragState = {
-  day: number;
   durationMinutes: number;
+  eventId: string;
   mode: "move" | "resize";
   offsetMinutes: number;
 };
 
 type CreateDragState = {
   day: number;
+  eventId: string;
   mode: "create";
   startMinutes: number;
 };
@@ -66,36 +73,70 @@ function snapMinutes(minutes: number) {
 }
 
 function eventsFromAvailability(availability: WeeklyAvailability | null) {
-  return (availability?.days ?? []).reduce<CalendarEvents>((events, day) => {
+  return (availability?.days ?? []).map((day, index): CalendarEvent => {
     const durationMinutes = Math.min(
       END_MINUTES - START_MINUTES,
       Math.max(SLOT_MINUTES, Math.round(day.hours * 60)),
     );
-    const startMinutes = clampStart(
-      day.start_hour * 60 + (day.start_minute ?? 0),
-      durationMinutes,
-    );
 
-    events[day.day_of_week] = { durationMinutes, startMinutes };
-    return events;
-  }, {});
+    return {
+      day: day.day_of_week,
+      durationMinutes,
+      id: `saved-${index}-${day.day_of_week}-${day.start_hour}-${day.start_minute ?? 0}`,
+      startMinutes: clampStart(
+        day.start_hour * 60 + (day.start_minute ?? 0),
+        durationMinutes,
+      ),
+    };
+  });
 }
 
 function availabilityFromEvents(
-  events: CalendarEvents,
+  events: CalendarEvent[],
 ): WeeklyAvailability | null {
-  const days = Object.entries(events)
+  const days = events
     .map(
-      ([day, event]): DayAvailability => ({
-        day_of_week: Number(day),
+      (event): DayAvailability => ({
+        day_of_week: event.day,
         hours: event.durationMinutes / 60,
         start_hour: Math.floor(event.startMinutes / 60),
         start_minute: event.startMinutes % 60,
       }),
     )
-    .sort((left, right) => left.day_of_week - right.day_of_week);
+    .sort(
+      (left, right) =>
+        left.day_of_week - right.day_of_week ||
+        left.start_hour - right.start_hour ||
+        (left.start_minute ?? 0) - (right.start_minute ?? 0),
+    );
 
   return days.length > 0 ? { days } : null;
+}
+
+function availabilityMatches(
+  left: WeeklyAvailability | null,
+  right: WeeklyAvailability | null,
+) {
+  if (left === right) {
+    return true;
+  }
+  if (
+    left === null ||
+    right === null ||
+    left.days.length !== right.days.length
+  ) {
+    return false;
+  }
+
+  return left.days.every((day, index) => {
+    const other = right.days[index];
+    return (
+      day.day_of_week === other.day_of_week &&
+      day.hours === other.hours &&
+      day.start_hour === other.start_hour &&
+      (day.start_minute ?? 0) === (other.start_minute ?? 0)
+    );
+  });
 }
 
 function getMinutesFromPointer(event: PointerEvent, column: HTMLElement) {
@@ -111,23 +152,76 @@ function getMinutesFromPointer(event: PointerEvent, column: HTMLElement) {
   return snapMinutes(START_MINUTES + progress * (END_MINUTES - START_MINUTES));
 }
 
+function overlaps(
+  events: CalendarEvent[],
+  candidate: Omit<CalendarEvent, "id">,
+  ignoredId?: string,
+) {
+  const candidateEnd = candidate.startMinutes + candidate.durationMinutes;
+  return events.some(
+    (event) =>
+      event.id !== ignoredId &&
+      event.day === candidate.day &&
+      event.startMinutes < candidateEnd &&
+      candidate.startMinutes < event.startMinutes + event.durationMinutes,
+  );
+}
+
+function maxDurationForEvent(events: CalendarEvent[], event: CalendarEvent) {
+  const nextEventStart = events
+    .filter(
+      (other) =>
+        other.id !== event.id &&
+        other.day === event.day &&
+        other.startMinutes >= event.startMinutes,
+    )
+    .reduce(
+      (closest, other) => Math.min(closest, other.startMinutes),
+      END_MINUTES,
+    );
+
+  return nextEventStart - event.startMinutes;
+}
+
 export function AvailabilityForm({ availability, onChange }: Props) {
   const { t } = useLanguage();
-  const [events, setEvents] = useState<CalendarEvents>(() =>
+  const [events, setEvents] = useState<CalendarEvent[]>(() =>
     eventsFromAvailability(availability),
   );
   const [dragState, setDragState] = useState<DragState | null>(null);
   const didCreateDrag = useRef(false);
+  const lastEmittedAvailability = useRef<WeeklyAvailability | null | undefined>(
+    undefined,
+  );
+  const nextEventId = useRef(0);
   const slots = Array.from(
     { length: (END_MINUTES - START_MINUTES) / SLOT_MINUTES },
     (_, index) => START_MINUTES + index * SLOT_MINUTES,
   );
 
   useEffect(() => {
+    if (
+      lastEmittedAvailability.current !== undefined &&
+      availabilityMatches(availability, lastEmittedAvailability.current)
+    ) {
+      lastEmittedAvailability.current = undefined;
+      return;
+    }
+
     setEvents(eventsFromAvailability(availability));
   }, [availability]);
 
-  useEffect(() => {
+  const emitEvents = useCallback(
+    (next: CalendarEvent[]) => {
+      const nextAvailability = availabilityFromEvents(next);
+      lastEmittedAvailability.current = nextAvailability;
+      onChange(nextAvailability);
+      return next;
+    },
+    [onChange],
+  );
+
+  useLayoutEffect(() => {
     if (!dragState) {
       return undefined;
     }
@@ -148,28 +242,44 @@ export function AvailabilityForm({ availability, onChange }: Props) {
 
       setEvents((current) => {
         if (dragState.mode === "create") {
-          if (
-            targetDay !== dragState.day ||
-            pointerMinutes === dragState.startMinutes
-          ) {
+          if (targetDay !== dragState.day) {
             return current;
           }
 
-          didCreateDrag.current = true;
           const startMinutes = Math.min(dragState.startMinutes, pointerMinutes);
           const durationMinutes = Math.max(
             SLOT_MINUTES,
             Math.abs(pointerMinutes - dragState.startMinutes),
           );
-          const next = {
-            ...current,
-            [dragState.day]: { durationMinutes, startMinutes },
+          const candidate = {
+            day: dragState.day,
+            durationMinutes,
+            startMinutes,
           };
-          onChange(availabilityFromEvents(next));
-          return next;
+          if (overlaps(current, candidate, dragState.eventId)) {
+            return current;
+          }
+
+          didCreateDrag.current ||= pointerMinutes !== dragState.startMinutes;
+          const nextEvent: CalendarEvent = {
+            ...candidate,
+            id: dragState.eventId,
+          };
+          const next = current.some(
+            (calendarEvent) => calendarEvent.id === dragState.eventId,
+          )
+            ? current.map((calendarEvent) =>
+                calendarEvent.id === dragState.eventId
+                  ? nextEvent
+                  : calendarEvent,
+              )
+            : [...current, nextEvent];
+          return emitEvents(next);
         }
 
-        const source = current[dragState.day];
+        const source = current.find(
+          (calendarEvent) => calendarEvent.id === dragState.eventId,
+        );
         if (!source) {
           return current;
         }
@@ -178,44 +288,37 @@ export function AvailabilityForm({ availability, onChange }: Props) {
           const durationMinutes = Math.max(
             SLOT_MINUTES,
             Math.min(
-              END_MINUTES - source.startMinutes,
+              maxDurationForEvent(current, source),
               pointerMinutes - source.startMinutes,
             ),
           );
-          const next = {
-            ...current,
-            [dragState.day]: {
-              ...source,
-              durationMinutes,
-            },
-          };
-          onChange(availabilityFromEvents(next));
-          return next;
+          const next = current.map((calendarEvent) =>
+            calendarEvent.id === source.id
+              ? { ...source, durationMinutes }
+              : calendarEvent,
+          );
+          return emitEvents(next);
         }
 
         const startMinutes = clampStart(
           pointerMinutes - dragState.offsetMinutes,
           dragState.durationMinutes,
         );
-        const targetEvent = current[targetDay];
-        const next = {
-          ...current,
-          [targetDay]: {
-            startMinutes,
-            durationMinutes: dragState.durationMinutes,
-          },
+        const candidate = {
+          day: targetDay,
+          durationMinutes: dragState.durationMinutes,
+          startMinutes,
         };
-
-        if (targetDay !== dragState.day) {
-          if (targetEvent) {
-            next[dragState.day] = targetEvent;
-          } else {
-            delete next[dragState.day];
-          }
+        if (overlaps(current, candidate, source.id)) {
+          return current;
         }
 
-        onChange(availabilityFromEvents(next));
-        return next;
+        const next = current.map((calendarEvent) =>
+          calendarEvent.id === source.id
+            ? { ...candidate, id: source.id }
+            : calendarEvent,
+        );
+        return emitEvents(next);
       });
     };
 
@@ -227,48 +330,49 @@ export function AvailabilityForm({ availability, onChange }: Props) {
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
     };
-  }, [dragState, onChange]);
+  }, [dragState, emitEvents]);
 
-  const commitEvents = (next: CalendarEvents) => {
+  const commitEvents = (next: CalendarEvent[]) => {
     setEvents(next);
-    onChange(availabilityFromEvents(next));
+    emitEvents(next);
   };
 
   const addEvent = (day: number, startMinutes: number) => {
-    if (events[day]) {
+    const candidate = {
+      day,
+      durationMinutes: DEFAULT_DURATION_MINUTES,
+      startMinutes: clampStart(startMinutes, DEFAULT_DURATION_MINUTES),
+    };
+    if (overlaps(events, candidate)) {
       return;
     }
-    commitEvents({
+
+    commitEvents([
       ...events,
-      [day]: {
-        startMinutes: clampStart(startMinutes, DEFAULT_DURATION_MINUTES),
-        durationMinutes: DEFAULT_DURATION_MINUTES,
-      },
-    });
+      { ...candidate, id: `new-${nextEventId.current++}` },
+    ]);
   };
 
   const applyPreset = (days: number[]) => {
-    const next = Object.fromEntries(
-      days.map((day) => [
+    commitEvents(
+      days.map((day) => ({
         day,
-        {
-          startMinutes: DEFAULT_START_MINUTES,
-          durationMinutes: 2 * 60,
-        },
-      ]),
+        durationMinutes: 2 * 60,
+        id: `preset-${nextEventId.current++}`,
+        startMinutes: DEFAULT_START_MINUTES,
+      })),
     );
-    commitEvents(next);
   };
 
   const startDragging = (
     event: PointerEvent,
-    day: number,
-    mode: DragState["mode"],
+    eventId: string,
+    mode: EventDragState["mode"],
   ) => {
     (event.currentTarget as HTMLElement).focus();
     event.preventDefault();
     event.stopPropagation();
-    const calendarEvent = events[day];
+    const calendarEvent = events.find((candidate) => candidate.id === eventId);
     const column = (event.currentTarget as HTMLElement).closest<HTMLElement>(
       "[data-week-day]",
     );
@@ -278,8 +382,8 @@ export function AvailabilityForm({ availability, onChange }: Props) {
 
     const pointerMinutes = getMinutesFromPointer(event, column);
     setDragState({
-      day,
       durationMinutes: calendarEvent.durationMinutes,
+      eventId,
       mode,
       offsetMinutes:
         mode === "move" && pointerMinutes !== null
@@ -293,18 +397,23 @@ export function AvailabilityForm({ availability, onChange }: Props) {
     day: number,
     startMinutes: number,
   ) => {
-    if (events[day]) {
-      return;
-    }
-
     (event.currentTarget as HTMLElement).focus();
     event.preventDefault();
     didCreateDrag.current = false;
-    setDragState({ day, mode: "create", startMinutes });
+    setDragState({
+      day,
+      eventId: `new-${nextEventId.current++}`,
+      mode: "create",
+      startMinutes,
+    });
   };
 
-  const moveWithKeyboard = (day: number, direction: -1 | 1, resize = false) => {
-    const calendarEvent = events[day];
+  const moveWithKeyboard = (
+    eventId: string,
+    direction: -1 | 1,
+    resize = false,
+  ) => {
+    const calendarEvent = events.find((event) => event.id === eventId);
     if (!calendarEvent) {
       return;
     }
@@ -315,7 +424,7 @@ export function AvailabilityForm({ availability, onChange }: Props) {
           durationMinutes: Math.max(
             SLOT_MINUTES,
             Math.min(
-              END_MINUTES - calendarEvent.startMinutes,
+              maxDurationForEvent(events, calendarEvent),
               calendarEvent.durationMinutes + direction * SLOT_MINUTES,
             ),
           ),
@@ -327,10 +436,17 @@ export function AvailabilityForm({ availability, onChange }: Props) {
             calendarEvent.durationMinutes,
           ),
         };
-    commitEvents({ ...events, [day]: nextEvent });
+
+    if (overlaps(events, nextEvent, calendarEvent.id)) {
+      return;
+    }
+
+    commitEvents(
+      events.map((event) => (event.id === eventId ? nextEvent : event)),
+    );
   };
 
-  const totalMinutes = Object.values(events).reduce(
+  const totalMinutes = events.reduce(
     (total, event) => total + event.durationMinutes,
     0,
   );
@@ -366,7 +482,7 @@ export function AvailabilityForm({ availability, onChange }: Props) {
           >
             {t.availability.form.everyDay}
           </Button>
-          <Button type="button" size="sm" onClick={() => commitEvents({})}>
+          <Button type="button" size="sm" onClick={() => commitEvents([])}>
             {t.availability.form.clearWeek}
           </Button>
         </div>
@@ -400,7 +516,9 @@ export function AvailabilityForm({ availability, onChange }: Props) {
           </div>
 
           {t.availability.days.map((day, dayIndex) => {
-            const calendarEvent = events[dayIndex];
+            const dayEvents = events
+              .filter((event) => event.day === dayIndex)
+              .sort((left, right) => left.startMinutes - right.startMinutes);
             return (
               <div
                 key={day}
@@ -427,8 +545,9 @@ export function AvailabilityForm({ availability, onChange }: Props) {
                     />
                   ))}
                 </div>
-                {calendarEvent && (
+                {dayEvents.map((calendarEvent) => (
                   <button
+                    key={calendarEvent.id}
                     type="button"
                     class="availability-week__event"
                     aria-label={`${day}, ${formatDuration(calendarEvent.durationMinutes)} from ${formatTime(calendarEvent.startMinutes)}`}
@@ -437,7 +556,7 @@ export function AvailabilityForm({ availability, onChange }: Props) {
                       height: `${(calendarEvent.durationMinutes / (END_MINUTES - START_MINUTES)) * 100}%`,
                     }}
                     onPointerDown={(event) =>
-                      startDragging(event, dayIndex, "move")
+                      startDragging(event, calendarEvent.id, "move")
                     }
                     onKeyDown={(event) => {
                       if (
@@ -446,16 +565,18 @@ export function AvailabilityForm({ availability, onChange }: Props) {
                       ) {
                         event.preventDefault();
                         moveWithKeyboard(
-                          dayIndex,
+                          calendarEvent.id,
                           event.key === "ArrowUp" ? -1 : 1,
                           event.shiftKey,
                         );
                       }
                       if (event.key === "Delete" || event.key === "Backspace") {
                         event.preventDefault();
-                        const next = { ...events };
-                        delete next[dayIndex];
-                        commitEvents(next);
+                        commitEvents(
+                          events.filter(
+                            (candidate) => candidate.id !== calendarEvent.id,
+                          ),
+                        );
                       }
                     }}
                   >
@@ -465,11 +586,11 @@ export function AvailabilityForm({ availability, onChange }: Props) {
                       class="availability-week__resize-handle"
                       aria-hidden="true"
                       onPointerDown={(event) =>
-                        startDragging(event, dayIndex, "resize")
+                        startDragging(event, calendarEvent.id, "resize")
                       }
                     />
                   </button>
-                )}
+                ))}
               </div>
             );
           })}
