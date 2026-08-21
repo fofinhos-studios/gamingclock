@@ -3,6 +3,7 @@ import {
   ArrowDownIcon,
   ArrowUpIcon,
   CircleNotchIcon,
+  ClockIcon,
   ListBulletsIcon,
   TrashIcon,
   TrophyIcon,
@@ -146,14 +147,15 @@ export function GameListView({
                               onSelectGameTime(index, category as HLTBCategory)
                             }
                           >
+                            <ClockIcon
+                              class="planner-hltb-option__icon"
+                              aria-hidden="true"
+                            />
                             {`${hours}h ${String(label).toLowerCase()}`}
                           </button>
                         ) : null,
                       )}
                     </>
-                  )}
-                  {game.release_year !== null && (
-                    <span class="planner-chip">{game.release_year}</span>
                   )}
                 </fieldset>
               </div>

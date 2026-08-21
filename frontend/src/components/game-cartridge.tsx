@@ -1,3 +1,9 @@
+import {
+  CalendarBlankIcon,
+  ClockIcon,
+  GameControllerIcon,
+} from "@phosphor-icons/react";
+import { useState } from "preact/hooks";
 import { type ListGame, getSelectedGameHours } from "../types";
 
 interface Props {
@@ -11,6 +17,18 @@ function previewCoverUrl(coverUrl: string): string {
   return coverUrl.replace("/t_thumb/", "/t_cover_small/");
 }
 
+function getArtworkUrls(game: ListGame): string[] {
+  return [
+    ...new Set(
+      [
+        game.hero_url,
+        game.cover_url ? previewCoverUrl(game.cover_url) : null,
+        game.logo_url,
+      ].filter((url): url is string => Boolean(url)),
+    ),
+  ];
+}
+
 export function GameCartridge({
   game,
   plannedHours,
@@ -19,9 +37,37 @@ export function GameCartridge({
 }: Props) {
   const primaryHours = plannedHours ?? getSelectedGameHours(game);
   const primaryLabel = plannedHours === undefined ? "PLAY TIME" : "TODAY";
+  const artworkUrls = getArtworkUrls(game);
+  const [settledArtwork, setSettledArtwork] = useState<string[]>([]);
+  const isReady = artworkUrls.every((url) => settledArtwork.includes(url));
+
+  const markArtworkSettled = (url: string) => {
+    setSettledArtwork((current) =>
+      current.includes(url) ? current : [...current, url],
+    );
+  };
 
   return (
-    <div class={`game-cartridge game-cartridge--${variant}`}>
+    <div
+      class={`game-cartridge game-cartridge--${variant}${
+        isReady ? "" : " game-cartridge--loading"
+      }`}
+      aria-busy={!isReady}
+    >
+      {!isReady && (
+        <output
+          class="game-cartridge__loading"
+          aria-label={`Loading ${game.name} artwork`}
+        >
+          <div class="game-cartridge__loading-cover" />
+          <div class="game-cartridge__loading-content">
+            <span class="game-cartridge__loading-logo" />
+            <span class="game-cartridge__loading-line" />
+            <span class="game-cartridge__loading-label" />
+          </div>
+        </output>
+      )}
+
       {game.hero_url && (
         <img
           aria-hidden="true"
@@ -30,11 +76,13 @@ export function GameCartridge({
           alt=""
           loading="lazy"
           decoding="async"
+          onLoad={() => markArtworkSettled(game.hero_url)}
+          onError={() => markArtworkSettled(game.hero_url)}
         />
       )}
       <div class="game-cartridge__wash" aria-hidden="true" />
 
-      <div class="game-cartridge__cover-frame">
+      <div class="game-cartridge__cover-frame" aria-hidden={!isReady}>
         {game.cover_url ? (
           <img
             class="game-cartridge__cover"
@@ -42,6 +90,8 @@ export function GameCartridge({
             alt={`${game.name} cover`}
             loading="lazy"
             decoding="async"
+            onLoad={() => markArtworkSettled(previewCoverUrl(game.cover_url))}
+            onError={() => markArtworkSettled(previewCoverUrl(game.cover_url))}
           />
         ) : (
           <div class="game-cartridge__cover game-cartridge__cover--empty">
@@ -50,7 +100,7 @@ export function GameCartridge({
         )}
       </div>
 
-      <div class="game-cartridge__content">
+      <div class="game-cartridge__content" aria-hidden={!isReady}>
         <div class="game-cartridge__identity">
           {game.logo_url ? (
             <img
@@ -59,6 +109,8 @@ export function GameCartridge({
               alt={`${game.name} logo`}
               loading="lazy"
               decoding="async"
+              onLoad={() => markArtworkSettled(game.logo_url)}
+              onError={() => markArtworkSettled(game.logo_url)}
             />
           ) : (
             <h3 class="game-cartridge__title planner-backlog-row__title">
@@ -69,21 +121,33 @@ export function GameCartridge({
 
         <dl class="game-cartridge__label" aria-label={`${game.name} details`}>
           <div>
-            <dt>{primaryLabel}</dt>
+            <dt>
+              <ClockIcon aria-hidden="true" />
+              <span>{primaryLabel}</span>
+            </dt>
             <dd>{primaryHours.toFixed(1)}H</dd>
           </div>
           {startTime && (
             <div>
-              <dt>START</dt>
+              <dt>
+                <ClockIcon aria-hidden="true" />
+                <span>START</span>
+              </dt>
               <dd>{startTime.slice(0, 5)}</dd>
             </div>
           )}
           <div>
-            <dt>YEAR</dt>
+            <dt>
+              <CalendarBlankIcon aria-hidden="true" />
+              <span>YEAR</span>
+            </dt>
             <dd>{game.release_year ?? "—"}</dd>
           </div>
           <div>
-            <dt>MODE</dt>
+            <dt>
+              <GameControllerIcon aria-hidden="true" />
+              <span>MODE</span>
+            </dt>
             <dd>{game.selected_hltb_category ?? "main"}</dd>
           </div>
         </dl>
