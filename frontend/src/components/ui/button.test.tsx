@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { render } from "@testing-library/preact";
 import { describe, expect, test } from "vitest";
 
@@ -19,5 +21,34 @@ describe("Button", () => {
     expect(button.className).toContain(
       "hover:border-[var(--muted-foreground)]",
     );
+  });
+
+  test("offers an unstyled escape hatch for specialized selection controls", () => {
+    const view = render(<Button unstyled>Choose game</Button>);
+    const button = view.getByRole("button", { name: "Choose game" });
+
+    expect(button.className).toContain("ui-button--unstyled");
+    expect(button.className).not.toContain("border-[var(--foreground)]");
+  });
+
+  test("is the shared primitive for every application button", async () => {
+    const buttonConsumers = [
+      "src/pages/home.tsx",
+      "src/components/backlog-manager.tsx",
+      "src/components/game-list-view.tsx",
+      "src/components/game-search.tsx",
+      "src/components/planner-schedule-step.tsx",
+      "src/components/planner-tabs.tsx",
+    ];
+
+    const sources = await Promise.all(
+      buttonConsumers.map((file) =>
+        readFile(path.join(process.cwd(), file), "utf8"),
+      ),
+    );
+
+    for (const source of sources) {
+      expect(source).not.toContain("<button");
+    }
   });
 });

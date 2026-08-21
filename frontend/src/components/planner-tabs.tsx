@@ -6,6 +6,7 @@ import {
 } from "@phosphor-icons/react";
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
 import { useLanguage } from "../i18n/i18n";
+import { Button } from "./ui";
 
 const PLANNER_TABS = [
   { id: "games", icon: GameControllerIcon },
@@ -81,10 +82,10 @@ export function PlannerTabs({ activeTab, completedTabs, onChange }: Props) {
 
           return (
             <div class="planner-stepper__item" key={tab.id}>
-              <button
+              <Button
                 id={`planner-tab-${tab.id}`}
                 role="tab"
-                type="button"
+                unstyled
                 class={`planner-stepper__tab ${
                   selected ? "planner-stepper__tab--active" : ""
                 } ${complete ? "planner-stepper__tab--complete" : ""} ${feedback.active === tab.id ? "planner-stepper__tab--confirmed" : ""}`}
@@ -113,7 +114,7 @@ export function PlannerTabs({ activeTab, completedTabs, onChange }: Props) {
                     <span class="planner-stepper__tab-status">{status}</span>
                   </span>
                 </span>
-              </button>
+              </Button>
             </div>
           );
         })}

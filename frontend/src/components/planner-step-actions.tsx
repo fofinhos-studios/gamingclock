@@ -43,7 +43,7 @@ export function PlannerStepActions({
     <div class="planner-step-actions">
       <Button
         class="planner-step-actions__back"
-        variant="ghost"
+        variant="outline"
         size="sm"
         disabled={previousTab === null}
         title={backHelp || undefined}
@@ -59,7 +59,7 @@ export function PlannerStepActions({
 
       <Button
         class="planner-step-actions__continue"
-        variant={nextTab && canContinue ? "primary" : "outline"}
+        variant="outline"
         size="sm"
         disabled={nextTab === null || !canContinue}
         title={continueHelp || undefined}

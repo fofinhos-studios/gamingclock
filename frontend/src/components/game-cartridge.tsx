@@ -2,6 +2,7 @@ import {
   CalendarBlankIcon,
   ClockIcon,
   GameControllerIcon,
+  TagIcon,
 } from "@phosphor-icons/react";
 import { useState } from "preact/hooks";
 import { type ListGame, getSelectedGameHours } from "../types";
@@ -151,6 +152,13 @@ export function GameCartridge({
               <span>MODE</span>
             </dt>
             <dd>{game.selected_hltb_category ?? "main"}</dd>
+          </div>
+          <div>
+            <dt>
+              <TagIcon aria-hidden="true" />
+              <span>GENRE</span>
+            </dt>
+            <dd>{game.genres[0] ?? "—"}</dd>
           </div>
         </dl>
       </div>

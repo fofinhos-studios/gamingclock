@@ -12,6 +12,7 @@ import { PlannerGamesStep } from "../components/planner-games-step";
 import { PlannerScheduleStep } from "../components/planner-schedule-step";
 import { PlannerStepActions } from "../components/planner-step-actions";
 import { type PlannerTab, PlannerTabs } from "../components/planner-tabs";
+import { Button } from "../components/ui";
 import { useLanguage } from "../i18n/i18n";
 import { strings } from "../i18n/strings";
 import {
@@ -498,8 +499,8 @@ export function HomePage() {
             <header class="planner-toolbar">
               <div class="planner-toolbar__topline">
                 <div class="planner-toolbar__controls">
-                  <button
-                    type="button"
+                  <Button
+                    unstyled
                     class="theme-toggle"
                     aria-label={t.app.theme.switchTo(
                       theme === "dark" ? t.app.theme.light : t.app.theme.dark,
@@ -519,7 +520,7 @@ export function HomePage() {
                     <span>
                       {theme === "dark" ? t.app.theme.dark : t.app.theme.light}
                     </span>
-                  </button>
+                  </Button>
                   <label class="language-chooser">
                     <span>{t.language.label}</span>
                     <select

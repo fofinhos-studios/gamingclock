@@ -50,13 +50,13 @@ export function BacklogManager({
       <div class="backlog-manager__summary">
         <div class="backlog-manager__current">
           <span class="backlog-manager__label">{t.app.currentBacklog}</span>
-          <button
-            type="button"
+          <Button
+            unstyled
             class="backlog-manager__current-name"
             onClick={() => setIsOpen(true)}
           >
             {activeBacklog.name}
-          </button>
+          </Button>
           <span class="backlog-manager__meta">
             {t.app.backlogStats(
               activeBacklog.games.length,
@@ -72,7 +72,7 @@ export function BacklogManager({
               onCreate(t.app.newBacklogName(backlogs.length + 1));
             }}
             size="sm"
-            variant="ghost"
+            variant="outline"
           >
             <PlusIcon aria-hidden="true" />
           </Button>
@@ -114,8 +114,8 @@ export function BacklogManager({
                     isActive ? "backlog-manager__item--active" : ""
                   }`}
                 >
-                  <button
-                    type="button"
+                  <Button
+                    unstyled
                     class="backlog-manager__select"
                     aria-current={isActive ? "true" : undefined}
                     aria-label={t.app.backlogSelection(
@@ -132,9 +132,9 @@ export function BacklogManager({
                         hours.toFixed(1),
                       )}
                     </small>
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    unstyled
                     class="backlog-manager__delete"
                     aria-label={t.app.deleteBacklog(backlog.name)}
                     title={
@@ -146,7 +146,7 @@ export function BacklogManager({
                     onClick={() => onDelete(backlog.id)}
                   >
                     <TrashIcon aria-hidden="true" />
-                  </button>
+                  </Button>
                 </div>
               );
             })}
