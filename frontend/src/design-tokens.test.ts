@@ -98,6 +98,17 @@ test("lays out schedule guidance and plan facts as deliberate responsive groups"
   );
 });
 
+test("keeps the planner in its single-column layout until there is room for its control panel", async () => {
+  const stylesheet = await readStylesheet();
+
+  expect(stylesheet).toMatch(
+    /@media \(min-width: 1280px\)\s*\{[\s\S]*?\.planner-app__workspace\s*\{[\s\S]*?grid-template-columns:\s*14rem minmax\(0,\s*1fr\);/,
+  );
+  expect(stylesheet).toMatch(
+    /@media \(max-width: 1279px\)\s*\{[\s\S]*?\.planner-algorithm-explanations,[\s\S]*?\.planner-preview-list\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\);/,
+  );
+});
+
 test("uses larger shared icons and an accessible animated brand title", async () => {
   const stylesheet = await readStylesheet();
 
