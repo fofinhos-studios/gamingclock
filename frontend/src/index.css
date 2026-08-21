@@ -2429,13 +2429,14 @@
     grid-row: 2;
     align-self: start;
     padding: 0 1.25rem 0 0;
-    border-right: 1px solid var(--foreground-12);
+    border-right: 0;
     border-bottom: 0;
   }
 
   .planner-stepper__list {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.45rem;
+    border-bottom: 0;
   }
 
   .planner-stepper__tab {
