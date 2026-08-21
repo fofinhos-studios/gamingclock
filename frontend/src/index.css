@@ -229,7 +229,8 @@
 
   .planner-app__frame {
     display: grid;
-    max-width: 78rem;
+    width: 100%;
+    max-width: none;
     margin: 0 auto;
   }
 
@@ -1767,15 +1768,15 @@
 
   .schedule-calendar {
     display: grid;
-    grid-template-columns: repeat(7, minmax(11rem, 1fr));
-    min-width: 77rem;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    min-width: 0;
     overflow: hidden;
     border: 1px solid var(--foreground-22);
     background: var(--foreground-08);
   }
 
   .schedule-calendar-section {
-    overflow-x: auto;
+    overflow: visible;
     padding-bottom: 0.2rem;
   }
 
@@ -2254,5 +2255,48 @@
 
   .planner-pane--availability .planner-day-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .schedule-calendar-section {
+    overflow: visible;
+  }
+
+  .schedule-calendar {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.6rem;
+    border: 0;
+    background: transparent;
+  }
+
+  .schedule-calendar__day {
+    min-height: 0;
+    padding: 0.65rem;
+    border: 1px solid var(--foreground-16);
+    background: var(--surface-62);
+  }
+
+  .schedule-calendar__day--empty {
+    display: none;
+  }
+
+  .schedule-calendar__date {
+    padding-bottom: 0.45rem;
+  }
+
+  .game-cartridge--calendar {
+    grid-template-columns: 4.25rem minmax(0, 1fr);
+    min-height: 7.25rem;
+  }
+
+  .game-cartridge--calendar .game-cartridge__cover {
+    min-height: 6.6rem;
+  }
+
+  .game-cartridge--calendar .game-cartridge__content {
+    padding: 0.65rem 0.7rem 0.55rem;
+  }
+
+  .game-cartridge--calendar .game-cartridge__logo {
+    max-height: 2.2rem;
   }
 }
