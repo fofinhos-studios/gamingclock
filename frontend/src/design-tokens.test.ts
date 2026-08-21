@@ -81,12 +81,10 @@ test("builds the workspace from inset metal, glass, and brushed material layers"
   );
 });
 
-test("lays out schedule guidance and plan facts as deliberate responsive groups", async () => {
+test("keeps schedule guidance in the method hint and plan facts in a responsive group", async () => {
   const stylesheet = await readStylesheet();
 
-  expect(stylesheet).toMatch(
-    /\.planner-algorithm-explanations\s*\{[\s\S]*?display:\s*grid;[\s\S]*?grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\);/,
-  );
+  expect(stylesheet).not.toMatch(/\.planner-algorithm-explanations\s*\{/);
   expect(stylesheet).toMatch(
     /\.planner-schedule-preview\s*\{[\s\S]*?border-left:\s*2px solid var\(--step-active\);/,
   );
@@ -94,7 +92,7 @@ test("lays out schedule guidance and plan facts as deliberate responsive groups"
     /\.planner-preview-list\s*\{[\s\S]*?display:\s*grid;[\s\S]*?grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\);/,
   );
   expect(stylesheet).toMatch(
-    /@media \(max-width: 767px\)\s*\{[\s\S]*?\.planner-algorithm-explanations,[\s\S]*?\.planner-preview-list\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\);/,
+    /@media \(max-width: 767px\)\s*\{[\s\S]*?\.planner-preview-list\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\);/,
   );
 });
 
@@ -105,7 +103,7 @@ test("keeps the planner in its single-column layout until there is room for its 
     /@media \(min-width: 1280px\)\s*\{[\s\S]*?\.planner-app__workspace\s*\{[\s\S]*?grid-template-columns:\s*14rem minmax\(0,\s*1fr\);/,
   );
   expect(stylesheet).toMatch(
-    /@media \(max-width: 1279px\)\s*\{[\s\S]*?\.planner-algorithm-explanations,[\s\S]*?\.planner-preview-list\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\);/,
+    /@media \(max-width: 1279px\)\s*\{[\s\S]*?\.planner-preview-list\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\);/,
   );
 });
 
@@ -147,11 +145,14 @@ test("keeps touch controls large and disables motion when requested", async () =
   );
 });
 
-test("keeps buttons stationary on hover", async () => {
+test("keeps buttons stationary and beveled through hover and press", async () => {
   const stylesheet = await readStylesheet();
 
   expect(stylesheet).toMatch(
-    /\.ui-button:hover\s*\{[\s\S]*?box-shadow:\s*0 0\.35rem 1rem var\(--foreground-08\);/,
+    /\.ui-button:hover\s*\{[\s\S]*?box-shadow:\s*inset 1px 1px 0 var\(--foreground-16\),[\s\S]*?inset -1px -1px 0 var\(--foreground-04\),[\s\S]*?0 0\.35rem 1rem var\(--foreground-08\);/,
+  );
+  expect(stylesheet).toMatch(
+    /\.ui-button:active\s*\{[\s\S]*?box-shadow:\s*inset 1px 1px 0 var\(--foreground-04\),[\s\S]*?inset -1px -1px 0 var\(--foreground-12\),/,
   );
   expect(stylesheet).not.toMatch(
     /\.ui-button:hover\s*\{[^}]*?transform:\s*translateY\(/,

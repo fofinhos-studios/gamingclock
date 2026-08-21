@@ -129,9 +129,9 @@ export function GameListView({
                         ],
                       ].map(([category, label, hours]) =>
                         typeof hours === "number" ? (
-                          <button
+                          <Button
                             key={category}
-                            type="button"
+                            unstyled
                             class={`planner-hltb-option ${
                               (game.selected_hltb_category ?? "main") ===
                               category
@@ -152,7 +152,7 @@ export function GameListView({
                               aria-hidden="true"
                             />
                             {`${hours}h ${String(label).toLowerCase()}`}
-                          </button>
+                          </Button>
                         ) : null,
                       )}
                     </>

@@ -1,4 +1,5 @@
 import type { JSX } from "preact";
+import { forwardRef } from "preact/compat";
 
 import { cx } from "./utils";
 
@@ -9,6 +10,7 @@ interface ButtonProps extends JSX.HTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   block?: boolean;
+  unstyled?: boolean;
   feedbackState?: "idle" | "loading" | "success";
 }
 
@@ -26,27 +28,36 @@ const sizeClasses: Record<ButtonSize, string> = {
   md: "min-h-11 px-4 py-2 text-[0.7rem] tracking-[0.18em]",
 };
 
-export function Button({
-  variant = "outline",
-  size = "md",
-  block = false,
-  feedbackState = "idle",
-  class: className,
-  type = "button",
-  ...props
-}: ButtonProps) {
-  return (
-    <button
-      type={type}
-      data-feedback={feedbackState}
-      class={cx(
-        "ui-button inline-flex items-center justify-center gap-2 whitespace-nowrap font-[var(--font-mono)] uppercase transition-colors duration-100 disabled:cursor-not-allowed disabled:opacity-40",
-        sizeClasses[size],
-        variantClasses[variant],
-        block && "w-full",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  function Button(
+    {
+      variant = "outline",
+      size = "md",
+      block = false,
+      unstyled = false,
+      feedbackState = "idle",
+      class: className,
+      type = "button",
+      ...props
+    },
+    ref,
+  ) {
+    return (
+      <button
+        ref={ref}
+        type={type}
+        data-feedback={feedbackState}
+        class={cx(
+          unstyled
+            ? "ui-button ui-button--unstyled"
+            : "ui-button inline-flex items-center justify-center gap-2 whitespace-nowrap font-[var(--font-mono)] uppercase transition-colors duration-100 disabled:cursor-not-allowed disabled:opacity-40",
+          !unstyled && sizeClasses[size],
+          !unstyled && variantClasses[variant],
+          block && "w-full",
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
+);

@@ -74,5 +74,7 @@ describe("GameCartridge", () => {
     ).toBe(game.hero_url);
     expect(view.getByText("PLAY TIME")).toBeTruthy();
     expect(view.getByText("27.5H")).toBeTruthy();
+    expect(view.getByText("GENRE")).toBeTruthy();
+    expect(view.getByText("Adventure")).toBeTruthy();
   });
 });

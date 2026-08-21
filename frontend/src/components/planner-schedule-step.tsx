@@ -1,9 +1,9 @@
-import { CalendarIcon } from "@phosphor-icons/react";
+import { CalendarIcon, InfoIcon } from "@phosphor-icons/react";
 import { useLanguage } from "../i18n/i18n";
 import type { ListGame, ScheduleAlgorithm, ScheduleResponse } from "../types";
 import type { PlannerTab } from "./planner-tabs";
 import { ScheduleView } from "./schedule-view";
-import { Field, Input, Select } from "./ui";
+import { Button, Field, Input, Select } from "./ui";
 
 interface PrerequisiteMessage {
   id: string;
@@ -51,6 +51,12 @@ export function PlannerScheduleStep({
   const { language, t } = useLanguage();
   const prerequisitesDescriptionId = "schedule-prerequisites";
   const readableStartDate = formatReadableDate(startDate, language);
+  const algorithmName =
+    algorithm === "sequential" ? t.schedule.sequential : t.schedule.alternating;
+  const algorithmExplanation =
+    algorithm === "sequential"
+      ? t.schedule.sequentialCopy
+      : t.schedule.alternatingCopy;
 
   return (
     <section
@@ -84,21 +90,31 @@ export function PlannerScheduleStep({
             />
           </Field>
 
-          <Field label={t.schedule.algorithm} controlId="schedule-algorithm">
-            <Select
-              id="schedule-algorithm"
-              value={algorithm}
-              onChange={(event) =>
-                onAlgorithmChange(
-                  (event.target as HTMLSelectElement)
-                    .value as ScheduleAlgorithm,
-                )
-              }
+          <div class="planner-algorithm-field">
+            <Field label={t.schedule.algorithm} controlId="schedule-algorithm">
+              <Select
+                id="schedule-algorithm"
+                value={algorithm}
+                onChange={(event) =>
+                  onAlgorithmChange(
+                    (event.target as HTMLSelectElement)
+                      .value as ScheduleAlgorithm,
+                  )
+                }
+              >
+                <option value="sequential">{t.schedule.sequential}</option>
+                <option value="alternating">{t.schedule.alternating}</option>
+              </Select>
+            </Field>
+            <Button
+              unstyled
+              class="planner-algorithm-field__hint"
+              aria-label={`${algorithmName}: ${algorithmExplanation}`}
+              data-tooltip={algorithmExplanation}
             >
-              <option value="sequential">{t.schedule.sequential}</option>
-              <option value="alternating">{t.schedule.alternating}</option>
-            </Select>
-          </Field>
+              <InfoIcon class="planner-icon" aria-hidden="true" />
+            </Button>
+          </div>
 
           {isGenerating && (
             <output aria-live="polite">{t.schedule.generating}</output>
@@ -136,21 +152,6 @@ export function PlannerScheduleStep({
             {actionError}
           </p>
         )}
-
-        <div class="planner-algorithm-explanations">
-          <div>
-            <p class="planner-option-card__label">{t.schedule.sequential}</p>
-            <p class="planner-section-heading__text">
-              {t.schedule.sequentialCopy}
-            </p>
-          </div>
-          <div>
-            <p class="planner-option-card__label">{t.schedule.alternating}</p>
-            <p class="planner-section-heading__text">
-              {t.schedule.alternatingCopy}
-            </p>
-          </div>
-        </div>
 
         {canGenerateSchedule && (
           <section

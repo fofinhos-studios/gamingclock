@@ -112,7 +112,7 @@ describe("PlannerScheduleStep", () => {
     }
   });
 
-  test("shows a ready preview with both algorithm explanations and a localized date", () => {
+  test("keeps the algorithm explanation in a hint and shows a localized date", () => {
     const view = renderStep({
       algorithm: "alternating",
       canGenerateSchedule: true,
@@ -128,7 +128,10 @@ describe("PlannerScheduleStep", () => {
     expect(view.getByText(/5 hours per week/i)).toBeTruthy();
     expect(view.getAllByText(/March 30, 2026/i).length).toBeGreaterThan(0);
     expect(view.getAllByText("Rotate games").length).toBeGreaterThan(0);
-    expect(view.getByText(/finish one game before the next/i)).toBeTruthy();
-    expect(view.getByText(/rotate between games/i)).toBeTruthy();
+    expect(
+      view.getByLabelText(/rotate games: rotate between games/i),
+    ).toBeTruthy();
+    expect(view.queryByText(/finish one game before the next/i)).toBeNull();
+    expect(view.queryByText(/rotate between games/i)).toBeNull();
   });
 });

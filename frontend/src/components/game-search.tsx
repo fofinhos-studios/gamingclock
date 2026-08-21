@@ -9,7 +9,7 @@ import { useTransientFeedback } from "../hooks/use-transient-feedback";
 import { useLanguage } from "../i18n/i18n";
 import { searchGames } from "../services/api";
 import type { CatalogGame, ListGame } from "../types";
-import { Field, Input } from "./ui";
+import { Button, Field, Input } from "./ui";
 
 interface Props {
   games: ListGame[];
@@ -146,42 +146,42 @@ export function GameSearch({ games, onAddGame }: Props) {
   };
 
   return (
-    <section aria-labelledby="search-games-heading" class="space-y-4">
-      <div class="planner-pane__header">
-        <div class="space-y-1">
-          <h2
-            id="search-games-heading"
-            class="planner-panel__title planner-heading"
-          >
-            <MagnifyingGlassIcon
-              class="planner-icon planner-heading__icon"
-              aria-hidden="true"
-            />
-            <span>{t.search.title}</span>
-          </h2>
-        </div>
-      </div>
+    <section aria-labelledby="search-games-heading" class="planner-search-dock">
+      <h2 id="search-games-heading" class="sr-only">
+        {t.search.title}
+      </h2>
 
-      <div ref={containerRef} class="space-y-3">
-        <Field label={t.search.label} controlId="game-search-input">
-          <Input
-            id="game-search-input"
-            type="text"
-            value={query}
-            onFocus={() => {
-              if (query.trim().length >= 2) {
-                setIsDropdownOpen(true);
-                setHighlightedIndex(results.length > 0 ? 0 : -1);
-              }
-            }}
-            onKeyDown={(event) => handleSearchKeyDown(event as KeyboardEvent)}
-            onInput={(event) =>
-              setQuery((event.target as HTMLInputElement).value)
-            }
-            placeholder={t.search.placeholder}
-            autoComplete="off"
+      <div ref={containerRef} class="planner-search-dock__content">
+        <div class="planner-search-dock__shell">
+          <MagnifyingGlassIcon
+            class="planner-icon planner-search-dock__icon"
+            aria-hidden="true"
           />
-        </Field>
+          <Field
+            label={t.search.label}
+            controlId="game-search-input"
+            class="planner-search-dock__field"
+          >
+            <Input
+              id="game-search-input"
+              type="text"
+              class="planner-search-dock__input"
+              value={query}
+              onFocus={() => {
+                if (query.trim().length >= 2) {
+                  setIsDropdownOpen(true);
+                  setHighlightedIndex(results.length > 0 ? 0 : -1);
+                }
+              }}
+              onKeyDown={(event) => handleSearchKeyDown(event as KeyboardEvent)}
+              onInput={(event) =>
+                setQuery((event.target as HTMLInputElement).value)
+              }
+              placeholder={t.search.placeholder}
+              autoComplete="off"
+            />
+          </Field>
+        </div>
 
         {error && !isDropdownOpen && (
           <p role="alert" class="planner-error">
@@ -226,12 +226,12 @@ export function GameSearch({ games, onAddGame }: Props) {
                   const isHighlighted = index === highlightedIndex;
 
                   return (
-                    <button
+                    <Button
                       key={game.igdb_id}
+                      unstyled
                       ref={(element) => {
                         resultRefs.current[index] = element;
                       }}
-                      type="button"
                       class={`planner-result ${
                         isHighlighted ? "planner-result--active" : ""
                       } ${
@@ -318,7 +318,7 @@ export function GameSearch({ games, onAddGame }: Props) {
                           </p>
                         )}
                       </div>
-                    </button>
+                    </Button>
                   );
                 })}
             </div>
