@@ -94,6 +94,22 @@ export function prepareTransparentShaderSurface(
   context.blendFunc(context.SRC_ALPHA, context.ONE_MINUS_SRC_ALPHA);
 }
 
+export function createFontReadyDraw(draw: () => void) {
+  let fontReady = false;
+
+  return {
+    onFontReady() {
+      fontReady = true;
+      draw();
+    },
+    onResize() {
+      if (fontReady) {
+        draw();
+      }
+    },
+  };
+}
+
 function compileShader(
   context: WebGLRenderingContext,
   type: number,
@@ -265,10 +281,11 @@ export function SurfaceWordmark({ text }: SurfaceWordmarkProps) {
       canvas.parentElement?.setAttribute("data-ready", "true");
     };
 
-    const observer = new ResizeObserver(draw);
+    const renderer = createFontReadyDraw(draw);
+    const observer = new ResizeObserver(renderer.onResize);
     observer.observe(canvas);
     const fontLoad = document.fonts?.load('800 48px "IntraNet"');
-    void (fontLoad ?? Promise.resolve()).finally(draw);
+    void (fontLoad ?? Promise.resolve()).finally(renderer.onFontReady);
 
     return () => {
       observer.disconnect();
