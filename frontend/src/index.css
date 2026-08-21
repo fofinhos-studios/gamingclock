@@ -247,12 +247,42 @@
   }
 
   .page-shell {
+    display: flex;
+    flex-direction: column;
     min-height: 100vh;
   }
 
   .planner-app {
-    min-height: 100vh;
+    flex: 1;
+    min-height: 0;
     padding: clamp(0.75rem, 2vw, 2rem);
+  }
+
+  .planner-footer {
+    padding: 0 1rem 1.1rem;
+    color: var(--muted-foreground);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+    text-align: center;
+  }
+
+  .planner-footer p {
+    margin: 0;
+  }
+
+  .planner-footer a {
+    color: var(--foreground);
+    text-decoration-color: var(--industrial-aqua);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+    transition: color 140ms ease;
+  }
+
+  .planner-footer a:hover,
+  .planner-footer a:focus-visible {
+    color: var(--industrial-aqua);
   }
 
   .planner-app__frame {

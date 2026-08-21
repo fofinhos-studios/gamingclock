@@ -631,6 +631,12 @@ export function HomePage() {
           </div>
         </div>
       </main>
+      <footer class="planner-footer">
+        <p>
+          Made with love by 🧡💜{" "}
+          <a href="https://fofinhos.studio">fofinhos.studio</a>
+        </p>
+      </footer>
     </div>
   );
 }
