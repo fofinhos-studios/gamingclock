@@ -76,14 +76,12 @@ describe("HomePage", () => {
     expect(controls?.querySelector(".language-chooser")).toBeTruthy();
   });
 
-  test("renders the brand as a Phosphor-icon wordmark", () => {
+  test("renders the brand through a decorative shader canvas", () => {
     const view = render(<HomePage path="/" />);
     const title = view.container.querySelector(".planner-brand__title");
 
     expect(title?.textContent).toContain("Gaming Clock");
-    expect(
-      view.container.querySelector(".planner-brand__name .planner-icon"),
-    ).toBeTruthy();
+    expect(title?.querySelector(".planner-brand__shader canvas")).toBeTruthy();
   });
 
   test("guides people through the planner with a clickable progress stepper", async () => {
