@@ -1073,39 +1073,6 @@
     outline-offset: 2px;
   }
 
-  .planner-note-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
-  }
-
-  .planner-note {
-    display: grid;
-    gap: 0.3rem;
-    padding: 0.8rem 0.9rem;
-    background: var(--foreground-035);
-  }
-
-  .planner-note__label {
-    color: var(--muted-foreground);
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-
-  .planner-note__value {
-    font-family: var(--font-mono);
-    font-size: 0.82rem;
-    font-weight: 500;
-  }
-
-  .planner-note__text {
-    color: var(--muted-foreground);
-    font-size: 0.8rem;
-    line-height: 1.35;
-  }
-
   .planner-section-heading {
     display: grid;
     gap: 0.18rem;
@@ -1115,6 +1082,21 @@
     color: var(--muted-foreground);
     font-size: 0.78rem;
     line-height: 1.3;
+  }
+
+  .planner-preset-group {
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .planner-preset-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .planner-preset-actions .ui-button {
+    flex: 1 1 8rem;
   }
 
   .planner-toggle-grid {
@@ -1225,6 +1207,21 @@
     gap: 0.65rem;
   }
 
+  .planner-duration-fieldset {
+    display: grid;
+    gap: 0.32rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .planner-duration-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
   .planner-hour-fieldset {
     display: grid;
     gap: 0.4rem;
@@ -1332,14 +1329,6 @@
     grid-template-columns: minmax(0, 14rem) minmax(0, 14rem) minmax(0, 1fr);
     gap: 0.75rem;
     align-items: end;
-  }
-
-  .planner-controls__hint {
-    max-width: 52rem;
-    margin-bottom: 0.8rem;
-    color: var(--muted-foreground);
-    font-size: 0.8rem;
-    line-height: 1.4;
   }
 
   .planner-controls > output {
@@ -1473,17 +1462,6 @@
     border-left: 2px solid var(--heat-marker);
     padding: 0.55rem 0.75rem;
     background: var(--foreground-04);
-  }
-
-  .planner-inline-notice__label {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
   }
 
   .planner-inline-notice__icon {
@@ -1862,11 +1840,7 @@
 
   .schedule-calendar {
     display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    min-width: 0;
-    overflow: hidden;
-    border: 1px solid var(--foreground-22);
-    background: var(--foreground-08);
+    gap: 1rem;
   }
 
   .schedule-calendar-section {
@@ -1874,21 +1848,73 @@
     padding-bottom: 0.2rem;
   }
 
+  .schedule-calendar__month {
+    overflow-x: auto;
+    border: 1px solid var(--foreground-22);
+    background: var(--foreground-08);
+  }
+
+  .schedule-calendar__month-title {
+    margin: 0;
+    padding: 0.7rem 0.75rem;
+    border-bottom: 1px solid var(--foreground-22);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .schedule-calendar__grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    min-width: 44rem;
+  }
+
+  .schedule-calendar__weekday {
+    padding: 0.38rem 0.45rem;
+    border-right: 1px solid var(--foreground-16);
+    border-bottom: 1px solid var(--foreground-16);
+    color: var(--muted-foreground);
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .schedule-calendar__weekday:nth-child(7n) {
+    border-right: 0;
+  }
+
   .schedule-calendar__day {
     display: grid;
     grid-template-rows: auto 1fr;
     gap: 0.45rem;
-    min-height: 14rem;
+    min-height: 9rem;
     padding: 0.45rem;
     border-right: 1px solid var(--foreground-16);
     border-bottom: 1px solid var(--foreground-16);
     background: var(--surface-62);
   }
 
+  .schedule-calendar__day:nth-child(7n) {
+    border-right: 0;
+  }
+
+  .schedule-calendar__day--adjacent {
+    background: var(--foreground-04);
+  }
+
+  .schedule-calendar__day--adjacent .schedule-calendar__date time {
+    color: var(--muted-foreground);
+  }
+
   .schedule-calendar__date {
     display: flex;
     align-items: baseline;
-    justify-content: space-between;
+    justify-content: end;
     border-bottom: 1px solid var(--foreground-16);
     padding-bottom: 0.3rem;
     color: var(--muted-foreground);
@@ -1898,7 +1924,7 @@
     text-transform: uppercase;
   }
 
-  .schedule-calendar__date strong {
+  .schedule-calendar__date time {
     color: var(--foreground);
     font-size: 0.9rem;
   }
@@ -2047,7 +2073,6 @@
   }
 
   .ui-button:hover {
-    transform: translateY(-1px);
     box-shadow: 0 0.35rem 1rem var(--foreground-08);
   }
 
@@ -2278,7 +2303,6 @@
   }
 
   .planner-games-workspace,
-  .planner-note-grid,
   .planner-controls,
   .planner-metric-grid,
   .planner-toggle-grid,
@@ -2299,8 +2323,7 @@
 
 @media (max-width: 767px) {
   .planner-app__workspace,
-  .planner-pane,
-  .planner-note {
+  .planner-pane {
     padding: 0.75rem;
   }
 
@@ -2389,46 +2412,4 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .schedule-calendar-section {
-    overflow: visible;
-  }
-
-  .schedule-calendar {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.6rem;
-    border: 0;
-    background: transparent;
-  }
-
-  .schedule-calendar__day {
-    min-height: 0;
-    padding: 0.65rem;
-    border: 1px solid var(--foreground-16);
-    background: var(--surface-62);
-  }
-
-  .schedule-calendar__day--empty {
-    display: none;
-  }
-
-  .schedule-calendar__date {
-    padding-bottom: 0.45rem;
-  }
-
-  .game-cartridge--calendar {
-    grid-template-columns: 4.25rem minmax(0, 1fr);
-    min-height: 7.25rem;
-  }
-
-  .game-cartridge--calendar .game-cartridge__cover {
-    min-height: 6.6rem;
-  }
-
-  .game-cartridge--calendar .game-cartridge__content {
-    padding: 0.65rem 0.7rem 0.55rem;
-  }
-
-  .game-cartridge--calendar .game-cartridge__logo {
-    max-height: 2.2rem;
-  }
 }

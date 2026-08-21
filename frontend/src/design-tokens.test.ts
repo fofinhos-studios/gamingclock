@@ -114,3 +114,14 @@ test("keeps touch controls large and disables motion when requested", async () =
     /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?animation-duration:\s*0\.01ms !important;[\s\S]*?transition-duration:\s*0\.01ms !important;/,
   );
 });
+
+test("keeps buttons stationary on hover", async () => {
+  const stylesheet = await readStylesheet();
+
+  expect(stylesheet).toMatch(
+    /\.ui-button:hover\s*\{[\s\S]*?box-shadow:\s*0 0\.35rem 1rem var\(--foreground-08\);/,
+  );
+  expect(stylesheet).not.toMatch(
+    /\.ui-button:hover\s*\{[^}]*?transform:\s*translateY\(/,
+  );
+});

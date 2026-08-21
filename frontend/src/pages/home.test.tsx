@@ -76,6 +76,16 @@ describe("HomePage", () => {
     expect(controls?.querySelector(".language-chooser")).toBeTruthy();
   });
 
+  test("renders the brand as a Phosphor-icon wordmark", () => {
+    const view = render(<HomePage path="/" />);
+    const title = view.container.querySelector(".planner-brand__title");
+
+    expect(title?.textContent).toContain("Gaming Clock");
+    expect(
+      view.container.querySelector(".planner-brand__name .planner-icon"),
+    ).toBeTruthy();
+  });
+
   test("guides people through the planner with a clickable progress stepper", async () => {
     const user = userEvent.setup();
     const view = render(<HomePage path="/" />);
@@ -512,8 +522,8 @@ describe("HomePage", () => {
     expect(within(activePanel).queryByText(/weekly cadence/i)).toBeNull();
     expect(within(activePanel).queryByText(/ready to plan/i)).toBeNull();
     expect(
-      within(activePanel).getByText(/before your schedule can update/i),
-    ).toBeTruthy();
+      within(activePanel).queryByText(/before your schedule can update/i),
+    ).toBeNull();
   });
 
   test("creates a second backlog from the compact backlog manager", async () => {
@@ -788,10 +798,7 @@ describe("HomePage", () => {
 
       const availabilityPanel = view.getByRole("tabpanel");
       await user.click(within(availabilityPanel).getByLabelText(/monday/i));
-      await user.clear(
-        within(availabilityPanel).getByLabelText(/^start time/i),
-      );
-      await user.type(
+      await user.selectOptions(
         within(availabilityPanel).getByLabelText(/^start time/i),
         "18:00",
       );
@@ -1060,9 +1067,15 @@ describe("HomePage", () => {
         within(schedulePanel).getByText(/total planned hours/i),
       ).toBeTruthy();
       expect(within(schedulePanel).getByText(/estimated finish/i)).toBeTruthy();
-      expect(within(schedulePanel).getByText(/^sessions$/i)).toBeTruthy();
+      const sessionsMetric = within(schedulePanel)
+        .getByText(/^sessions$/i)
+        .closest(".planner-metric");
+      expect(sessionsMetric).toBeTruthy();
+      if (!sessionsMetric) {
+        throw new Error("Sessions metric is missing its metric container");
+      }
       expect(within(schedulePanel).getByText(/days to finish/i)).toBeTruthy();
-      expect(within(schedulePanel).getAllByText(/^2$/)).toHaveLength(2);
+      expect(within(sessionsMetric).getByText(/^2$/)).toBeTruthy();
       expect(within(schedulePanel).getByText(/3 days/i)).toBeTruthy();
     } finally {
       globalThis.fetch = originalFetch;

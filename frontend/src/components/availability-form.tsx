@@ -4,12 +4,16 @@ import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
 import { useLanguage } from "../i18n/i18n";
 import type { DayAvailability, WeeklyAvailability } from "../types";
-import { Button, Field, Input } from "./ui";
+import { Button, Field, Input, Select } from "./ui";
 
-const MIN_HOURS = 0.5;
-const MAX_HOURS = 16;
+const MINUTES_PER_HOUR = 60;
 const MIN_START_HOUR = 6;
 const MAX_START_HOUR = 23;
+const START_TIMES = Array.from(
+  { length: MAX_START_HOUR - MIN_START_HOUR + 1 },
+  (_, index) => formatHour(MIN_START_HOUR + index),
+);
+const MINUTES = Array.from({ length: MINUTES_PER_HOUR }, (_, index) => index);
 type ScheduleMode = "uniform" | "custom";
 
 interface Props {
@@ -39,8 +43,86 @@ function parseStartHour(value: string): number | null {
   return hour;
 }
 
-function formatHours(hours: number): string {
-  return Number.isInteger(hours) ? String(hours) : hours.toFixed(1);
+function splitDuration(duration: number) {
+  const totalMinutes = Math.max(0, Math.round(duration * MINUTES_PER_HOUR));
+
+  return {
+    hours: Math.floor(totalMinutes / MINUTES_PER_HOUR),
+    minutes: totalMinutes % MINUTES_PER_HOUR,
+  };
+}
+
+function formatDuration(duration: number): string {
+  const { hours, minutes } = splitDuration(duration);
+
+  if (minutes === 0) {
+    return `${hours}h`;
+  }
+
+  return `${hours}h ${minutes}m`;
+}
+
+interface DurationInputsProps {
+  duration: number;
+  hoursId: string;
+  hoursLabel: string;
+  minutesId: string;
+  minutesLabel: string;
+  onChange: (duration: number) => void;
+}
+
+function DurationInputs({
+  duration,
+  hoursId,
+  hoursLabel,
+  minutesId,
+  minutesLabel,
+  onChange,
+}: DurationInputsProps) {
+  const { hours, minutes } = splitDuration(duration);
+
+  return (
+    <>
+      <Field label={hoursLabel} controlId={hoursId}>
+        <Input
+          id={hoursId}
+          type="number"
+          min={0}
+          step={1}
+          inputMode="numeric"
+          value={hours}
+          onInput={(event) => {
+            const nextHours = Number((event.target as HTMLInputElement).value);
+            onChange(
+              Number.isFinite(nextHours)
+                ? Math.max(0, Math.floor(nextHours)) +
+                    minutes / MINUTES_PER_HOUR
+                : Number.NaN,
+            );
+          }}
+        />
+      </Field>
+      <Field label={minutesLabel} controlId={minutesId}>
+        <Select
+          id={minutesId}
+          value={String(minutes)}
+          onChange={(event) => {
+            onChange(
+              hours +
+                Number((event.target as HTMLSelectElement).value) /
+                  MINUTES_PER_HOUR,
+            );
+          }}
+        >
+          {MINUTES.map((minute) => (
+            <option key={minute} value={minute}>
+              {minute.toString().padStart(2, "0")}
+            </option>
+          ))}
+        </Select>
+      </Field>
+    </>
+  );
 }
 
 export function AvailabilityForm({ availability, onChange }: Props) {
@@ -118,8 +200,7 @@ export function AvailabilityForm({ availability, onChange }: Props) {
     const isValid = days.every(
       (day) =>
         Number.isFinite(day.hours) &&
-        day.hours >= MIN_HOURS &&
-        day.hours <= MAX_HOURS &&
+        day.hours > 0 &&
         Number.isInteger(day.start_hour),
     );
 
@@ -255,49 +336,48 @@ export function AvailabilityForm({ availability, onChange }: Props) {
 
       {scheduleMode === "uniform" ? (
         <div class="planner-availability-controls">
-          <Field
-            label={t.availability.form.hoursPerDay}
-            hint={t.availability.form.hoursHint}
-            controlId="uniform-hours"
-            class="max-w-xs"
-          >
-            <Input
-              id="uniform-hours"
-              type="number"
-              min={MIN_HOURS}
-              max={MAX_HOURS}
-              step={0.5}
-              value={uniformHours}
-              aria-invalid={validationError === t.availability.form.hoursError}
-              onInput={(event) => {
-                setUniformHours(
-                  Number((event.target as HTMLInputElement).value),
-                );
-                setValidationError("");
-              }}
-            />
-          </Field>
+          <fieldset class="planner-duration-fieldset max-w-xs">
+            <legend class="ui-label">
+              {t.availability.form.durationPerDay}
+            </legend>
+            <p class="ui-hint">{t.availability.form.durationHint}</p>
+            <div class="planner-duration-fields">
+              <DurationInputs
+                duration={uniformHours}
+                hoursId="uniform-hours"
+                hoursLabel={t.availability.form.durationHours}
+                minutesId="uniform-minutes"
+                minutesLabel={t.availability.form.durationMinutes}
+                onChange={(duration) => {
+                  setUniformHours(duration);
+                  setValidationError("");
+                }}
+              />
+            </div>
+          </fieldset>
           <Field
             label={t.availability.form.startTime}
             hint={t.availability.form.startTimeHint}
             controlId="uniform-start-time"
             class="max-w-xs"
           >
-            <Input
+            <Select
               id="uniform-start-time"
-              type="time"
-              min={formatHour(MIN_START_HOUR)}
-              max={formatHour(MAX_START_HOUR)}
-              step={3600}
               value={uniformStartTime}
               aria-invalid={
                 validationError === t.availability.form.startTimeError
               }
-              onInput={(event) => {
-                setUniformStartTime((event.target as HTMLInputElement).value);
+              onChange={(event) => {
+                setUniformStartTime((event.target as HTMLSelectElement).value);
                 setValidationError("");
               }}
-            />
+            >
+              {START_TIMES.map((time) => (
+                <option key={time} value={time}>
+                  {time}
+                </option>
+              ))}
+            </Select>
           </Field>
         </div>
       ) : (
@@ -347,7 +427,7 @@ export function AvailabilityForm({ availability, onChange }: Props) {
                     </span>
                     <span class="planner-day-card__text">
                       {t.availability.form.hoursAt(
-                        getDayHours(index),
+                        formatDuration(getDayHours(index)),
                         getDayStartTime(index),
                       )}
                     </span>
@@ -356,48 +436,43 @@ export function AvailabilityForm({ availability, onChange }: Props) {
 
                 {scheduleMode === "custom" && selected && (
                   <div class="planner-day-card__controls">
-                    <Field
-                      label={t.availability.form.dayHours(name)}
-                      hint={t.availability.form.hoursHint}
-                      controlId={`custom-hours-${index}`}
-                    >
-                      <Input
-                        id={`custom-hours-${index}`}
-                        type="number"
-                        min={MIN_HOURS}
-                        max={MAX_HOURS}
-                        step={0.5}
-                        value={customHours[index] ?? uniformHours}
-                        onInput={(event) => {
+                    <div class="planner-duration-fields">
+                      <DurationInputs
+                        duration={customHours[index] ?? uniformHours}
+                        hoursId={`custom-hours-${index}`}
+                        hoursLabel={t.availability.form.dayHours(name)}
+                        minutesId={`custom-minutes-${index}`}
+                        minutesLabel={t.availability.form.dayMinutes(name)}
+                        onChange={(duration) => {
                           setCustomHours({
                             ...customHours,
-                            [index]: Number(
-                              (event.target as HTMLInputElement).value,
-                            ),
+                            [index]: duration,
                           });
                           setValidationError("");
                         }}
                       />
-                    </Field>
+                    </div>
                     <Field
                       label={t.availability.form.dayStartTime(name)}
                       controlId={`custom-start-time-${index}`}
                     >
-                      <Input
+                      <Select
                         id={`custom-start-time-${index}`}
-                        type="time"
-                        min={formatHour(MIN_START_HOUR)}
-                        max={formatHour(MAX_START_HOUR)}
-                        step={3600}
                         value={customStartTimes[index] ?? uniformStartTime}
-                        onInput={(event) => {
+                        onChange={(event) => {
                           setCustomStartTimes({
                             ...customStartTimes,
-                            [index]: (event.target as HTMLInputElement).value,
+                            [index]: (event.target as HTMLSelectElement).value,
                           });
                           setValidationError("");
                         }}
-                      />
+                      >
+                        {START_TIMES.map((time) => (
+                          <option key={time} value={time}>
+                            {time}
+                          </option>
+                        ))}
+                      </Select>
                     </Field>
                   </div>
                 )}
@@ -408,7 +483,9 @@ export function AvailabilityForm({ availability, onChange }: Props) {
       </div>
 
       <output class="planner-availability-summary" aria-live="polite">
-        <span>{t.availability.form.weeklyTotal(formatHours(weeklyHours))}</span>
+        <span>
+          {t.availability.form.weeklyTotal(formatDuration(weeklyHours))}
+        </span>
       </output>
 
       {validationError && (
