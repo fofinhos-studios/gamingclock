@@ -1,6 +1,7 @@
-import { Gamepad2, Moon, Sun } from "lucide-preact";
+import { GameControllerIcon, MoonIcon, SunIcon } from "@phosphor-icons/react";
 import { useLayoutEffect, useState } from "preact/hooks";
 
+import { BacklogManager } from "../components/backlog-manager";
 import { PlannerAvailabilityStep } from "../components/planner-availability-step";
 import { PlannerGamesStep } from "../components/planner-games-step";
 import { PlannerScheduleStep } from "../components/planner-schedule-step";
@@ -8,26 +9,19 @@ import { PlannerStepActions } from "../components/planner-step-actions";
 import { type PlannerTab, PlannerTabs } from "../components/planner-tabs";
 import { useLanguage } from "../i18n/i18n";
 import { strings } from "../i18n/strings";
+import { downloadIcal, generateSchedule, resolveGame } from "../services/api";
 import {
-  downloadIcal,
-  generateSchedule,
-  getApiErrorMessage,
-  resolveGame,
-} from "../services/api";
-import {
-  createPlannerListId,
   loadPlannerState,
   savePlannerState,
 } from "../services/planner-storage";
-import {
-  type CatalogGame,
-  type GameList,
-  type HLTBCategory,
-  type ListGame,
-  type ScheduleAlgorithm,
-  type ScheduleResponse,
-  type WeeklyAvailability,
-  getSelectedGameHours,
+import type {
+  CatalogGame,
+  GameList,
+  HLTBCategory,
+  ListGame,
+  ScheduleAlgorithm,
+  ScheduleResponse,
+  WeeklyAvailability,
 } from "../types";
 
 type Theme = "dark" | "light";
@@ -53,8 +47,8 @@ export function HomePage() {
     initialState.activeTab,
   );
   const [backlogs, setBacklogs] = useState<GameList[]>(initialState.backlogs);
-  const [activeBacklogId, setActiveBacklogId] = useState(
-    initialState.activeBacklogId,
+  const [activeBacklogIndex, setActiveBacklogIndex] = useState(
+    initialState.activeBacklogIndex,
   );
   const [availability, setAvailability] = useState<WeeklyAvailability | null>(
     initialState.availability,
@@ -72,7 +66,7 @@ export function HomePage() {
     savePlannerState({
       activeTab,
       backlogs,
-      activeBacklogId,
+      activeBacklogIndex,
       availability,
       algorithm,
       schedule,
@@ -81,7 +75,7 @@ export function HomePage() {
   }, [
     activeTab,
     backlogs,
-    activeBacklogId,
+    activeBacklogIndex,
     availability,
     algorithm,
     schedule,
@@ -107,22 +101,9 @@ export function HomePage() {
     );
   }, [t.app.defaultBacklog]);
 
-  const activeBacklog =
-    backlogs.find((backlog) => backlog.id === activeBacklogId) ?? backlogs[0];
+  const activeBacklog = backlogs[activeBacklogIndex];
   const backlogName = activeBacklog.name;
   const games = activeBacklog.games;
-  const allBacklogGames = backlogs.flatMap((backlog) => backlog.games);
-  const totalAllBacklogsHours = allBacklogGames.reduce(
-    (total, game) => total + getSelectedGameHours(game),
-    0,
-  );
-  const currentListWeeklyHours = availability
-    ? availability.days.reduce((total, day) => total + day.hours, 0)
-    : 0;
-  const currentListSelectedHours = games.reduce(
-    (total, game) => total + getSelectedGameHours(game),
-    0,
-  );
 
   const clearGeneratedSchedule = () => {
     setSchedule(null);
@@ -148,7 +129,6 @@ export function HomePage() {
           {
             id: "games-required",
             message: t.app.prerequisites.games,
-            target: "games" as const,
           },
         ]
       : []),
@@ -157,7 +137,6 @@ export function HomePage() {
           {
             id: "availability-required",
             message: t.app.prerequisites.availability,
-            target: "availability" as const,
           },
         ]
       : []),
@@ -166,7 +145,6 @@ export function HomePage() {
           {
             id: "game-times-loading",
             message: t.app.prerequisites.loading,
-            target: "games" as const,
           },
         ]
       : []),
@@ -175,7 +153,6 @@ export function HomePage() {
           {
             id: "game-times-unavailable",
             message: t.app.prerequisites.unavailable,
-            target: "games" as const,
           },
         ]
       : []),
@@ -189,17 +166,35 @@ export function HomePage() {
     ...(schedule ? (["schedule"] as const) : []),
   ];
 
-  const resolveBacklogGame = (game: CatalogGame, backlogId: string) => {
+  const addGame = (game: CatalogGame) => {
+    const pendingGame: ListGame = {
+      ...game,
+      hltb_status: "loading",
+      hltb_match_name: null,
+      main_story_hours: null,
+      main_extra_hours: null,
+      completionist_hours: null,
+      selected_hltb_category: "main",
+    };
+
+    setBacklogs((currentBacklogs) =>
+      currentBacklogs.map((backlog, index) =>
+        index === activeBacklogIndex
+          ? { ...backlog, games: [...backlog.games, pendingGame] }
+          : backlog,
+      ),
+    );
+    clearGeneratedSchedule();
+
     void resolveGame(game)
       .then((resolvedGame) => {
         const nextGame: ListGame = {
           ...resolvedGame,
-          hltb_error: null,
           selected_hltb_category: "main",
         };
         setBacklogs((currentBacklogs) =>
-          currentBacklogs.map((backlog) =>
-            backlog.id === backlogId
+          currentBacklogs.map((backlog, index) =>
+            index === activeBacklogIndex
               ? {
                   ...backlog,
                   games: backlog.games.map((backlogGame) =>
@@ -212,10 +207,10 @@ export function HomePage() {
           ),
         );
       })
-      .catch((error: unknown) => {
+      .catch(() => {
         setBacklogs((currentBacklogs) =>
-          currentBacklogs.map((backlog) =>
-            backlog.id === backlogId
+          currentBacklogs.map((backlog, index) =>
+            index === activeBacklogIndex
               ? {
                   ...backlog,
                   games: backlog.games.map((backlogGame) =>
@@ -223,10 +218,6 @@ export function HomePage() {
                       ? {
                           ...backlogGame,
                           hltb_status: "unresolved",
-                          hltb_error: getApiErrorMessage(
-                            error,
-                            t.list.unavailable,
-                          ),
                         }
                       : backlogGame,
                   ),
@@ -237,65 +228,10 @@ export function HomePage() {
       });
   };
 
-  const addGame = (game: CatalogGame) => {
-    const targetBacklogId = activeBacklogId;
-    const pendingGame: ListGame = {
-      ...game,
-      hltb_status: "loading",
-      hltb_match_name: null,
-      main_story_hours: null,
-      main_extra_hours: null,
-      completionist_hours: null,
-      hltb_error: null,
-      selected_hltb_category: "main",
-    };
-
-    setBacklogs((currentBacklogs) =>
-      currentBacklogs.map((backlog) =>
-        backlog.id === targetBacklogId
-          ? { ...backlog, games: [...backlog.games, pendingGame] }
-          : backlog,
-      ),
-    );
-    clearGeneratedSchedule();
-    resolveBacklogGame(game, targetBacklogId);
-  };
-
-  const retryGame = (igdbId: number) => {
-    const targetBacklogId = activeBacklogId;
-    const game = backlogs
-      .find((backlog) => backlog.id === targetBacklogId)
-      ?.games.find((backlogGame) => backlogGame.igdb_id === igdbId);
-    if (!game) {
-      return;
-    }
-
-    setBacklogs((currentBacklogs) =>
-      currentBacklogs.map((backlog) =>
-        backlog.id === targetBacklogId
-          ? {
-              ...backlog,
-              games: backlog.games.map((backlogGame) =>
-                backlogGame.igdb_id === igdbId
-                  ? {
-                      ...backlogGame,
-                      hltb_status: "loading",
-                      hltb_error: null,
-                    }
-                  : backlogGame,
-              ),
-            }
-          : backlog,
-      ),
-    );
-    clearGeneratedSchedule();
-    resolveBacklogGame(game, targetBacklogId);
-  };
-
   const removeGame = (igdbId: number) => {
     setBacklogs((currentBacklogs) =>
-      currentBacklogs.map((backlog) =>
-        backlog.id === activeBacklogId
+      currentBacklogs.map((backlog, backlogIndex) =>
+        backlogIndex === activeBacklogIndex
           ? {
               ...backlog,
               games: backlog.games.filter((game) => game.igdb_id !== igdbId),
@@ -308,8 +244,8 @@ export function HomePage() {
 
   const selectGameTime = (index: number, category: HLTBCategory) => {
     setBacklogs((currentBacklogs) =>
-      currentBacklogs.map((backlog) =>
-        backlog.id === activeBacklogId
+      currentBacklogs.map((backlog, backlogIndex) =>
+        backlogIndex === activeBacklogIndex
           ? {
               ...backlog,
               games: backlog.games.map((game, gameIndex) =>
@@ -324,46 +260,41 @@ export function HomePage() {
     clearGeneratedSchedule();
   };
 
-  const moveGame = (index: number, direction: -1 | 1) => {
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= games.length) {
-      return;
-    }
-
-    setBacklogs((currentBacklogs) =>
-      currentBacklogs.map((backlog) => {
-        if (backlog.id !== activeBacklogId) {
-          return backlog;
-        }
-
-        const nextGames = [...backlog.games];
-        const [movedGame] = nextGames.splice(index, 1);
-        if (!movedGame) {
-          return backlog;
-        }
-        nextGames.splice(targetIndex, 0, movedGame);
-        return { ...backlog, games: nextGames };
-      }),
-    );
-    clearGeneratedSchedule();
-  };
-
   const renameBacklog = (name: string) => {
     setBacklogs((currentBacklogs) =>
-      currentBacklogs.map((backlog) =>
-        backlog.id === activeBacklogId ? { ...backlog, name } : backlog,
+      currentBacklogs.map((backlog, index) =>
+        index === activeBacklogIndex ? { ...backlog, name } : backlog,
       ),
     );
   };
 
-  const addBacklog = () => {
-    const nextBacklog: GameList = {
-      id: createPlannerListId(),
-      name: t.app.newBacklogName(backlogs.length + 1),
-      games: [],
-    };
-    setBacklogs((currentBacklogs) => [...currentBacklogs, nextBacklog]);
-    setActiveBacklogId(nextBacklog.id);
+  const addBacklog = (name: string) => {
+    setBacklogs((currentBacklogs) => {
+      setActiveBacklogIndex(currentBacklogs.length);
+      return [...currentBacklogs, { name, games: [] }];
+    });
+    clearGeneratedSchedule();
+  };
+
+  const deleteBacklog = (index: number) => {
+    if (backlogs.length === 1) {
+      return;
+    }
+
+    setBacklogs((currentBacklogs) =>
+      currentBacklogs.filter((_, backlogIndex) => backlogIndex !== index),
+    );
+    setActiveBacklogIndex((currentIndex) => {
+      if (index < currentIndex) {
+        return currentIndex - 1;
+      }
+
+      if (index === currentIndex) {
+        return Math.min(currentIndex, backlogs.length - 2);
+      }
+
+      return currentIndex;
+    });
     clearGeneratedSchedule();
   };
 
@@ -383,7 +314,9 @@ export function HomePage() {
       setSchedule(result);
       return true;
     } catch (error) {
-      setActionError(getApiErrorMessage(error, t.app.scheduleFailed));
+      setActionError(
+        error instanceof Error ? error.message : t.app.scheduleFailed,
+      );
       return false;
     }
   };
@@ -409,7 +342,9 @@ export function HomePage() {
       URL.revokeObjectURL(url);
       return true;
     } catch (error) {
-      setActionError(getApiErrorMessage(error, t.app.downloadFailed));
+      setActionError(
+        error instanceof Error ? error.message : t.app.downloadFailed,
+      );
       return false;
     }
   };
@@ -442,7 +377,7 @@ export function HomePage() {
               <div class="planner-toolbar__topline">
                 <div class="planner-brand">
                   <p class="planner-brand__name">
-                    <Gamepad2
+                    <GameControllerIcon
                       class="planner-icon planner-brand__icon"
                       aria-hidden="true"
                     />
@@ -464,9 +399,9 @@ export function HomePage() {
                     }
                   >
                     {theme === "dark" ? (
-                      <Moon aria-hidden="true" />
+                      <MoonIcon aria-hidden="true" />
                     ) : (
-                      <Sun aria-hidden="true" />
+                      <SunIcon aria-hidden="true" />
                     )}
                     <span>
                       {theme === "dark" ? t.app.theme.dark : t.app.theme.light}
@@ -500,34 +435,16 @@ export function HomePage() {
                 <div class="planner-toolbar__main">
                   <h1 class="planner-toolbar__title">{activeStep.title}</h1>
                 </div>
-                <fieldset
-                  class="planner-toolbar__backlogs"
-                  aria-label={t.app.backlogs}
-                >
-                  <legend class="sr-only">{t.app.backlogs}</legend>
-                  {backlogs.map((backlog) => (
-                    <button
-                      key={backlog.id}
-                      type="button"
-                      aria-pressed={backlog.id === activeBacklogId}
-                      onClick={() => {
-                        setActiveBacklogId(backlog.id);
-                        clearGeneratedSchedule();
-                      }}
-                    >
-                      {backlog.name}
-                    </button>
-                  ))}
-                  <button type="button" onClick={addBacklog}>
-                    {t.app.newBacklog}
-                  </button>
-                  <p>
-                    {t.app.allBacklogs(
-                      allBacklogGames.length,
-                      totalAllBacklogsHours.toFixed(1),
-                    )}
-                  </p>
-                </fieldset>
+                <BacklogManager
+                  backlogs={backlogs}
+                  activeBacklogIndex={activeBacklogIndex}
+                  onSelect={(index) => {
+                    setActiveBacklogIndex(index);
+                    clearGeneratedSchedule();
+                  }}
+                  onCreate={addBacklog}
+                  onDelete={deleteBacklog}
+                />
               </div>
               <div class="planner-workspace__body">
                 <section
@@ -543,8 +460,6 @@ export function HomePage() {
                     onAddGame={addGame}
                     onSelectGameTime={selectGameTime}
                     onRemoveGame={removeGame}
-                    onRetryGame={retryGame}
-                    onMoveGame={moveGame}
                     onRenameBacklog={renameBacklog}
                   />
                 </section>
@@ -558,8 +473,6 @@ export function HomePage() {
                 >
                   <PlannerAvailabilityStep
                     availability={availability}
-                    gameCount={games.length}
-                    hasSchedule={schedule !== null}
                     onSubmit={handleSetAvailability}
                   />
                 </section>
@@ -573,17 +486,12 @@ export function HomePage() {
                 >
                   <PlannerScheduleStep
                     availability={availability}
-                    gameListName={backlogName}
-                    gameCount={games.length}
-                    totalSelectedHours={currentListSelectedHours}
-                    weeklyHours={currentListWeeklyHours}
                     algorithm={algorithm}
                     startDate={startDate}
                     schedule={schedule}
                     actionError={actionError}
                     canGenerateSchedule={canGenerateSchedule}
                     prerequisiteMessages={schedulePrerequisites}
-                    onNavigate={setActiveTab}
                     onAlgorithmChange={handleAlgorithmChange}
                     onStartDateChange={handleStartDateChange}
                     onGenerateSchedule={handleGenerateSchedule}

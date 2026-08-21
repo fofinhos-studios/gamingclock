@@ -1,5 +1,7 @@
 from unittest.mock import AsyncMock, patch
 
+from gamingclock.models.catalog import GameArtwork
+
 
 def test_resolve_game_returns_resolved_item(client):
     with (
@@ -63,3 +65,38 @@ def test_resolve_game_returns_unresolved_item_when_hltb_misses(client):
     assert data["igdb_id"] == 11
     assert data["hltb_status"] == "unresolved"
     assert data["main_story_hours"] is None
+
+
+def test_resolve_game_includes_steamgriddb_artwork(client):
+    with (
+        patch("gamingclock.routers.games.igdb_service") as mock_igdb,
+        patch("gamingclock.routers.games.hltb_service") as mock_hltb,
+        patch("gamingclock.routers.games.steamgriddb_service") as mock_steamgriddb,
+    ):
+        mock_igdb.get_by_id = AsyncMock(
+            return_value={
+                "igdb_id": 10,
+                "name": "Final Fantasy VII",
+                "cover_url": "https://example.com/cover.png",
+                "summary": "A classic RPG.",
+                "genres": ["RPG"],
+                "platforms": ["PlayStation"],
+                "release_year": 1997,
+                "rating": 91.2,
+            }
+        )
+        mock_hltb.search = AsyncMock(return_value=[])
+        mock_steamgriddb.get_artwork = AsyncMock(
+            return_value=GameArtwork(
+                logo_url="https://cdn.example/ff7-logo.png",
+                hero_url="https://cdn.example/ff7-hero.jpg",
+            )
+        )
+
+        response = client.post("/games/resolve", json={"igdb_id": 10})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["logo_url"] == "https://cdn.example/ff7-logo.png"
+    assert data["hero_url"] == "https://cdn.example/ff7-hero.jpg"
+    mock_steamgriddb.get_artwork.assert_awaited_once_with("Final Fantasy VII")

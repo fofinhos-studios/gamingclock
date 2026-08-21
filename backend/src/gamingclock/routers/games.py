@@ -1,15 +1,19 @@
+import asyncio
 import logging
 
+import httpx
 from fastapi import APIRouter, Response
 
-from gamingclock.models.catalog import CatalogGame, HLTBStatus, ListGame, ResolveGameRequest
+from gamingclock.models.catalog import CatalogGame, GameArtwork, HLTBStatus, ListGame, ResolveGameRequest
 from gamingclock.services.hltb import HLTBService
 from gamingclock.services.igdb import IGDBService
+from gamingclock.services.steamgriddb import SteamGridDBService
 
 router = APIRouter(prefix="/games", tags=["games"])
 
 hltb_service = HLTBService()
 igdb_service = IGDBService()
+steamgriddb_service = SteamGridDBService()
 SEARCH_ENRICHMENT_LIMIT = 8
 logger = logging.getLogger(__name__)
 
@@ -45,9 +49,12 @@ async def resolve_game(request: ResolveGameRequest) -> ListGame:
 
 
 async def _enrich_catalog_game(catalog_game: CatalogGame) -> ListGame:
-    hltb_results = await hltb_service.search(catalog_game.name)
+    artwork, hltb_results = await asyncio.gather(
+        _get_steamgriddb_artwork(catalog_game.name),
+        hltb_service.search(catalog_game.name),
+    )
     if not hltb_results:
-        return _unresolved_game(catalog_game)
+        return _unresolved_game(catalog_game, artwork)
 
     match = hltb_results[0]
     if isinstance(match, dict):
@@ -65,6 +72,8 @@ async def _enrich_catalog_game(catalog_game: CatalogGame) -> ListGame:
         igdb_id=catalog_game.igdb_id,
         name=catalog_game.name,
         cover_url=catalog_game.cover_url,
+        logo_url=artwork.logo_url,
+        hero_url=artwork.hero_url,
         summary=catalog_game.summary,
         genres=catalog_game.genres,
         platforms=catalog_game.platforms,
@@ -78,11 +87,21 @@ async def _enrich_catalog_game(catalog_game: CatalogGame) -> ListGame:
     )
 
 
-def _unresolved_game(catalog_game: CatalogGame) -> ListGame:
+async def _get_steamgriddb_artwork(game_name: str) -> GameArtwork:
+    try:
+        return await steamgriddb_service.get_artwork(game_name)
+    except (httpx.HTTPError, KeyError, TypeError, ValueError):
+        logger.warning("SteamGridDB artwork lookup failed", exc_info=True)
+        return GameArtwork()
+
+
+def _unresolved_game(catalog_game: CatalogGame, artwork: GameArtwork) -> ListGame:
     return ListGame(
         igdb_id=catalog_game.igdb_id,
         name=catalog_game.name,
         cover_url=catalog_game.cover_url,
+        logo_url=artwork.logo_url,
+        hero_url=artwork.hero_url,
         summary=catalog_game.summary,
         genres=catalog_game.genres,
         platforms=catalog_game.platforms,

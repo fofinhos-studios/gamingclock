@@ -1,12 +1,9 @@
 import {
-  ArrowDown,
-  ArrowUp,
-  List,
-  LoaderCircle,
-  RefreshCcw,
-  Trash2,
-  Trophy,
-} from "lucide-preact";
+  CircleNotchIcon,
+  ListBulletsIcon,
+  TrashIcon,
+  TrophyIcon,
+} from "@phosphor-icons/react";
 import { useLanguage } from "../i18n/i18n";
 import {
   type HLTBCategory,
@@ -20,8 +17,6 @@ interface Props {
   games: ListGame[];
   onRemoveGame: (igdbId: number) => void;
   onSelectGameTime: (index: number, category: HLTBCategory) => void;
-  onRetryGame: (igdbId: number) => void;
-  onMoveGame: (index: number, direction: -1 | 1) => void;
   onRenameList: (name: string) => void;
 }
 
@@ -30,8 +25,6 @@ export function GameListView({
   games,
   onRemoveGame,
   onSelectGameTime,
-  onRetryGame,
-  onMoveGame,
   onRenameList,
 }: Props) {
   const { t } = useLanguage();
@@ -51,7 +44,7 @@ export function GameListView({
             id="current-list-heading"
             class="planner-panel__title planner-heading"
           >
-            <List
+            <ListBulletsIcon
               class="planner-icon planner-heading__icon"
               aria-hidden="true"
             />
@@ -59,7 +52,6 @@ export function GameListView({
           </h2>
         </div>
         <div class="planner-inline-stats">
-          <span>{t.list.count(games.length)}</span>
           <span>{totalHours.toFixed(1)}h</span>
         </div>
       </div>
@@ -82,7 +74,7 @@ export function GameListView({
 
       {games.length === 0 ? (
         <div class="planner-empty-state">
-          <Trophy
+          <TrophyIcon
             class="planner-icon planner-empty-state__icon"
             aria-hidden="true"
           />
@@ -121,23 +113,14 @@ export function GameListView({
                         class="planner-chip planner-chip--loading"
                         aria-live="polite"
                       >
-                        <LoaderCircle
+                        <CircleNotchIcon
                           class="planner-icon planner-icon--spin"
                           aria-hidden="true"
                         />
                         {t.list.retrieving}
                       </span>
                     ) : game.hltb_status === "unresolved" ? (
-                      <>
-                        <span class="planner-chip" aria-live="polite">
-                          {t.list.unavailable}
-                        </span>
-                        {game.hltb_error && (
-                          <span class="planner-chip" role="alert">
-                            {game.hltb_error}
-                          </span>
-                        )}
-                      </>
+                      <span class="planner-chip">{t.list.unavailable}</span>
                     ) : (
                       <>
                         {games.length === 1 && index === 0 && (
@@ -190,59 +173,15 @@ export function GameListView({
               </div>
 
               <div class="planner-backlog-row__actions">
-                <div
-                  class="planner-backlog-row__reorder"
-                  aria-label={t.list.reorder(game.name)}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onRemoveGame(game.igdb_id)}
                 >
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    class="planner-reorder-button"
-                    aria-label={t.list.moveEarlier(game.name)}
-                    disabled={index === 0}
-                    onClick={() => onMoveGame(index, -1)}
-                  >
-                    <ArrowUp class="planner-icon" aria-hidden="true" />
-                    <span>{t.list.earlier}</span>
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    class="planner-reorder-button"
-                    aria-label={t.list.moveLater(game.name)}
-                    disabled={index === games.length - 1}
-                    onClick={() => onMoveGame(index, 1)}
-                  >
-                    <ArrowDown class="planner-icon" aria-hidden="true" />
-                    <span>{t.list.later}</span>
-                  </Button>
-                </div>
-
-                <div class="planner-backlog-row__action-group">
-                  {game.hltb_status === "unresolved" && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      aria-label={t.list.retryPlaytime(game.name)}
-                      onClick={() => onRetryGame(game.igdb_id)}
-                    >
-                      <RefreshCcw class="planner-icon" aria-hidden="true" />
-                      {t.list.retry}
-                    </Button>
-                  )}
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onRemoveGame(game.igdb_id)}
-                  >
-                    <Trash2 class="planner-icon" aria-hidden="true" />
-                    {t.list.remove}
-                  </Button>
-                </div>
+                  <TrashIcon class="planner-icon" aria-hidden="true" />
+                  {t.list.remove}
+                </Button>
               </div>
             </article>
           ))}

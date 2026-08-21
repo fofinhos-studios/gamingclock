@@ -16,6 +16,8 @@ def test_full_flow(client):
     }
     resolved_game = {
         **catalog_game,
+        "logo_url": "",
+        "hero_url": "",
         "hltb_status": "resolved",
         "hltb_match_name": "Final Fantasy VII",
         "main_story_hours": 36.5,

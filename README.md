@@ -14,4 +14,8 @@ Turn your game backlog into a plan you can actually play. Gaming Clock helps you
 
 ## Data credits
 
-Game information is provided by [IGDB](https://www.igdb.com/). Playtime estimates are sourced from [HowLongToBeat](https://howlongtobeat.com/).
+Game information is provided by [IGDB](https://www.igdb.com/). Playtime estimates are sourced from [HowLongToBeat](https://howlongtobeat.com/). Game logos and hero banners are provided by [SteamGridDB](https://www.steamgriddb.com/).
+
+## Optional artwork configuration
+
+Set `STEAMGRIDDB_API_KEY` in your local `.env` file or deployment environment to retrieve a selected game's logo and hero banner. Without it, the app continues normally and returns empty artwork URLs.

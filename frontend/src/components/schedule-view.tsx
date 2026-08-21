@@ -1,13 +1,13 @@
 import {
-  CalendarRange,
-  Check,
-  Clock3,
-  Download,
-  Flag,
-  Hourglass,
-  LoaderCircle,
-  Rows3,
-} from "lucide-preact";
+  CalendarIcon,
+  CheckIcon,
+  CircleNotchIcon,
+  ClockIcon,
+  DownloadSimpleIcon,
+  FlagIcon,
+  HourglassIcon,
+  RowsIcon,
+} from "@phosphor-icons/react";
 import { useState } from "preact/hooks";
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
 import { useLanguage } from "../i18n/i18n";
@@ -82,7 +82,7 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
             id="schedule-heading"
             class="planner-panel__title planner-heading"
           >
-            <CalendarRange
+            <CalendarIcon
               class="planner-icon planner-heading__icon"
               aria-hidden="true"
             />
@@ -105,14 +105,14 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
           }
         >
           {isDownloading ? (
-            <LoaderCircle
+            <CircleNotchIcon
               class="planner-icon planner-icon--spin"
               aria-hidden="true"
             />
           ) : feedback.active === "success" ? (
-            <Check class="planner-icon" aria-hidden="true" />
+            <CheckIcon class="planner-icon" aria-hidden="true" />
           ) : (
-            <Download class="planner-icon" aria-hidden="true" />
+            <DownloadSimpleIcon class="planner-icon" aria-hidden="true" />
           )}
           {isDownloading
             ? t.schedule.downloading
@@ -125,7 +125,7 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
       <div class="planner-metric-grid">
         <div class="planner-metric">
           <p class="planner-metric__label">
-            <Hourglass
+            <HourglassIcon
               class="planner-icon planner-metric__icon"
               aria-hidden="true"
             />
@@ -135,7 +135,7 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
         </div>
         <div class="planner-metric">
           <p class="planner-metric__label">
-            <Flag
+            <FlagIcon
               class="planner-icon planner-metric__icon"
               aria-hidden="true"
             />
@@ -149,7 +149,7 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
         </div>
         <div class="planner-metric">
           <p class="planner-metric__label">
-            <Rows3
+            <RowsIcon
               class="planner-icon planner-metric__icon"
               aria-hidden="true"
             />
@@ -160,7 +160,7 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
         {totalElapsedDays !== null && (
           <div class="planner-metric">
             <p class="planner-metric__label">
-              <Clock3
+              <ClockIcon
                 class="planner-icon planner-metric__icon"
                 aria-hidden="true"
               />

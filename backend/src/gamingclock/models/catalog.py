@@ -15,6 +15,11 @@ class HLTBCategory(StrEnum):
     COMPLETIONIST = "completionist"
 
 
+class GameArtwork(BaseModel):
+    logo_url: str = ""
+    hero_url: str = ""
+
+
 class CatalogGame(BaseModel):
     igdb_id: int
     name: str
@@ -30,6 +35,8 @@ class ListGame(BaseModel):
     igdb_id: int
     name: str
     cover_url: str
+    logo_url: str = ""
+    hero_url: str = ""
     summary: str
     genres: list[str]
     platforms: list[str]

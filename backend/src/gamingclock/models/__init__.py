@@ -1,5 +1,6 @@
 from gamingclock.models.catalog import (
     CatalogGame,
+    GameArtwork,
     HLTBStatus,
     ListGame,
     ResolveGameRequest,
@@ -10,9 +11,7 @@ from gamingclock.models.schedule import (
     DayAvailability,
     PlaySession,
     ScheduleAlgorithm,
-    ScheduleErrorResponse,
     ScheduleRequest,
-    ScheduleResponse,
     WeeklyAvailability,
 )
 
@@ -20,14 +19,13 @@ __all__ = [
     "CatalogGame",
     "DayAvailability",
     "Game",
+    "GameArtwork",
     "HLTBStatus",
     "ListGame",
     "PlaySession",
     "ResolveGameRequest",
     "ScheduleAlgorithm",
     "ScheduleErrorDetail",
-    "ScheduleErrorResponse",
     "ScheduleRequest",
-    "ScheduleResponse",
     "WeeklyAvailability",
 ]
