@@ -11,11 +11,13 @@ import {
 import { useState } from "preact/hooks";
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
 import { useLanguage } from "../i18n/i18n";
-import type { ScheduleResponse } from "../types";
+import type { ListGame, PlaySession, ScheduleResponse } from "../types";
+import { GameCartridge } from "./game-cartridge";
 import { Button } from "./ui";
 
 interface Props {
   schedule: ScheduleResponse;
+  games?: ListGame[];
   onDownloadIcal: () => Promise<boolean>;
 }
 
@@ -48,7 +50,38 @@ function formatReadableDate(date: string, language: string): string {
   }).format(parsedDate);
 }
 
-export function ScheduleView({ schedule, onDownloadIcal }: Props) {
+function getCalendarDays(sessions: PlaySession[]) {
+  const sessionsByDate = new Map<string, PlaySession[]>();
+  for (const session of sessions) {
+    sessionsByDate.set(session.date, [
+      ...(sessionsByDate.get(session.date) ?? []),
+      session,
+    ]);
+  }
+
+  const first = new Date(`${sessions[0].date}T12:00:00Z`);
+  const last = new Date(`${sessions.at(-1)?.date}T12:00:00Z`);
+  const firstMonday = new Date(first);
+  firstMonday.setUTCDate(first.getUTCDate() - ((first.getUTCDay() + 6) % 7));
+  const lastSunday = new Date(last);
+  lastSunday.setUTCDate(
+    last.getUTCDate() + (7 - ((last.getUTCDay() + 6) % 7) - 1),
+  );
+
+  const days: Array<{ date: string; sessions: PlaySession[] }> = [];
+  for (
+    const day = new Date(firstMonday);
+    day <= lastSunday;
+    day.setUTCDate(day.getUTCDate() + 1)
+  ) {
+    const date = day.toISOString().slice(0, 10);
+    days.push({ date, sessions: sessionsByDate.get(date) ?? [] });
+  }
+
+  return days;
+}
+
+export function ScheduleView({ schedule, games = [], onDownloadIcal }: Props) {
   const { language, t } = useLanguage();
   const [isDownloading, setIsDownloading] = useState(false);
   const feedback = useTransientFeedback<"success">();
@@ -62,6 +95,11 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
   }
 
   const totalElapsedDays = calculateElapsedDays(schedule);
+  const calendarDays = getCalendarDays(schedule.sessions);
+  const weekDayFormatter = new Intl.DateTimeFormat(language, {
+    weekday: "short",
+    timeZone: "UTC",
+  });
 
   const handleDownloadClick = async () => {
     setIsDownloading(true);
@@ -173,31 +211,53 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
         )}
       </div>
 
-      <div class="space-y-3">
+      <div class="schedule-calendar-section">
         <p class="section-eyebrow">{t.schedule.timeline}</p>
-        <ol class="timeline">
-          {schedule.sessions.map((session, index) => (
-            <li key={`${session.game_name}-${session.date}-${index}`}>
-              <article class="timeline-entry">
-                <div class="timeline-entry__header">
-                  <p class="timeline-meta">
-                    {t.schedule.starts(
-                      formatReadableDate(session.date, language),
-                      session.start_time,
-                    )}
-                  </p>
-                  <p class="timeline-duration">
-                    {session.duration_hours.toFixed(1)}h
-                  </p>
+        <div class="schedule-calendar" aria-label={t.schedule.timeline}>
+          {calendarDays.map((day) => {
+            const date = new Date(`${day.date}T12:00:00Z`);
+            const dayContents = (
+              <div class="schedule-calendar__day-content">
+                <div class="schedule-calendar__date">
+                  <span>{weekDayFormatter.format(date)}</span>
+                  <strong>{date.getUTCDate()}</strong>
                 </div>
-                <h3 class="timeline-title">{session.game_name}</h3>
-                <p class="timeline-detail">
-                  {t.schedule.plannedHours(session.duration_hours.toFixed(1))}
-                </p>
-              </article>
-            </li>
-          ))}
-        </ol>
+                <div class="schedule-calendar__sessions">
+                  {day.sessions.map((session, index) => {
+                    const game = games.find(
+                      (candidate) =>
+                        candidate.name.toLocaleLowerCase() ===
+                        session.game_name.toLocaleLowerCase(),
+                    );
+                    return game ? (
+                      <GameCartridge
+                        key={`${session.game_name}-${index}`}
+                        game={game}
+                        plannedHours={session.duration_hours}
+                        startTime={session.start_time}
+                        variant="calendar"
+                      />
+                    ) : (
+                      <div
+                        key={`${session.game_name}-${index}`}
+                        class="schedule-calendar__session-fallback"
+                      >
+                        <strong>{session.game_name}</strong>
+                        <span>{session.duration_hours.toFixed(1)}h</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+
+            return (
+              <div key={day.date} class="schedule-calendar__day">
+                {dayContents}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </section>
   );

@@ -1,5 +1,10 @@
 import { GameControllerIcon, MoonIcon, SunIcon } from "@phosphor-icons/react";
-import { useLayoutEffect, useState } from "preact/hooks";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useState,
+} from "preact/hooks";
 
 import { BacklogManager } from "../components/backlog-manager";
 import { PlannerAvailabilityStep } from "../components/planner-availability-step";
@@ -9,19 +14,26 @@ import { PlannerStepActions } from "../components/planner-step-actions";
 import { type PlannerTab, PlannerTabs } from "../components/planner-tabs";
 import { useLanguage } from "../i18n/i18n";
 import { strings } from "../i18n/strings";
-import { downloadIcal, generateSchedule, resolveGame } from "../services/api";
 import {
+  downloadIcal,
+  generateSchedule,
+  getApiErrorMessage,
+  resolveGame,
+} from "../services/api";
+import {
+  createPlannerListId,
   loadPlannerState,
   savePlannerState,
 } from "../services/planner-storage";
-import type {
-  CatalogGame,
-  GameList,
-  HLTBCategory,
-  ListGame,
-  ScheduleAlgorithm,
-  ScheduleResponse,
-  WeeklyAvailability,
+import {
+  type CatalogGame,
+  type GameList,
+  type HLTBCategory,
+  type ListGame,
+  type ScheduleAlgorithm,
+  type ScheduleResponse,
+  type WeeklyAvailability,
+  getSelectedGameHours,
 } from "../types";
 
 type Theme = "dark" | "light";
@@ -47,8 +59,8 @@ export function HomePage() {
     initialState.activeTab,
   );
   const [backlogs, setBacklogs] = useState<GameList[]>(initialState.backlogs);
-  const [activeBacklogIndex, setActiveBacklogIndex] = useState(
-    initialState.activeBacklogIndex,
+  const [activeBacklogId, setActiveBacklogId] = useState(
+    initialState.activeBacklogId,
   );
   const [availability, setAvailability] = useState<WeeklyAvailability | null>(
     initialState.availability,
@@ -59,6 +71,7 @@ export function HomePage() {
   const [schedule, setSchedule] = useState<ScheduleResponse | null>(
     initialState.schedule,
   );
+  const [isGenerating, setIsGenerating] = useState(false);
   const [actionError, setActionError] = useState("");
   const [startDate, setStartDate] = useState(initialState.startDate);
 
@@ -66,7 +79,7 @@ export function HomePage() {
     savePlannerState({
       activeTab,
       backlogs,
-      activeBacklogIndex,
+      activeBacklogId,
       availability,
       algorithm,
       schedule,
@@ -75,7 +88,7 @@ export function HomePage() {
   }, [
     activeTab,
     backlogs,
-    activeBacklogIndex,
+    activeBacklogId,
     availability,
     algorithm,
     schedule,
@@ -101,14 +114,27 @@ export function HomePage() {
     );
   }, [t.app.defaultBacklog]);
 
-  const activeBacklog = backlogs[activeBacklogIndex];
+  const activeBacklog =
+    backlogs.find((backlog) => backlog.id === activeBacklogId) ?? backlogs[0];
   const backlogName = activeBacklog.name;
   const games = activeBacklog.games;
+  const allBacklogGames = backlogs.flatMap((backlog) => backlog.games);
+  const totalAllBacklogsHours = allBacklogGames.reduce(
+    (total, game) => total + getSelectedGameHours(game),
+    0,
+  );
+  const currentListWeeklyHours = availability
+    ? availability.days.reduce((total, day) => total + day.hours, 0)
+    : 0;
+  const currentListSelectedHours = games.reduce(
+    (total, game) => total + getSelectedGameHours(game),
+    0,
+  );
 
-  const clearGeneratedSchedule = () => {
+  const clearGeneratedSchedule = useCallback(() => {
     setSchedule(null);
     setActionError("");
-  };
+  }, []);
 
   const hasLoadingGames = games.some((game) => game.hltb_status === "loading");
   const hasUnresolvedGames = games.some(
@@ -117,6 +143,52 @@ export function HomePage() {
   const gamesReady =
     games.length > 0 && !hasLoadingGames && !hasUnresolvedGames;
   const canGenerateSchedule = availability !== null && gamesReady;
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    if (!availability || !canGenerateSchedule) {
+      setIsGenerating(false);
+      return;
+    }
+
+    setIsGenerating(true);
+    setActionError("");
+    void generateSchedule(
+      backlogName,
+      games,
+      availability,
+      algorithm,
+      startDate,
+    )
+      .then((result) => {
+        if (isCurrent) {
+          setSchedule(result);
+        }
+      })
+      .catch((error: unknown) => {
+        if (isCurrent) {
+          setActionError(getApiErrorMessage(error, t.app.scheduleFailed));
+        }
+      })
+      .finally(() => {
+        if (isCurrent) {
+          setIsGenerating(false);
+        }
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [
+    algorithm,
+    availability,
+    backlogName,
+    canGenerateSchedule,
+    games,
+    startDate,
+    t.app.scheduleFailed,
+  ]);
   const canContinue =
     activeTab === "games"
       ? gamesReady
@@ -129,6 +201,7 @@ export function HomePage() {
           {
             id: "games-required",
             message: t.app.prerequisites.games,
+            target: "games" as const,
           },
         ]
       : []),
@@ -137,6 +210,7 @@ export function HomePage() {
           {
             id: "availability-required",
             message: t.app.prerequisites.availability,
+            target: "availability" as const,
           },
         ]
       : []),
@@ -145,6 +219,7 @@ export function HomePage() {
           {
             id: "game-times-loading",
             message: t.app.prerequisites.loading,
+            target: "games" as const,
           },
         ]
       : []),
@@ -153,6 +228,7 @@ export function HomePage() {
           {
             id: "game-times-unavailable",
             message: t.app.prerequisites.unavailable,
+            target: "games" as const,
           },
         ]
       : []),
@@ -166,35 +242,17 @@ export function HomePage() {
     ...(schedule ? (["schedule"] as const) : []),
   ];
 
-  const addGame = (game: CatalogGame) => {
-    const pendingGame: ListGame = {
-      ...game,
-      hltb_status: "loading",
-      hltb_match_name: null,
-      main_story_hours: null,
-      main_extra_hours: null,
-      completionist_hours: null,
-      selected_hltb_category: "main",
-    };
-
-    setBacklogs((currentBacklogs) =>
-      currentBacklogs.map((backlog, index) =>
-        index === activeBacklogIndex
-          ? { ...backlog, games: [...backlog.games, pendingGame] }
-          : backlog,
-      ),
-    );
-    clearGeneratedSchedule();
-
+  const resolveBacklogGame = (game: CatalogGame, backlogId: string) => {
     void resolveGame(game)
       .then((resolvedGame) => {
         const nextGame: ListGame = {
           ...resolvedGame,
+          hltb_error: null,
           selected_hltb_category: "main",
         };
         setBacklogs((currentBacklogs) =>
-          currentBacklogs.map((backlog, index) =>
-            index === activeBacklogIndex
+          currentBacklogs.map((backlog) =>
+            backlog.id === backlogId
               ? {
                   ...backlog,
                   games: backlog.games.map((backlogGame) =>
@@ -207,10 +265,10 @@ export function HomePage() {
           ),
         );
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         setBacklogs((currentBacklogs) =>
-          currentBacklogs.map((backlog, index) =>
-            index === activeBacklogIndex
+          currentBacklogs.map((backlog) =>
+            backlog.id === backlogId
               ? {
                   ...backlog,
                   games: backlog.games.map((backlogGame) =>
@@ -218,6 +276,10 @@ export function HomePage() {
                       ? {
                           ...backlogGame,
                           hltb_status: "unresolved",
+                          hltb_error: getApiErrorMessage(
+                            error,
+                            t.list.unavailable,
+                          ),
                         }
                       : backlogGame,
                   ),
@@ -228,10 +290,65 @@ export function HomePage() {
       });
   };
 
+  const addGame = (game: CatalogGame) => {
+    const targetBacklogId = activeBacklogId;
+    const pendingGame: ListGame = {
+      ...game,
+      hltb_status: "loading",
+      hltb_match_name: null,
+      main_story_hours: null,
+      main_extra_hours: null,
+      completionist_hours: null,
+      hltb_error: null,
+      selected_hltb_category: "main",
+    };
+
+    setBacklogs((currentBacklogs) =>
+      currentBacklogs.map((backlog) =>
+        backlog.id === targetBacklogId
+          ? { ...backlog, games: [...backlog.games, pendingGame] }
+          : backlog,
+      ),
+    );
+    clearGeneratedSchedule();
+    resolveBacklogGame(game, targetBacklogId);
+  };
+
+  const retryGame = (igdbId: number) => {
+    const targetBacklogId = activeBacklogId;
+    const game = backlogs
+      .find((backlog) => backlog.id === targetBacklogId)
+      ?.games.find((backlogGame) => backlogGame.igdb_id === igdbId);
+    if (!game) {
+      return;
+    }
+
+    setBacklogs((currentBacklogs) =>
+      currentBacklogs.map((backlog) =>
+        backlog.id === targetBacklogId
+          ? {
+              ...backlog,
+              games: backlog.games.map((backlogGame) =>
+                backlogGame.igdb_id === igdbId
+                  ? {
+                      ...backlogGame,
+                      hltb_status: "loading",
+                      hltb_error: null,
+                    }
+                  : backlogGame,
+              ),
+            }
+          : backlog,
+      ),
+    );
+    clearGeneratedSchedule();
+    resolveBacklogGame(game, targetBacklogId);
+  };
+
   const removeGame = (igdbId: number) => {
     setBacklogs((currentBacklogs) =>
-      currentBacklogs.map((backlog, backlogIndex) =>
-        backlogIndex === activeBacklogIndex
+      currentBacklogs.map((backlog) =>
+        backlog.id === activeBacklogId
           ? {
               ...backlog,
               games: backlog.games.filter((game) => game.igdb_id !== igdbId),
@@ -244,8 +361,8 @@ export function HomePage() {
 
   const selectGameTime = (index: number, category: HLTBCategory) => {
     setBacklogs((currentBacklogs) =>
-      currentBacklogs.map((backlog, backlogIndex) =>
-        backlogIndex === activeBacklogIndex
+      currentBacklogs.map((backlog) =>
+        backlog.id === activeBacklogId
           ? {
               ...backlog,
               games: backlog.games.map((game, gameIndex) =>
@@ -260,65 +377,69 @@ export function HomePage() {
     clearGeneratedSchedule();
   };
 
+  const moveGame = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= games.length) {
+      return;
+    }
+
+    setBacklogs((currentBacklogs) =>
+      currentBacklogs.map((backlog) => {
+        if (backlog.id !== activeBacklogId) {
+          return backlog;
+        }
+
+        const nextGames = [...backlog.games];
+        const [movedGame] = nextGames.splice(index, 1);
+        if (!movedGame) {
+          return backlog;
+        }
+        nextGames.splice(targetIndex, 0, movedGame);
+        return { ...backlog, games: nextGames };
+      }),
+    );
+    clearGeneratedSchedule();
+  };
+
   const renameBacklog = (name: string) => {
     setBacklogs((currentBacklogs) =>
-      currentBacklogs.map((backlog, index) =>
-        index === activeBacklogIndex ? { ...backlog, name } : backlog,
+      currentBacklogs.map((backlog) =>
+        backlog.id === activeBacklogId ? { ...backlog, name } : backlog,
       ),
     );
   };
 
   const addBacklog = (name: string) => {
-    setBacklogs((currentBacklogs) => {
-      setActiveBacklogIndex(currentBacklogs.length);
-      return [...currentBacklogs, { name, games: [] }];
-    });
+    const nextBacklog: GameList = {
+      id: createPlannerListId(),
+      name,
+      games: [],
+    };
+    setBacklogs((currentBacklogs) => [...currentBacklogs, nextBacklog]);
+    setActiveBacklogId(nextBacklog.id);
     clearGeneratedSchedule();
   };
 
-  const deleteBacklog = (index: number) => {
+  const deleteBacklog = (backlogId: string) => {
     if (backlogs.length === 1) {
       return;
     }
 
-    setBacklogs((currentBacklogs) =>
-      currentBacklogs.filter((_, backlogIndex) => backlogIndex !== index),
+    const deletedIndex = backlogs.findIndex(
+      (backlog) => backlog.id === backlogId,
     );
-    setActiveBacklogIndex((currentIndex) => {
-      if (index < currentIndex) {
-        return currentIndex - 1;
-      }
+    setBacklogs((currentBacklogs) =>
+      currentBacklogs.filter((backlog) => backlog.id !== backlogId),
+    );
 
-      if (index === currentIndex) {
-        return Math.min(currentIndex, backlogs.length - 2);
+    if (backlogId === activeBacklogId) {
+      const nextBacklog =
+        backlogs[deletedIndex + 1] ?? backlogs[deletedIndex - 1];
+      if (nextBacklog) {
+        setActiveBacklogId(nextBacklog.id);
       }
-
-      return currentIndex;
-    });
+    }
     clearGeneratedSchedule();
-  };
-
-  const handleGenerateSchedule = async (): Promise<boolean> => {
-    if (!availability || games.length === 0) {
-      return false;
-    }
-    setActionError("");
-    try {
-      const result = await generateSchedule(
-        backlogName,
-        games,
-        availability,
-        algorithm,
-        startDate,
-      );
-      setSchedule(result);
-      return true;
-    } catch (error) {
-      setActionError(
-        error instanceof Error ? error.message : t.app.scheduleFailed,
-      );
-      return false;
-    }
   };
 
   const handleDownloadIcal = async (): Promise<boolean> => {
@@ -342,17 +463,18 @@ export function HomePage() {
       URL.revokeObjectURL(url);
       return true;
     } catch (error) {
-      setActionError(
-        error instanceof Error ? error.message : t.app.downloadFailed,
-      );
+      setActionError(getApiErrorMessage(error, t.app.downloadFailed));
       return false;
     }
   };
 
-  const handleSetAvailability = (nextAvailability: WeeklyAvailability) => {
-    setAvailability(nextAvailability);
-    clearGeneratedSchedule();
-  };
+  const handleSetAvailability = useCallback(
+    (nextAvailability: WeeklyAvailability | null) => {
+      setAvailability(nextAvailability);
+      clearGeneratedSchedule();
+    },
+    [clearGeneratedSchedule],
+  );
 
   const handleAlgorithmChange = (nextAlgorithm: ScheduleAlgorithm) => {
     setAlgorithm(nextAlgorithm);
@@ -437,9 +559,9 @@ export function HomePage() {
                 </div>
                 <BacklogManager
                   backlogs={backlogs}
-                  activeBacklogIndex={activeBacklogIndex}
-                  onSelect={(index) => {
-                    setActiveBacklogIndex(index);
+                  activeBacklogId={activeBacklog.id}
+                  onSelect={(backlogId) => {
+                    setActiveBacklogId(backlogId);
                     clearGeneratedSchedule();
                   }}
                   onCreate={addBacklog}
@@ -460,6 +582,8 @@ export function HomePage() {
                     onAddGame={addGame}
                     onSelectGameTime={selectGameTime}
                     onRemoveGame={removeGame}
+                    onRetryGame={retryGame}
+                    onMoveGame={moveGame}
                     onRenameBacklog={renameBacklog}
                   />
                 </section>
@@ -473,7 +597,9 @@ export function HomePage() {
                 >
                   <PlannerAvailabilityStep
                     availability={availability}
-                    onSubmit={handleSetAvailability}
+                    gameCount={games.length}
+                    hasSchedule={schedule !== null}
+                    onChange={handleSetAvailability}
                   />
                 </section>
 
@@ -486,15 +612,21 @@ export function HomePage() {
                 >
                   <PlannerScheduleStep
                     availability={availability}
+                    gameListName={backlogName}
+                    games={games}
+                    gameCount={games.length}
+                    totalSelectedHours={currentListSelectedHours}
+                    weeklyHours={currentListWeeklyHours}
                     algorithm={algorithm}
                     startDate={startDate}
                     schedule={schedule}
+                    isGenerating={isGenerating}
                     actionError={actionError}
                     canGenerateSchedule={canGenerateSchedule}
                     prerequisiteMessages={schedulePrerequisites}
+                    onNavigate={setActiveTab}
                     onAlgorithmChange={handleAlgorithmChange}
                     onStartDateChange={handleStartDateChange}
-                    onGenerateSchedule={handleGenerateSchedule}
                     onDownloadIcal={handleDownloadIcal}
                   />
                 </section>

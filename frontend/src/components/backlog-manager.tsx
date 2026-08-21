@@ -7,15 +7,15 @@ import { Button, Field, Input } from "./ui";
 
 interface Props {
   backlogs: GameList[];
-  activeBacklogIndex: number;
-  onSelect: (index: number) => void;
+  activeBacklogId: string;
+  onSelect: (id: string) => void;
   onCreate: (name: string) => void;
-  onDelete: (index: number) => void;
+  onDelete: (id: string) => void;
 }
 
 export function BacklogManager({
   backlogs,
-  activeBacklogIndex,
+  activeBacklogId,
   onSelect,
   onCreate,
   onDelete,
@@ -23,7 +23,8 @@ export function BacklogManager({
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [newBacklogName, setNewBacklogName] = useState("");
-  const activeBacklog = backlogs[activeBacklogIndex];
+  const activeBacklog =
+    backlogs.find((backlog) => backlog.id === activeBacklogId) ?? backlogs[0];
   const activeHours = getBacklogHours(activeBacklog);
   const allGames = backlogs.flatMap((backlog) => backlog.games);
   const allHours = backlogs.reduce(
@@ -42,11 +43,20 @@ export function BacklogManager({
   };
 
   return (
-    <section class="backlog-manager" aria-label={t.app.backlogs}>
+    <section
+      class="backlog-manager planner-toolbar__backlogs"
+      aria-label={t.app.backlogs}
+    >
       <div class="backlog-manager__summary">
         <div class="backlog-manager__current">
           <span class="backlog-manager__label">{t.app.currentBacklog}</span>
-          <strong>{activeBacklog.name}</strong>
+          <button
+            type="button"
+            class="backlog-manager__current-name"
+            onClick={() => setIsOpen(true)}
+          >
+            {activeBacklog.name}
+          </button>
           <span class="backlog-manager__meta">
             {t.app.backlogStats(
               activeBacklog.games.length,
@@ -58,7 +68,9 @@ export function BacklogManager({
           <Button
             aria-label={t.app.newBacklog}
             title={t.app.newBacklog}
-            onClick={() => onCreate(t.app.newBacklogName(backlogs.length + 1))}
+            onClick={() => {
+              onCreate(t.app.newBacklogName(backlogs.length + 1));
+            }}
             size="sm"
             variant="ghost"
           >
@@ -86,18 +98,18 @@ export function BacklogManager({
           <div class="backlog-manager__panel-heading">
             <div>
               <p class="backlog-manager__label">{t.app.backlogs}</p>
-              <h2>{t.app.manageBacklogs}</h2>
+              <h2>{t.app.backlogs}</h2>
             </div>
           </div>
 
           <div class="backlog-manager__collection">
-            {backlogs.map((backlog, index) => {
+            {backlogs.map((backlog) => {
               const hours = getBacklogHours(backlog);
-              const isActive = index === activeBacklogIndex;
+              const isActive = backlog.id === activeBacklogId;
 
               return (
                 <div
-                  key={`${backlog.name}-${index}`}
+                  key={backlog.id}
                   class={`backlog-manager__item ${
                     isActive ? "backlog-manager__item--active" : ""
                   }`}
@@ -111,7 +123,7 @@ export function BacklogManager({
                       backlog.games.length,
                       hours.toFixed(1),
                     )}
-                    onClick={() => onSelect(index)}
+                    onClick={() => onSelect(backlog.id)}
                   >
                     <span>{backlog.name}</span>
                     <small>
@@ -131,7 +143,7 @@ export function BacklogManager({
                         : t.app.deleteBacklog(backlog.name)
                     }
                     disabled={backlogs.length === 1}
-                    onClick={() => onDelete(index)}
+                    onClick={() => onDelete(backlog.id)}
                   >
                     <TrashIcon aria-hidden="true" />
                   </button>

@@ -1,11 +1,16 @@
-import { CheckIcon } from "@phosphor-icons/react";
+import {
+  CalendarDotsIcon,
+  CalendarIcon,
+  CheckIcon,
+  GameControllerIcon,
+} from "@phosphor-icons/react";
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
 import { useLanguage } from "../i18n/i18n";
 
 const PLANNER_TABS = [
-  { id: "games" },
-  { id: "availability" },
-  { id: "schedule" },
+  { id: "games", icon: GameControllerIcon },
+  { id: "availability", icon: CalendarDotsIcon },
+  { id: "schedule", icon: CalendarIcon },
 ] as const;
 
 export type PlannerTab = (typeof PLANNER_TABS)[number]["id"];
@@ -67,6 +72,7 @@ export function PlannerTabs({ activeTab, completedTabs, onChange }: Props) {
                 : t.tabs.schedule;
           const selected = tab.id === activeTab;
           const complete = completedTabs.includes(tab.id);
+          const Icon = tab.icon;
           const status = complete
             ? t.tabs.complete
             : selected
@@ -98,6 +104,10 @@ export function PlannerTabs({ activeTab, completedTabs, onChange }: Props) {
                   {complete ? <CheckIcon class="planner-icon" /> : index + 1}
                 </span>
                 <span class="planner-stepper__tab-content">
+                  <Icon
+                    class="planner-icon planner-stepper__tab-icon"
+                    aria-hidden="true"
+                  />
                   <span>
                     <span class="planner-stepper__tab-label">{label}</span>
                     <span class="planner-stepper__tab-status">{status}</span>

@@ -5,12 +5,12 @@ import { describe, expect, test, vi } from "vitest";
 import { LanguageProvider } from "../i18n/i18n";
 import { AvailabilityForm } from "./availability-form";
 
-function renderForm(onSubmit = vi.fn()) {
+function renderForm(onChange = vi.fn()) {
   return {
-    onSubmit,
+    onChange,
     ...render(
       <LanguageProvider browserLanguages={["en"]}>
-        <AvailabilityForm availability={null} onSubmit={onSubmit} />
+        <AvailabilityForm availability={null} onChange={onChange} />
       </LanguageProvider>,
     ),
   };
@@ -67,30 +67,28 @@ describe("AvailabilityForm", () => {
     expect(view.getByRole("status").textContent).toContain("5 hours per week");
   });
 
-  test("identifies the missing day selection when saving", async () => {
+  test("clears availability immediately when no play days are selected", async () => {
     const user = userEvent.setup();
-    const view = renderForm();
+    const onChange = vi.fn();
+    const view = renderForm(onChange);
 
-    await user.click(view.getByRole("button", { name: /save play time/i }));
+    await user.click(view.getByRole("button", { name: "Weeknights" }));
+    await user.click(view.getByRole("button", { name: "Clear" }));
 
-    expect(view.getByRole("alert").textContent).toContain(
-      "Choose at least one play day",
-    );
+    expect(onChange).toHaveBeenLastCalledWith(null);
   });
 
-  test("reports a clear saved state and serializes the selected whole-hour start time", async () => {
+  test("updates availability immediately and serializes the selected whole-hour start time", async () => {
     const user = userEvent.setup();
-    const onSubmit = vi.fn();
-    const view = renderForm(onSubmit);
+    const onChange = vi.fn();
+    const view = renderForm(onChange);
 
     await user.click(view.getByLabelText("Monday"));
     await user.clear(view.getByLabelText(/^Start time/));
     await user.type(view.getByLabelText(/^Start time/), "18:00");
-    await user.click(view.getByRole("button", { name: /save play time/i }));
 
-    expect(onSubmit).toHaveBeenCalledWith({
+    expect(onChange).toHaveBeenLastCalledWith({
       days: [{ day_of_week: 0, hours: 2, start_hour: 18 }],
     });
-    expect(view.getByRole("status").textContent).toContain("Saved");
   });
 });

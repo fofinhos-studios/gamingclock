@@ -8,25 +8,26 @@ import { BacklogManager } from "./backlog-manager";
 
 function BacklogManagerHarness() {
   const [backlogs, setBacklogs] = useState<GameList[]>([
-    { name: "My Backlog", games: [] },
-    { name: "Weekend Games", games: [] },
+    { id: "my-backlog", name: "My Backlog", games: [] },
+    { id: "weekend-games", name: "Weekend Games", games: [] },
   ]);
-  const [activeBacklogIndex, setActiveBacklogIndex] = useState(0);
+  const [activeBacklogId, setActiveBacklogId] = useState("my-backlog");
 
   return (
     <BacklogManager
       backlogs={backlogs}
-      activeBacklogIndex={activeBacklogIndex}
-      onSelect={setActiveBacklogIndex}
+      activeBacklogId={activeBacklogId}
+      onSelect={setActiveBacklogId}
       onCreate={(name) => {
-        setBacklogs((current) => [...current, { name, games: [] }]);
-        setActiveBacklogIndex(backlogs.length);
+        const id = name.toLowerCase().replace(/\s+/g, "-");
+        setBacklogs((current) => [...current, { id, name, games: [] }]);
+        setActiveBacklogId(id);
       }}
-      onDelete={(index) => {
+      onDelete={(id) => {
         setBacklogs((current) =>
-          current.filter((_, itemIndex) => itemIndex !== index),
+          current.filter((backlog) => backlog.id !== id),
         );
-        setActiveBacklogIndex(0);
+        setActiveBacklogId("my-backlog");
       }}
     />
   );
@@ -47,7 +48,7 @@ describe("BacklogManager", () => {
     );
 
     expect(
-      view.container.querySelector(".backlog-manager__current strong")
+      view.container.querySelector(".backlog-manager__current-name")
         ?.textContent,
     ).toBe("Weekend Games");
 
@@ -74,8 +75,8 @@ describe("BacklogManager", () => {
     const user = userEvent.setup();
     const view = render(
       <BacklogManager
-        backlogs={[{ name: "My Backlog", games: [] }]}
-        activeBacklogIndex={0}
+        backlogs={[{ id: "my-backlog", name: "My Backlog", games: [] }]}
+        activeBacklogId="my-backlog"
         onSelect={() => undefined}
         onCreate={() => undefined}
         onDelete={() => undefined}
