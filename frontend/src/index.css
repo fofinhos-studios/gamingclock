@@ -325,13 +325,13 @@
   .planner-identity {
     position: relative;
     display: inline-grid;
-    width: clamp(13.5rem, 25vw, 19rem);
-    height: clamp(2.5rem, 5vw, 3.7rem);
+    width: clamp(16rem, 30vw, 23rem);
+    height: clamp(3.25rem, 5.8vw, 4.4rem);
     place-items: center;
     overflow: hidden;
     color: var(--foreground);
     font-family: "IntraNet", sans-serif;
-    font-size: clamp(1.55rem, 3.15vw, 2.7rem);
+    font-size: clamp(2rem, 4vw, 3.45rem);
     font-weight: 800;
     letter-spacing: 0.025em;
     line-height: 1;
