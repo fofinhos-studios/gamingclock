@@ -969,19 +969,22 @@
   }
 
   .planner-result {
+    position: relative;
+    isolation: isolate;
     display: grid;
-    grid-template-columns: 5rem minmax(0, 1fr);
+    grid-template-columns: 5.75rem minmax(0, 1fr);
     gap: 0;
     align-items: stretch;
-    min-height: 7.6rem;
+    min-height: 8.25rem;
     width: 100%;
     overflow: hidden;
     padding: 0;
-    border: 1px solid var(--foreground-22);
-    background:
-      linear-gradient(90deg, var(--surface-92) 0%, var(--surface-82) 60%, var(--surface-62) 100%),
-      var(--brushed-metal);
-    box-shadow: 4px 4px 0 var(--foreground-08);
+    border: 1px solid var(--foreground-32);
+    background: var(--surface);
+    box-shadow:
+      inset 1px 1px 0 var(--metal-highlight),
+      inset -1px -1px 0 var(--metal-shadow),
+      4px 4px 0 var(--foreground-08);
     clip-path: polygon(0.6rem 0, 100% 0, 100% calc(100% - 0.6rem), calc(100% - 0.6rem) 100%, 0 100%, 0 0.6rem);
     appearance: none;
     color: inherit;
@@ -1004,9 +1007,6 @@
   .planner-result--active,
   .planner-result--active:hover {
     border-color: var(--industrial-aqua);
-    background:
-      linear-gradient(90deg, var(--surface-92) 0%, var(--surface-82) 44%, var(--step-complete-soft) 100%),
-      var(--brushed-metal);
     color: var(--foreground);
   }
 
@@ -1014,12 +1014,48 @@
     transform: scale(0.992);
   }
 
+  .planner-result__hero,
+  .planner-result__wash {
+    position: absolute;
+    z-index: -2;
+    inset: 0;
+  }
+
+  .planner-result__hero {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.42;
+    filter: saturate(0.78) contrast(1.1);
+    transition: opacity 180ms ease;
+  }
+
+  .planner-result__wash {
+    z-index: -1;
+    background:
+      linear-gradient(90deg, var(--surface-92) 0%, var(--surface-82) 44%, var(--surface-62) 100%),
+      linear-gradient(0deg, var(--surface) 0%, var(--foreground-0) 72%);
+    transition: opacity 180ms ease;
+  }
+
+  .planner-result--artwork-loading .planner-result__hero,
+  .planner-result--artwork-loading .planner-result__wash,
+  .planner-result__logo--loading {
+    opacity: 0;
+  }
+
+  .planner-result__cover-frame {
+    z-index: 1;
+    display: grid;
+    align-items: stretch;
+    padding: 0.42rem 0 0.42rem 0.42rem;
+  }
+
   .planner-result__cover {
     width: 100%;
     height: 100%;
-    min-height: 7.6rem;
-    border: 0;
-    border-right: 1px solid var(--foreground-22);
+    min-height: 7.35rem;
+    border: 1px solid var(--foreground-32);
     object-fit: cover;
     background: var(--cover-fallback);
   }
@@ -1047,11 +1083,59 @@
   }
 
   .planner-result__body {
+    z-index: 1;
     display: grid;
-    grid-template-rows: minmax(0, 1fr) auto;
-    gap: 0.45rem;
+    align-content: start;
+    gap: 0.5rem;
     min-width: 0;
-    padding: 0.68rem 0.8rem 0.52rem;
+    padding: 0.7rem 0.75rem 0.55rem;
+  }
+
+  .planner-result__identity {
+    display: flex;
+    align-items: start;
+    min-width: 0;
+  }
+
+  .planner-result__logo {
+    width: auto;
+    max-width: min(100%, 15rem);
+    max-height: 3.15rem;
+    object-fit: contain;
+    object-position: left top;
+    filter: drop-shadow(0 1px 0 var(--surface));
+    transition: opacity 180ms ease;
+  }
+
+  .planner-result__details {
+    display: grid;
+    gap: 0.3rem;
+  }
+
+  .planner-result__artwork-loading {
+    display: grid;
+    align-content: start;
+    gap: 0.42rem;
+    min-height: 3.2rem;
+    padding-top: 0.2rem;
+  }
+
+  .planner-result__loading-line {
+    display: block;
+    width: 78%;
+    height: 0.56rem;
+    background: linear-gradient(
+      105deg,
+      var(--foreground-08) 34%,
+      var(--surface-82) 48%,
+      var(--foreground-08) 62%
+    );
+    background-size: 220% 100%;
+    animation: game-cartridge-scan 1200ms ease-in-out infinite;
+  }
+
+  .planner-result__loading-line--short {
+    width: 54%;
   }
 
   .planner-backlog-row__body {

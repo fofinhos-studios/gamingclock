@@ -48,6 +48,17 @@ async def resolve_game(request: ResolveGameRequest) -> ListGame:
     return await _enrich_catalog_game(catalog_game)
 
 
+@router.post("/artwork", response_model=GameArtwork)
+async def get_game_artwork(request: ResolveGameRequest) -> GameArtwork:
+    if request.name:
+        return await _get_steamgriddb_artwork(request.name)
+
+    catalog_game = await igdb_service.get_by_id(request.igdb_id)
+    if isinstance(catalog_game, dict):
+        catalog_game = CatalogGame.model_validate(catalog_game)
+    return await _get_steamgriddb_artwork(catalog_game.name)
+
+
 async def _enrich_catalog_game(catalog_game: CatalogGame) -> ListGame:
     artwork, hltb_results = await asyncio.gather(
         _get_steamgriddb_artwork(catalog_game.name),

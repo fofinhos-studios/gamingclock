@@ -12,6 +12,12 @@ export interface CatalogGame {
   rating: number | null;
 }
 
+export interface GameArtwork {
+  cover_url: string;
+  logo_url: string;
+  hero_url: string;
+}
+
 export interface ListGame extends CatalogGame {
   logo_url?: string;
   hero_url?: string;

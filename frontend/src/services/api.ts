@@ -1,5 +1,6 @@
 import type {
   CatalogGame,
+  GameArtwork,
   ListGame,
   ScheduleAlgorithm,
   ScheduleResponse,
@@ -106,6 +107,23 @@ export async function resolveGame(game: CatalogGame): Promise<ListGame> {
       "Could not find a playtime estimate",
       "resolve",
     );
+  }
+  return response.json();
+}
+
+export async function getGameArtwork(game: CatalogGame): Promise<GameArtwork> {
+  const response = await request(
+    `${API_BASE}/games/artwork`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(game),
+    },
+    "Could not load game artwork",
+    "search",
+  );
+  if (!response.ok) {
+    throw await parseError(response, "Could not load game artwork", "search");
   }
   return response.json();
 }
