@@ -128,10 +128,6 @@ export function HomePage() {
   const currentListWeeklyHours = availability
     ? availability.days.reduce((total, day) => total + day.hours, 0)
     : 0;
-  const currentListSelectedHours = games.reduce(
-    (total, game) => total + getSelectedGameHours(game),
-    0,
-  );
 
   const clearGeneratedSchedule = useCallback(() => {
     setSchedule(null);
@@ -139,11 +135,13 @@ export function HomePage() {
   }, []);
 
   const hasLoadingGames = games.some((game) => game.hltb_status === "loading");
-  const hasUnresolvedGames = games.some(
-    (game) => game.hltb_status === "unresolved",
+  const schedulableGames = games.filter(
+    (game) => game.hltb_status === "resolved" && game.main_story_hours !== null,
   );
-  const gamesReady =
-    games.length > 0 && !hasLoadingGames && !hasUnresolvedGames;
+  const excludedGames = games.filter(
+    (game) => !schedulableGames.includes(game),
+  );
+  const gamesReady = games.length > 0 && !hasLoadingGames;
   const canGenerateSchedule = availability !== null && gamesReady;
 
   useEffect(() => {
@@ -225,21 +223,10 @@ export function HomePage() {
           },
         ]
       : []),
-    ...(hasUnresolvedGames
-      ? [
-          {
-            id: "game-times-unavailable",
-            message: t.app.prerequisites.unavailable,
-            target: "games" as const,
-          },
-        ]
-      : []),
   ];
   const activeStep = t.app.steps[activeTab];
   const completedTabs: PlannerTab[] = [
-    ...(games.length > 0 && !hasLoadingGames && !hasUnresolvedGames
-      ? (["games"] as const)
-      : []),
+    ...(games.length > 0 && !hasLoadingGames ? (["games"] as const) : []),
     ...(availability ? (["availability"] as const) : []),
     ...(schedule ? (["schedule"] as const) : []),
   ];
@@ -614,8 +601,12 @@ export function HomePage() {
                   <PlannerScheduleStep
                     gameListName={backlogName}
                     games={games}
-                    gameCount={games.length}
-                    totalSelectedHours={currentListSelectedHours}
+                    excludedGames={excludedGames}
+                    gameCount={schedulableGames.length}
+                    totalSelectedHours={schedulableGames.reduce(
+                      (total, game) => total + getSelectedGameHours(game),
+                      0,
+                    )}
                     weeklyHours={currentListWeeklyHours}
                     algorithm={algorithm}
                     startDate={startDate}

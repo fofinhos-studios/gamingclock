@@ -72,7 +72,7 @@ def test_full_flow(client):
     assert "BEGIN:VCALENDAR" in ical_resp.text
 
 
-def test_schedule_blocks_unresolved_games(client):
+def test_schedule_skips_unresolved_games(client):
     unresolved_game = {
         "igdb_id": 12,
         "name": "Mystery Game",
@@ -100,7 +100,9 @@ def test_schedule_blocks_unresolved_games(client):
         },
     )
 
-    assert response.status_code == 400
-    assert response.json()["detail"]["unresolved_games"] == [
-        {"igdb_id": 12, "name": "Mystery Game"},
-    ]
+    assert response.status_code == 200
+    assert response.json() == {
+        "sessions": [],
+        "total_hours": 0,
+        "estimated_end_date": None,
+    }

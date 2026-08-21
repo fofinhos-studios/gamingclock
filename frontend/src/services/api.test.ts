@@ -60,37 +60,6 @@ describe("api client errors and contracts", () => {
     );
   });
 
-  test("keeps unresolved game details from schedule responses", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 400,
-      json: async () => ({
-        detail: {
-          message: "Cannot generate schedule with unresolved games",
-          unresolved_games: [{ igdb_id: 7, name: "Final Fantasy VII" }],
-        },
-      }),
-    }) as typeof fetch;
-
-    const error = await generateSchedule(
-      "Weekend RPGs",
-      [listGame],
-      availability,
-      "sequential",
-      "2026-08-22",
-    ).catch((value: unknown) => value);
-
-    expect(error).toBeInstanceOf(ApiError);
-    expect(error).toMatchObject({
-      message: "Cannot generate schedule with unresolved games",
-      operation: "schedule",
-      unresolvedGames: [{ igdb_id: 7, name: "Final Fantasy VII" }],
-    });
-    expect(getApiErrorMessage(error, "fallback")).toContain(
-      "Final Fantasy VII",
-    );
-  });
-
   test("wraps network failures with the operation and fallback message", async () => {
     globalThis.fetch = vi
       .fn()

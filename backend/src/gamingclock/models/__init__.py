@@ -4,7 +4,6 @@ from gamingclock.models.catalog import (
     HLTBStatus,
     ListGame,
     ResolveGameRequest,
-    ScheduleErrorDetail,
 )
 from gamingclock.models.game import Game
 from gamingclock.models.schedule import (
@@ -25,7 +24,6 @@ __all__ = [
     "PlaySession",
     "ResolveGameRequest",
     "ScheduleAlgorithm",
-    "ScheduleErrorDetail",
     "ScheduleRequest",
     "WeeklyAvailability",
 ]

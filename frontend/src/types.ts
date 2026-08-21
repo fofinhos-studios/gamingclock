@@ -56,16 +56,6 @@ export interface ScheduleResponse {
   estimated_end_date: string | null;
 }
 
-export interface ScheduleErrorDetail {
-  igdb_id: number;
-  name: string;
-}
-
-export interface ScheduleErrorResponse {
-  message: string;
-  unresolved_games: ScheduleErrorDetail[];
-}
-
 export function getSelectedGameHours(game: ListGame): number {
   const category = game.selected_hltb_category ?? "main";
   const selectedHours = {

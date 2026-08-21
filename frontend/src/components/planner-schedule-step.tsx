@@ -1,4 +1,4 @@
-import { CalendarIcon, InfoIcon } from "@phosphor-icons/react";
+import { CalendarIcon, InfoIcon, WarningIcon } from "@phosphor-icons/react";
 import { useLanguage } from "../i18n/i18n";
 import type { ListGame, ScheduleAlgorithm, ScheduleResponse } from "../types";
 import type { PlannerTab } from "./planner-tabs";
@@ -14,6 +14,7 @@ interface PrerequisiteMessage {
 interface Props {
   gameListName: string;
   games?: ListGame[];
+  excludedGames?: ListGame[];
   gameCount: number;
   totalSelectedHours: number;
   weeklyHours: number;
@@ -33,6 +34,7 @@ interface Props {
 export function PlannerScheduleStep({
   gameListName,
   games = [],
+  excludedGames = [],
   gameCount,
   totalSelectedHours,
   weeklyHours,
@@ -57,6 +59,7 @@ export function PlannerScheduleStep({
     algorithm === "sequential"
       ? t.schedule.sequentialCopy
       : t.schedule.alternatingCopy;
+  const excludedGameNames = excludedGames.map((game) => game.name).join(", ");
 
   return (
     <section
@@ -145,6 +148,21 @@ export function PlannerScheduleStep({
               ))}
             </ul>
           </output>
+        )}
+
+        {excludedGames.length > 0 && (
+          <aside class="planner-inline-notice planner-inline-notice--warning">
+            <WarningIcon
+              class="planner-inline-notice__icon planner-icon"
+              aria-hidden="true"
+            />
+            <p>
+              {t.schedule.excludedGames(
+                excludedGameNames,
+                excludedGames.length,
+              )}
+            </p>
+          </aside>
         )}
 
         {actionError && (

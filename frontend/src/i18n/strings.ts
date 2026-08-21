@@ -186,6 +186,8 @@ export const strings = {
       startsOn: (date: string) => `Starts on ${date}`,
       sequentialCopy: "Finish one game before the next.",
       alternatingCopy: "Rotate between games to keep several in progress.",
+      excludedGames: (names: string, count: number) =>
+        `${names} ${count === 1 ? "does" : "do"} not have HLTB playtime data and will not be included in this schedule.`,
       generatedHeading: "Your schedule",
       downloading: "Downloading",
       downloaded: "Downloaded",
@@ -393,6 +395,8 @@ export const strings = {
       startsOn: (date: string) => `Começa em ${date}`,
       sequentialCopy: "Termine um jogo antes de começar o próximo.",
       alternatingCopy: "Alterne entre jogos para manter vários em andamento.",
+      excludedGames: (names: string, count: number) =>
+        `${names} ${count === 1 ? "não tem" : "não têm"} estimativa de tempo no HLTB e ${count === 1 ? "não entrará" : "não entrarão"} neste cronograma.`,
       generatedHeading: "Seu cronograma",
       downloading: "Baixando",
       downloaded: "Baixado",
