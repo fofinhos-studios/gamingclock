@@ -26,11 +26,6 @@ export function BacklogManager({
   const activeBacklog =
     backlogs.find((backlog) => backlog.id === activeBacklogId) ?? backlogs[0];
   const activeHours = getBacklogHours(activeBacklog);
-  const allGames = backlogs.flatMap((backlog) => backlog.games);
-  const allHours = backlogs.reduce(
-    (total, backlog) => total + getBacklogHours(backlog),
-    0,
-  );
 
   const createBacklog = () => {
     const name = newBacklogName.trim();
@@ -48,22 +43,26 @@ export function BacklogManager({
       aria-label={t.app.backlogs}
     >
       <div class="backlog-manager__summary">
-        <div class="backlog-manager__current">
-          <span class="backlog-manager__label">{t.app.currentBacklog}</span>
-          <Button
-            unstyled
-            class="backlog-manager__current-name"
-            onClick={() => setIsOpen(true)}
-          >
+        <Button
+          class="backlog-manager__current"
+          variant="outline"
+          size="sm"
+          aria-expanded={isOpen}
+          aria-controls="backlog-manager-panel"
+          aria-label={t.app.manageBacklogs}
+          onClick={() => setIsOpen((open) => !open)}
+        >
+          <ListBulletsIcon aria-hidden="true" />
+          <span class="backlog-manager__current-name">
             {activeBacklog.name}
-          </Button>
+          </span>
           <span class="backlog-manager__meta">
             {t.app.backlogStats(
               activeBacklog.games.length,
               activeHours.toFixed(1),
             )}
           </span>
-        </div>
+        </Button>
         <div class="backlog-manager__actions">
           <Button
             aria-label={t.app.newBacklog}
@@ -76,22 +75,8 @@ export function BacklogManager({
           >
             <PlusIcon aria-hidden="true" />
           </Button>
-          <Button
-            aria-expanded={isOpen}
-            aria-controls="backlog-manager-panel"
-            onClick={() => setIsOpen((open) => !open)}
-            size="sm"
-          >
-            <ListBulletsIcon aria-hidden="true" />
-            {t.app.manageBacklogs}
-          </Button>
         </div>
       </div>
-
-      <p class="backlog-manager__total">
-        <span>{t.app.backlogCount(backlogs.length)}</span>
-        <span>{t.app.allBacklogs(allGames.length, allHours.toFixed(1))}</span>
-      </p>
 
       {isOpen && (
         <div id="backlog-manager-panel" class="backlog-manager__panel">

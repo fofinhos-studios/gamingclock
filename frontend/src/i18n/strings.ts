@@ -46,6 +46,7 @@ export const strings = {
       scheduleFailed: "Schedule generation failed",
       downloadFailed: "iCal download failed",
       theme: {
+        label: "Theme",
         dark: "Dark",
         light: "Light",
         switchTo: (theme: string) => `Switch to ${theme} theme`,
@@ -249,6 +250,7 @@ export const strings = {
       scheduleFailed: "Falha ao gerar o cronograma",
       downloadFailed: "Falha ao baixar o iCal",
       theme: {
+        label: "Tema",
         dark: "Escuro",
         light: "Claro",
         switchTo: (theme: string) => `Mudar para o tema ${theme.toLowerCase()}`,

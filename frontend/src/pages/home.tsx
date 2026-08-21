@@ -501,30 +501,39 @@ export function HomePage() {
               <div class="planner-toolbar__topline">
                 <SurfaceWordmark text="Gaming Clock" />
                 <div class="planner-toolbar__controls">
-                  <Button
-                    unstyled
-                    class="theme-toggle"
-                    aria-label={t.app.theme.switchTo(
-                      theme === "dark" ? t.app.theme.light : t.app.theme.dark,
-                    )}
-                    aria-pressed={theme === "light"}
-                    onClick={() =>
-                      setTheme((currentTheme) =>
-                        currentTheme === "dark" ? "light" : "dark",
-                      )
-                    }
-                  >
-                    {theme === "dark" ? (
-                      <MoonIcon aria-hidden="true" />
-                    ) : (
-                      <SunIcon aria-hidden="true" />
-                    )}
-                    <span>
-                      {theme === "dark" ? t.app.theme.dark : t.app.theme.light}
+                  <div class="toolbar-control">
+                    <span class="toolbar-control__label">
+                      {t.app.theme.label}
                     </span>
-                  </Button>
-                  <label class="language-chooser">
-                    <span>{t.language.label}</span>
+                    <Button
+                      unstyled
+                      class="theme-toggle"
+                      aria-label={t.app.theme.switchTo(
+                        theme === "dark" ? t.app.theme.light : t.app.theme.dark,
+                      )}
+                      aria-pressed={theme === "light"}
+                      onClick={() =>
+                        setTheme((currentTheme) =>
+                          currentTheme === "dark" ? "light" : "dark",
+                        )
+                      }
+                    >
+                      {theme === "dark" ? (
+                        <MoonIcon aria-hidden="true" />
+                      ) : (
+                        <SunIcon aria-hidden="true" />
+                      )}
+                      <span>
+                        {theme === "dark"
+                          ? t.app.theme.dark
+                          : t.app.theme.light}
+                      </span>
+                    </Button>
+                  </div>
+                  <label class="toolbar-control language-chooser">
+                    <span class="toolbar-control__label">
+                      {t.language.label}
+                    </span>
                     <select
                       value={language}
                       onChange={(event) =>
@@ -538,6 +547,16 @@ export function HomePage() {
                       <option value="pt-BR">{t.language.portuguese}</option>
                     </select>
                   </label>
+                  <BacklogManager
+                    backlogs={backlogs}
+                    activeBacklogId={activeBacklog.id}
+                    onSelect={(backlogId) => {
+                      setActiveBacklogId(backlogId);
+                      clearGeneratedSchedule();
+                    }}
+                    onCreate={addBacklog}
+                    onDelete={deleteBacklog}
+                  />
                 </div>
               </div>
             </header>
@@ -551,16 +570,6 @@ export function HomePage() {
                 <div class="planner-toolbar__main">
                   <h1 class="planner-toolbar__title">{activeStep.title}</h1>
                 </div>
-                <BacklogManager
-                  backlogs={backlogs}
-                  activeBacklogId={activeBacklog.id}
-                  onSelect={(backlogId) => {
-                    setActiveBacklogId(backlogId);
-                    clearGeneratedSchedule();
-                  }}
-                  onCreate={addBacklog}
-                  onDelete={deleteBacklog}
-                />
               </div>
               <div class="planner-workspace__body">
                 <section

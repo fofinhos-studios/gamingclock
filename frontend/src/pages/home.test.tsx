@@ -67,13 +67,16 @@ describe("HomePage", () => {
     ).toBeTruthy();
   });
 
-  test("groups theme and language controls at the top right", () => {
+  test("groups aligned theme, language, and backlog controls at the top right", () => {
     const view = render(<HomePage path="/" />);
     const controls = view.container.querySelector(".planner-toolbar__controls");
 
     expect(controls).toBeTruthy();
+    expect(controls?.querySelector(".toolbar-control")).toBeTruthy();
+    expect(view.getByText("Theme")).toBeTruthy();
     expect(controls?.querySelector(".theme-toggle")).toBeTruthy();
     expect(controls?.querySelector(".language-chooser")).toBeTruthy();
+    expect(controls?.querySelector(".backlog-manager")).toBeTruthy();
   });
 
   test("renders an IntraNet surface wordmark with a shader canvas", () => {
@@ -483,9 +486,7 @@ describe("HomePage", () => {
         name: /what do you want to play/i,
       }),
     ).toBeTruthy();
-    expect(
-      view.getByLabelText(/backlogs/i).classList.contains("backlog-manager"),
-    ).toBe(true);
+    expect(view.container.querySelector(".backlog-manager")).toBeTruthy();
     expect(view.getByRole("tab", { name: /games/i })).toBeTruthy();
     expect(view.getByRole("tab", { name: /availability/i })).toBeTruthy();
     expect(view.getByRole("tab", { name: /schedule/i })).toBeTruthy();
