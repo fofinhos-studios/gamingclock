@@ -1,4 +1,5 @@
 import { render } from "@testing-library/preact";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "vitest";
 
 import type { ScheduleResponse } from "../types";
@@ -41,5 +42,38 @@ describe("ScheduleView", () => {
 
     expect(view.getByText(/days to finish/i)).toBeTruthy();
     expect(view.getByText(/3 days/i)).toBeTruthy();
+  });
+
+  test("uses a readable date for sessions and handles an empty result", () => {
+    const view = render(
+      <ScheduleView
+        schedule={schedule}
+        onDownloadIcal={() => Promise.resolve(true)}
+      />,
+    );
+
+    expect(view.getByText(/March 30, 2026/i)).toBeTruthy();
+    expect(view.queryByText("2026-03-30")).toBeNull();
+
+    view.rerender(
+      <ScheduleView
+        schedule={{ sessions: [], total_hours: 0, estimated_end_date: null }}
+        onDownloadIcal={() => Promise.resolve(true)}
+      />,
+    );
+    expect(view.getByText(/no sessions yet/i)).toBeTruthy();
+  });
+
+  test("communicates a successful calendar download", async () => {
+    const user = userEvent.setup();
+    const view = render(
+      <ScheduleView
+        schedule={schedule}
+        onDownloadIcal={() => Promise.resolve(true)}
+      />,
+    );
+
+    await user.click(view.getByRole("button", { name: /download \.ics/i }));
+    expect(view.getByRole("button", { name: /downloaded/i })).toBeTruthy();
   });
 });

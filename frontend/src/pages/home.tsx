@@ -109,6 +109,13 @@ export function HomePage() {
     (total, game) => total + getSelectedGameHours(game),
     0,
   );
+  const currentListWeeklyHours = availability
+    ? availability.days.reduce((total, day) => total + day.hours, 0)
+    : 0;
+  const currentListSelectedHours = games.reduce(
+    (total, game) => total + getSelectedGameHours(game),
+    0,
+  );
 
   const clearGeneratedSchedule = () => {
     setSchedule(null);
@@ -134,6 +141,7 @@ export function HomePage() {
           {
             id: "games-required",
             message: t.app.prerequisites.games,
+            target: "games" as const,
           },
         ]
       : []),
@@ -142,6 +150,7 @@ export function HomePage() {
           {
             id: "availability-required",
             message: t.app.prerequisites.availability,
+            target: "availability" as const,
           },
         ]
       : []),
@@ -150,6 +159,7 @@ export function HomePage() {
           {
             id: "game-times-loading",
             message: t.app.prerequisites.loading,
+            target: "games" as const,
           },
         ]
       : []),
@@ -158,6 +168,7 @@ export function HomePage() {
           {
             id: "game-times-unavailable",
             message: t.app.prerequisites.unavailable,
+            target: "games" as const,
           },
         ]
       : []),
@@ -548,12 +559,17 @@ export function HomePage() {
                 >
                   <PlannerScheduleStep
                     availability={availability}
+                    gameListName={backlogName}
+                    gameCount={games.length}
+                    totalSelectedHours={currentListSelectedHours}
+                    weeklyHours={currentListWeeklyHours}
                     algorithm={algorithm}
                     startDate={startDate}
                     schedule={schedule}
                     actionError={actionError}
                     canGenerateSchedule={canGenerateSchedule}
                     prerequisiteMessages={schedulePrerequisites}
+                    onNavigate={setActiveTab}
                     onAlgorithmChange={handleAlgorithmChange}
                     onStartDateChange={handleStartDateChange}
                     onGenerateSchedule={handleGenerateSchedule}

@@ -36,8 +36,20 @@ function calculateElapsedDays(schedule: ScheduleResponse): number | null {
   return differenceInDays >= 0 ? differenceInDays + 1 : null;
 }
 
+function formatReadableDate(date: string, language: string): string {
+  const parsedDate = new Date(`${date}T12:00:00`);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return date;
+  }
+  return new Intl.DateTimeFormat(language, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(parsedDate);
+}
+
 export function ScheduleView({ schedule, onDownloadIcal }: Props) {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [isDownloading, setIsDownloading] = useState(false);
   const feedback = useTransientFeedback<"success">();
 
@@ -131,7 +143,9 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
             <span>{t.schedule.estimatedFinish}</span>
           </p>
           <p class="planner-metric__value">
-            {schedule.estimated_end_date ?? t.schedule.unavailable}
+            {schedule.estimated_end_date
+              ? formatReadableDate(schedule.estimated_end_date, language)
+              : t.schedule.unavailable}
           </p>
         </div>
         <div class="planner-metric">
@@ -168,7 +182,10 @@ export function ScheduleView({ schedule, onDownloadIcal }: Props) {
               <article class="timeline-entry">
                 <div class="timeline-entry__header">
                   <p class="timeline-meta">
-                    {t.schedule.starts(session.date, session.start_time)}
+                    {t.schedule.starts(
+                      formatReadableDate(session.date, language),
+                      session.start_time,
+                    )}
                   </p>
                   <p class="timeline-duration">
                     {session.duration_hours.toFixed(1)}h
