@@ -40,7 +40,10 @@ jobs:
       - uses: jdx/aube-action@v1
         with:
           node-version: "22"
-          run-install: true
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: aube install --frozen-lockfile
 
       - name: Audit dependencies
         run: cd frontend && aube audit
