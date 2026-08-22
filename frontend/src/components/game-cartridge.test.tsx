@@ -77,4 +77,14 @@ describe("GameCartridge", () => {
     expect(view.getByText("GENRE")).toBeTruthy();
     expect(view.getByText("Adventure")).toBeTruthy();
   });
+
+  test("labels calendar sessions with their time to play", () => {
+    const view = render(
+      <GameCartridge game={game} plannedHours={2.5} variant="calendar" />,
+    );
+
+    expect(view.getByText("TIME TO PLAY")).toBeTruthy();
+    expect(view.getByText("2.5H")).toBeTruthy();
+    expect(view.queryByText("TODAY")).toBeNull();
+  });
 });
