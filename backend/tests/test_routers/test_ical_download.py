@@ -1,3 +1,8 @@
+import base64
+import json
+import zlib
+
+
 def test_download_ical(client):
     response = client.post(
         "/schedule/ical",
@@ -103,3 +108,35 @@ def test_download_ical_uses_edited_sessions_when_provided(client):
     assert response.status_code == 200
     assert "Moved game" in response.text
     assert "20260403T173000" in response.text
+
+
+def test_calendar_url_serves_a_portable_ical_export(client):
+    calendar_payload = {
+        "game_list_name": "Edited schedule",
+        "sessions": [
+            {
+                "game_name": "Moved game",
+                "date": "2026-04-03",
+                "start_time": "17:30:00",
+                "duration_hours": 4,
+            }
+        ],
+    }
+    compressor = zlib.compressobj(wbits=-zlib.MAX_WBITS)
+    compressed = compressor.compress(json.dumps(calendar_payload).encode()) + compressor.flush()
+    payload = base64.urlsafe_b64encode(compressed).decode().rstrip("=")
+
+    response = client.get("/schedule/ical-url", params={"payload": payload})
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "text/calendar; charset=utf-8"
+    assert response.headers["content-disposition"] == "inline; filename=gaming-clock.ics"
+    assert "Moved game" in response.text
+    assert "20260403T173000" in response.text
+
+
+def test_calendar_url_rejects_invalid_payloads(client):
+    response = client.get("/schedule/ical-url", params={"payload": "not-calendar-data"})
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Invalid calendar URL"

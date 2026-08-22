@@ -68,6 +68,7 @@ describe("ScheduleView", () => {
         schedule={schedule}
         onScheduleChange={() => {}}
         onDownloadIcal={() => {}}
+        onCopyCalendarUrl={() => Promise.resolve(true)}
       />,
     );
 
@@ -94,6 +95,7 @@ describe("ScheduleView", () => {
         games={games}
         onScheduleChange={() => {}}
         onDownloadIcal={() => {}}
+        onCopyCalendarUrl={() => Promise.resolve(true)}
       />,
     );
 
@@ -122,6 +124,7 @@ describe("ScheduleView", () => {
         schedule={schedule}
         onScheduleChange={() => {}}
         onDownloadIcal={() => Promise.resolve(true)}
+        onCopyCalendarUrl={() => Promise.resolve(true)}
       />,
     );
 
@@ -137,6 +140,7 @@ describe("ScheduleView", () => {
         schedule={{ sessions: [], total_hours: 0, estimated_end_date: null }}
         onScheduleChange={() => {}}
         onDownloadIcal={() => Promise.resolve(true)}
+        onCopyCalendarUrl={() => Promise.resolve(true)}
       />,
     );
     expect(view.getByText(/no sessions yet/i)).toBeTruthy();
@@ -149,11 +153,27 @@ describe("ScheduleView", () => {
         schedule={schedule}
         onScheduleChange={() => {}}
         onDownloadIcal={() => Promise.resolve(true)}
+        onCopyCalendarUrl={() => Promise.resolve(true)}
       />,
     );
 
     await user.click(view.getByRole("button", { name: /download \.ics/i }));
     expect(view.getByRole("button", { name: /downloaded/i })).toBeTruthy();
+  });
+
+  test("communicates when the calendar URL is copied", async () => {
+    const user = userEvent.setup();
+    const view = render(
+      <ScheduleView
+        schedule={schedule}
+        onScheduleChange={() => {}}
+        onDownloadIcal={() => Promise.resolve(true)}
+        onCopyCalendarUrl={() => Promise.resolve(true)}
+      />,
+    );
+
+    await user.click(view.getByRole("button", { name: /copy calendar url/i }));
+    expect(view.getByRole("button", { name: /url copied/i })).toBeTruthy();
   });
 
   test("moves a focused session by date", async () => {
@@ -165,6 +185,7 @@ describe("ScheduleView", () => {
         finishByDate="2026-04-01"
         onScheduleChange={onScheduleChange}
         onDownloadIcal={() => Promise.resolve(true)}
+        onCopyCalendarUrl={() => Promise.resolve(true)}
       />,
     );
 
@@ -185,6 +206,7 @@ describe("ScheduleView", () => {
         finishByDate="2026-03-31"
         onScheduleChange={() => {}}
         onDownloadIcal={() => Promise.resolve(true)}
+        onCopyCalendarUrl={() => Promise.resolve(true)}
       />,
     );
 

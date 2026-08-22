@@ -201,3 +201,45 @@ export async function downloadIcal(
   }
   return response.blob();
 }
+
+async function deflateRaw(value: string): Promise<Uint8Array | null> {
+  if (typeof CompressionStream === "undefined") {
+    return null;
+  }
+
+  const stream = new Blob([value])
+    .stream()
+    .pipeThrough(new CompressionStream("deflate-raw"));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+function toBase64Url(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary)
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replaceAll("=", "");
+}
+
+export async function createCalendarUrl(
+  gameListName: string,
+  sessions: PlaySession[],
+): Promise<string> {
+  const content = JSON.stringify({
+    game_list_name: gameListName,
+    sessions,
+  });
+  const compressed = await deflateRaw(content);
+  const payload = toBase64Url(compressed ?? new TextEncoder().encode(content));
+  const params = new URLSearchParams({
+    payload,
+    encoding: compressed ? "deflate" : "plain",
+  });
+  return new URL(
+    `${API_BASE}/schedule/ical-url?${params}`,
+    window.location.origin,
+  ).href;
+}

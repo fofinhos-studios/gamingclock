@@ -41,6 +41,7 @@ interface Props {
   onMaxSessionHoursChange: (maxSessionHours: number) => void;
   onScheduleChange: (schedule: ScheduleResponse) => void;
   onDownloadIcal: () => Promise<boolean>;
+  onCopyCalendarUrl: () => Promise<boolean>;
 }
 
 export function PlannerScheduleStep({
@@ -68,6 +69,7 @@ export function PlannerScheduleStep({
   onMaxSessionHoursChange,
   onScheduleChange,
   onDownloadIcal,
+  onCopyCalendarUrl,
 }: Props) {
   const { language, t } = useLanguage();
   const prerequisitesDescriptionId = "schedule-prerequisites";
@@ -328,6 +330,7 @@ export function PlannerScheduleStep({
             finishByDate={planningMode === "finish_by" ? finishByDate : null}
             onScheduleChange={onScheduleChange}
             onDownloadIcal={onDownloadIcal}
+            onCopyCalendarUrl={onCopyCalendarUrl}
           />
         </div>
       )}

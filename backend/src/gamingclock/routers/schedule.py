@@ -1,10 +1,16 @@
-from fastapi import APIRouter, HTTPException
+import base64
+import binascii
+import zlib
+
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
+from pydantic import ValidationError
 
 from gamingclock.calendar.ical import generate_ical
 from gamingclock.models.catalog import HLTBCategory, HLTBStatus
 from gamingclock.models.game import Game
 from gamingclock.models.schedule import (
+    CalendarUrlRequest,
     IcalRequest,
     PlaySession,
     ScheduleRequest,
@@ -76,4 +82,34 @@ async def download_ical(request: IcalRequest) -> Response:
         content=ical_content,
         media_type="text/calendar",
         headers={"Content-Disposition": f'attachment; filename="{request.game_list_name}.ics"'},
+    )
+
+
+@router.get("/ical-url")
+async def calendar_url(
+    payload: str = Query(min_length=1),
+    encoding: str = Query(default="deflate"),
+) -> Response:
+    """Serve an iCalendar document from a portable, client-generated payload."""
+    try:
+        padded_payload = payload + "=" * (-len(payload) % 4)
+        decoded = base64.b64decode(padded_payload.encode("ascii"), altchars=b"-_", validate=True)
+        if encoding == "deflate":
+            decoded = zlib.decompress(decoded, wbits=-zlib.MAX_WBITS)
+        elif encoding != "plain":
+            raise ValueError("unsupported encoding")
+        request = CalendarUrlRequest.model_validate_json(decoded)
+    except (
+        UnicodeEncodeError,
+        binascii.Error,
+        ValidationError,
+        ValueError,
+        zlib.error,
+    ) as error:
+        raise HTTPException(status_code=422, detail="Invalid calendar URL") from error
+
+    return Response(
+        content=generate_ical(request.sessions, calendar_name=request.game_list_name),
+        media_type="text/calendar",
+        headers={"Content-Disposition": "inline; filename=gaming-clock.ics"},
     )

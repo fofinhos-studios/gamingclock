@@ -3,6 +3,7 @@ import {
   CheckIcon,
   CircleNotchIcon,
   ClockIcon,
+  CopyIcon,
   DownloadSimpleIcon,
   FlagIcon,
   HourglassIcon,
@@ -22,6 +23,7 @@ interface Props {
   finishByDate?: string | null;
   onScheduleChange: (schedule: ScheduleResponse) => void;
   onDownloadIcal: () => Promise<boolean>;
+  onCopyCalendarUrl: () => Promise<boolean>;
 }
 
 function calculateElapsedDays(schedule: ScheduleResponse): number | null {
@@ -135,10 +137,13 @@ export function ScheduleView({
   finishByDate = null,
   onScheduleChange,
   onDownloadIcal,
+  onCopyCalendarUrl,
 }: Props) {
   const { language, t } = useLanguage();
   const [isDownloading, setIsDownloading] = useState(false);
-  const feedback = useTransientFeedback<"success">();
+  const [isCopyingUrl, setIsCopyingUrl] = useState(false);
+  const downloadFeedback = useTransientFeedback<"success">();
+  const urlFeedback = useTransientFeedback<"success">();
 
   if (schedule.sessions.length === 0) {
     return (
@@ -202,9 +207,20 @@ export function ScheduleView({
     const success = await onDownloadIcal();
     setIsDownloading(false);
     if (success) {
-      feedback.trigger("success", 1800);
+      downloadFeedback.trigger("success", 1800);
     } else {
-      feedback.clear();
+      downloadFeedback.clear();
+    }
+  };
+
+  const handleCopyUrlClick = async () => {
+    setIsCopyingUrl(true);
+    const success = await onCopyCalendarUrl();
+    setIsCopyingUrl(false);
+    if (success) {
+      urlFeedback.trigger("success", 1800);
+    } else {
+      urlFeedback.clear();
     }
   };
 
@@ -224,36 +240,68 @@ export function ScheduleView({
           </h2>
         </div>
 
-        <Button
-          type="button"
-          variant="primary"
-          size="sm"
-          onClick={() => void handleDownloadClick()}
-          disabled={isDownloading}
-          feedbackState={
-            isDownloading
-              ? "loading"
-              : feedback.active === "success"
-                ? "success"
-                : "idle"
-          }
-        >
-          {isDownloading ? (
-            <CircleNotchIcon
-              class="planner-icon planner-icon--spin"
-              aria-hidden="true"
-            />
-          ) : feedback.active === "success" ? (
-            <CheckIcon class="planner-icon" aria-hidden="true" />
-          ) : (
-            <DownloadSimpleIcon class="planner-icon" aria-hidden="true" />
-          )}
-          {isDownloading
-            ? t.schedule.downloading
-            : feedback.active === "success"
-              ? t.schedule.downloaded
-              : t.schedule.download}
-        </Button>
+        <div class="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void handleCopyUrlClick()}
+            disabled={isCopyingUrl}
+            feedbackState={
+              isCopyingUrl
+                ? "loading"
+                : urlFeedback.active === "success"
+                  ? "success"
+                  : "idle"
+            }
+          >
+            {isCopyingUrl ? (
+              <CircleNotchIcon
+                class="planner-icon planner-icon--spin"
+                aria-hidden="true"
+              />
+            ) : urlFeedback.active === "success" ? (
+              <CheckIcon class="planner-icon" aria-hidden="true" />
+            ) : (
+              <CopyIcon class="planner-icon" aria-hidden="true" />
+            )}
+            {isCopyingUrl
+              ? t.schedule.copyingCalendarUrl
+              : urlFeedback.active === "success"
+                ? t.schedule.copiedCalendarUrl
+                : t.schedule.copyCalendarUrl}
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            onClick={() => void handleDownloadClick()}
+            disabled={isDownloading}
+            feedbackState={
+              isDownloading
+                ? "loading"
+                : downloadFeedback.active === "success"
+                  ? "success"
+                  : "idle"
+            }
+          >
+            {isDownloading ? (
+              <CircleNotchIcon
+                class="planner-icon planner-icon--spin"
+                aria-hidden="true"
+              />
+            ) : downloadFeedback.active === "success" ? (
+              <CheckIcon class="planner-icon" aria-hidden="true" />
+            ) : (
+              <DownloadSimpleIcon class="planner-icon" aria-hidden="true" />
+            )}
+            {isDownloading
+              ? t.schedule.downloading
+              : downloadFeedback.active === "success"
+                ? t.schedule.downloaded
+                : t.schedule.download}
+          </Button>
+        </div>
       </div>
 
       <div class="planner-metric-grid">
