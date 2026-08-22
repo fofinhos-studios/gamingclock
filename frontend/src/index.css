@@ -19,6 +19,7 @@
   --font-display: "DM Sans", sans-serif;
   --font-body: "Space Mono", monospace;
   --font-mono: "Space Mono", monospace;
+  --font-brand: "IntraNet", sans-serif;
 }
 
 :root {
@@ -80,6 +81,7 @@
   --font-display: "DM Sans", sans-serif;
   --font-body: "Space Mono", monospace;
   --font-mono: "Space Mono", monospace;
+  --font-brand: "IntraNet", sans-serif;
 }
 
 :root[data-theme="light"] {
@@ -136,6 +138,7 @@
   --font-display: "DM Sans", sans-serif;
   --font-body: "Space Mono", monospace;
   --font-mono: "Space Mono", monospace;
+  --font-brand: "IntraNet", sans-serif;
 }
 
 @layer base {
@@ -324,7 +327,7 @@
 
   .planner-identity {
     display: inline-block;
-    font-family: "IntraNet", sans-serif;
+    font-family: var(--font-brand);
     font-size: clamp(1.65rem, 3vw, 2.45rem);
     font-weight: 800;
     letter-spacing: 0.025em;
@@ -766,14 +769,11 @@
     padding: 0.9rem;
     min-width: 0;
     border: 1px solid var(--foreground-16);
-    background:
-      linear-gradient(135deg, var(--panel-glass), var(--surface-68)),
-      var(--brushed-metal);
+    background: var(--surface);
     box-shadow:
       inset 1px 1px 0 var(--metal-highlight),
       inset -1px -1px 0 var(--metal-shadow),
       0 0.7rem 1.4rem var(--foreground-06);
-    backdrop-filter: blur(10px) saturate(0.86);
   }
 
   .planner-pane--search {
