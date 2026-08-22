@@ -69,7 +69,7 @@ test("builds the workspace from inset metal and solid planner surfaces", async (
   const stylesheet = await readStylesheet();
 
   expect(stylesheet).toMatch(/--panel-glass:\s*var\(--surface-\d+\);/);
-  expect(stylesheet).toMatch(/--brushed-metal:/);
+  expect(stylesheet).toMatch(/--canvas-texture:/);
   expect(stylesheet).toMatch(
     /\.planner-app__workspace\s*\{[\s\S]*?box-shadow:\s*[\s\S]*?inset/,
   );

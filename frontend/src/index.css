@@ -33,12 +33,22 @@
   --panel-chassis: var(--surface-92);
   --metal-highlight: var(--foreground-16);
   --metal-shadow: var(--foreground-08);
-  --brushed-metal: repeating-linear-gradient(
-    105deg,
-    var(--foreground-0) 0 3px,
-    var(--foreground-035) 3px 4px,
-    var(--foreground-0) 4px 8px
-  );
+  --canvas-texture:
+    radial-gradient(
+      ellipse 72% 54% at 8% 6%,
+      var(--foreground-04) 0%,
+      var(--foreground-0) 72%
+    ),
+    radial-gradient(
+      ellipse 66% 58% at 94% 24%,
+      var(--foreground-035) 0%,
+      var(--foreground-0) 74%
+    ),
+    radial-gradient(
+      ellipse 80% 62% at 36% 96%,
+      var(--foreground-04) 0%,
+      var(--foreground-0) 76%
+    );
   --background: var(--iron-core);
   --surface: #2d3837;
   --foreground: var(--architectural-cream);
@@ -108,12 +118,22 @@
   --panel-chassis: var(--surface-92);
   --metal-highlight: var(--foreground-16);
   --metal-shadow: var(--foreground-08);
-  --brushed-metal: repeating-linear-gradient(
-    105deg,
-    var(--foreground-0) 0 3px,
-    var(--foreground-035) 3px 4px,
-    var(--foreground-0) 4px 8px
-  );
+  --canvas-texture:
+    radial-gradient(
+      ellipse 72% 54% at 8% 6%,
+      var(--foreground-04) 0%,
+      var(--foreground-0) 72%
+    ),
+    radial-gradient(
+      ellipse 66% 58% at 94% 24%,
+      var(--foreground-035) 0%,
+      var(--foreground-0) 74%
+    ),
+    radial-gradient(
+      ellipse 80% 62% at 36% 96%,
+      var(--foreground-04) 0%,
+      var(--foreground-0) 76%
+    );
   --foreground-0: rgb(34 42 42 / 0);
   --foreground-035: rgb(34 42 42 / 0.035);
   --foreground-04: rgb(34 42 42 / 0.04);
@@ -166,7 +186,7 @@
     margin: 0;
     min-height: 100vh;
     background:
-      var(--brushed-metal),
+      var(--canvas-texture),
       linear-gradient(180deg, var(--canvas-start) 0%, var(--canvas-end) 100%);
     color: var(--foreground);
     font-family: var(--font-body);
