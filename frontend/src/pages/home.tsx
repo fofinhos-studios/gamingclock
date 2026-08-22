@@ -17,6 +17,7 @@ import { Button } from "../components/ui";
 import { useLanguage } from "../i18n/i18n";
 import { strings } from "../i18n/strings";
 import {
+  createCalendarUrl,
   downloadIcal,
   generateSchedule,
   getApiErrorMessage,
@@ -487,6 +488,24 @@ export function HomePage() {
     }
   };
 
+  const handleCopyCalendarUrl = async (): Promise<boolean> => {
+    if (!schedule) {
+      return false;
+    }
+    setActionError("");
+    try {
+      const calendarUrl = await createCalendarUrl(
+        backlogName,
+        schedule.sessions,
+      );
+      await navigator.clipboard.writeText(calendarUrl);
+      return true;
+    } catch {
+      setActionError(t.app.calendarUrlFailed);
+      return false;
+    }
+  };
+
   const handleSetAvailability = useCallback(
     (nextAvailability: WeeklyAvailability | null) => {
       setAvailability(nextAvailability);
@@ -677,6 +696,7 @@ export function HomePage() {
                     onMaxSessionHoursChange={handleMaxSessionHoursChange}
                     onScheduleChange={handleScheduleChange}
                     onDownloadIcal={handleDownloadIcal}
+                    onCopyCalendarUrl={handleCopyCalendarUrl}
                   />
                 </section>
               </div>

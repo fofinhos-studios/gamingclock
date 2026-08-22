@@ -72,3 +72,10 @@ class IcalRequest(ScheduleRequest):
     """Schedule export contract; accepts user-adjusted sessions when supplied."""
 
     sessions: list[PlaySession] | None = None
+
+
+class CalendarUrlRequest(BaseModel):
+    """Portable calendar export payload embedded in a shareable URL."""
+
+    game_list_name: str
+    sessions: list[PlaySession]

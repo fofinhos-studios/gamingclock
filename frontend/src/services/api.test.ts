@@ -3,6 +3,7 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import type { CatalogGame, ListGame, WeeklyAvailability } from "../types";
 import {
   ApiError,
+  createCalendarUrl,
   generateSchedule,
   getApiErrorMessage,
   resolveGame,
@@ -34,6 +35,7 @@ const availability: WeeklyAvailability = {
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
+  vi.unstubAllGlobals();
 });
 
 describe("api client errors and contracts", () => {
@@ -110,6 +112,37 @@ describe("api client errors and contracts", () => {
         { igdb_id: 7, selected_hltb_category: "completionist" },
         { igdb_id: 8, name: "Chrono Trigger" },
       ],
+    });
+  });
+
+  test("creates an absolute calendar URL that preserves edited sessions", async () => {
+    vi.stubGlobal("CompressionStream", undefined);
+
+    const url = await createCalendarUrl("Weekend RPGs", [
+      {
+        game_name: "Final Fantasy VII",
+        date: "2026-08-22",
+        start_time: "20:00",
+        duration_hours: 2,
+      },
+    ]);
+
+    const parsed = new URL(url);
+    expect(parsed.origin).toBe("http://localhost");
+    expect(parsed.pathname).toBe("/api/schedule/ical-url");
+    expect(parsed.searchParams.get("encoding")).toBe("plain");
+    const payload = parsed.searchParams.get("payload");
+    expect(
+      JSON.parse(
+        new TextDecoder().decode(
+          Uint8Array.from(atob(payload as string), (character) =>
+            character.charCodeAt(0),
+          ),
+        ),
+      ),
+    ).toMatchObject({
+      game_list_name: "Weekend RPGs",
+      sessions: [{ game_name: "Final Fantasy VII", date: "2026-08-22" }],
     });
   });
 });
