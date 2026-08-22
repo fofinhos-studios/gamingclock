@@ -128,6 +128,9 @@ test("uses larger shared icons and an embossed IntraNet wordmark", async () => {
     /@font-face\s*\{[\s\S]*?font-family:\s*"IntraNet";[\s\S]*?IntraNet-Bold\.otf/,
   );
   expect(stylesheet).toMatch(
+    /@font-face\s*\{[\s\S]*?font-family:\s*"IntraNet";[\s\S]*?font-display:\s*block;/,
+  );
+  expect(stylesheet).toMatch(
     /\.planner-identity\s*\{[\s\S]*?font-family:\s*"IntraNet"/,
   );
   expect(stylesheet).toMatch(/\.planner-identity__label\s*\{/);
