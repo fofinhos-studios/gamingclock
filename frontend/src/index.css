@@ -737,10 +737,8 @@
 
   .planner-workspace__main {
     display: grid;
-    grid-template-rows: minmax(0, 1fr) auto;
     align-content: start;
     gap: 0.9rem;
-    min-height: clamp(26rem, 56vh, 38rem);
     min-width: 0;
   }
 
