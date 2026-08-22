@@ -127,7 +127,7 @@ export function GameCartridge({
           <div>
             <dt>
               <ClockIcon aria-hidden="true" />
-              <span>{primaryLabel}</span>
+              {variant !== "calendar" && <span>{primaryLabel}</span>}
             </dt>
             <dd>{primaryHours.toFixed(1)}H</dd>
           </div>

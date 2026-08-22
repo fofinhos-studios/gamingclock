@@ -78,13 +78,20 @@ describe("GameCartridge", () => {
     expect(view.getByText("Adventure")).toBeTruthy();
   });
 
-  test("labels calendar sessions with their time to play", () => {
+  test("shows calendar sessions as a clock icon and their planned hours", () => {
     const view = render(
       <GameCartridge game={game} plannedHours={2.5} variant="calendar" />,
     );
 
-    expect(view.getByText("TIME TO PLAY")).toBeTruthy();
     expect(view.getByText("2.5H")).toBeTruthy();
+    const primaryDetail = view
+      .getByLabelText("Hollow Knight details")
+      .querySelector("div");
+    expect(primaryDetail?.querySelector("dt span")).toBeNull();
+    expect(
+      primaryDetail?.querySelector("dt [aria-hidden='true']"),
+    ).toBeTruthy();
     expect(view.queryByText("TODAY")).toBeNull();
+    expect(view.queryByText("TIME TO PLAY")).toBeNull();
   });
 });
