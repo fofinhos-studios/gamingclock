@@ -172,6 +172,8 @@ export const strings = {
       planningMode: "Planning mode",
       weeklyMode: "Weekly availability",
       finishByMode: "Finish by",
+      planningModeHint:
+        "Weekly availability plans only within your chosen hours. Finish by adds the hours needed to complete your list by a deadline.",
       startDate: "Start date",
       finishByDate: "Finish by date",
       maxSessionHours: "Max session length (hours)",
@@ -401,6 +403,8 @@ export const strings = {
       planningMode: "Modo de planejamento",
       weeklyMode: "Disponibilidade semanal",
       finishByMode: "Terminar até",
+      planningModeHint:
+        "A disponibilidade semanal planeja apenas dentro dos horários escolhidos. Terminar até adiciona as horas necessárias para concluir a lista até uma data.",
       startDate: "Data de início",
       finishByDate: "Data para terminar",
       maxSessionHours: "Duração máxima da sessão (horas)",

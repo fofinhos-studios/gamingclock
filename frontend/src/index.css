@@ -1881,15 +1881,18 @@
     width: 100%;
   }
 
-  .planner-algorithm-field {
+  .planner-algorithm-field,
+  .planner-planning-mode-field {
     position: relative;
   }
 
-  .planner-algorithm-field .ui-select {
+  .planner-algorithm-field .ui-select,
+  .planner-planning-mode-field .ui-select {
     padding-right: 4.25rem;
   }
 
-  .planner-algorithm-field__hint {
+  .planner-algorithm-field__hint,
+  .planner-planning-mode-field__hint {
     position: absolute;
     bottom: 0.78rem;
     right: 2.15rem;
@@ -1906,13 +1909,16 @@
   }
 
   .planner-algorithm-field__hint:hover,
-  .planner-algorithm-field__hint:focus-visible {
+  .planner-algorithm-field__hint:focus-visible,
+  .planner-planning-mode-field__hint:hover,
+  .planner-planning-mode-field__hint:focus-visible {
     color: var(--industrial-aqua);
     outline: 1px solid var(--industrial-aqua);
     outline-offset: 0.15rem;
   }
 
-  .planner-algorithm-field__hint::after {
+  .planner-algorithm-field__hint::after,
+  .planner-planning-mode-field__hint::after {
     position: absolute;
     z-index: 4;
     top: calc(100% + 0.55rem);
@@ -1935,7 +1941,9 @@
   }
 
   .planner-algorithm-field__hint:hover::after,
-  .planner-algorithm-field__hint:focus-visible::after {
+  .planner-algorithm-field__hint:focus-visible::after,
+  .planner-planning-mode-field__hint:hover::after,
+  .planner-planning-mode-field__hint:focus-visible::after {
     opacity: 1;
     transform: translateY(0);
   }
