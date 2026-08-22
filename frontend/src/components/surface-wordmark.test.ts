@@ -1,54 +1,29 @@
+import { render, waitFor } from "@testing-library/preact";
+import { h } from "preact";
 import { expect, test, vi } from "vitest";
 
-import {
-  createFontReadyDraw,
-  fitWordmarkFontSize,
-  prepareTransparentShaderSurface,
-} from "./surface-wordmark";
+const liquidGlass = vi.hoisted(() => ({ init: vi.fn() }));
 
-test("scales a wide IntraNet wordmark to fit its shader canvas", () => {
-  expect(
-    fitWordmarkFontSize({
-      preferredSize: 54,
-      measuredWidth: 498,
-      maximumWidth: 276,
+vi.mock("@ybouane/liquidglass", () => ({ LiquidGlass: liquidGlass }));
+
+import { SurfaceWordmark } from "./surface-wordmark";
+
+test("initializes and disposes the glass effect within the wordmark", async () => {
+  const glassInstance = { destroy: vi.fn() };
+  liquidGlass.init.mockResolvedValue(glassInstance);
+
+  const view = render(h(SurfaceWordmark, {}));
+  const wordmark = view.getByRole("img", { name: "Gaming Clock" });
+  const glassSurface = view.container.querySelector(".planner-identity__glass");
+
+  await waitFor(() => expect(liquidGlass.init).toHaveBeenCalledOnce());
+  expect(liquidGlass.init).toHaveBeenCalledWith(
+    expect.objectContaining({
+      root: wordmark,
+      glassElements: [glassSurface],
     }),
-  ).toBeCloseTo(29.93, 2);
-});
-
-test("clears the wordmark canvas transparently before shading", () => {
-  const context = {
-    BLEND: 3042,
-    COLOR_BUFFER_BIT: 16384,
-    ONE_MINUS_SRC_ALPHA: 771,
-    SRC_ALPHA: 770,
-    blendFunc: vi.fn(),
-    clear: vi.fn(),
-    clearColor: vi.fn(),
-    enable: vi.fn(),
-  };
-
-  prepareTransparentShaderSurface(context);
-
-  expect(context.clearColor).toHaveBeenCalledWith(0, 0, 0, 0);
-  expect(context.clear).toHaveBeenCalledWith(context.COLOR_BUFFER_BIT);
-  expect(context.enable).toHaveBeenCalledWith(context.BLEND);
-  expect(context.blendFunc).toHaveBeenCalledWith(
-    context.SRC_ALPHA,
-    context.ONE_MINUS_SRC_ALPHA,
   );
-});
 
-test("waits for IntraNet before drawing the first shader frame", () => {
-  const draw = vi.fn();
-  const renderer = createFontReadyDraw(draw);
-
-  renderer.onResize();
-  expect(draw).not.toHaveBeenCalled();
-
-  renderer.onFontReady();
-  expect(draw).toHaveBeenCalledTimes(1);
-
-  renderer.onResize();
-  expect(draw).toHaveBeenCalledTimes(2);
+  view.unmount();
+  expect(glassInstance.destroy).toHaveBeenCalledOnce();
 });

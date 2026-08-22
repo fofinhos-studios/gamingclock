@@ -1,301 +1,72 @@
+import { LiquidGlass } from "@ybouane/liquidglass";
 import { useEffect, useRef } from "preact/hooks";
 
-type SurfaceWordmarkProps = {
-  text: string;
+const WORDMARK_TEXT = "Gaming Clock";
+
+const glassConfig = {
+  blurAmount: 0.1,
+  refraction: 0.38,
+  chromAberration: 0,
+  edgeHighlight: 0.2,
+  specular: 0.45,
+  fresnel: 0.68,
+  distortion: 0,
+  cornerRadius: 14,
+  zRadius: 14,
+  opacity: 0.82,
+  saturation: -0.16,
+  tintStrength: 0,
+  brightness: 0.06,
+  shadowOpacity: 0.14,
+  shadowSpread: 5,
+  shadowOffsetY: 1,
+  floating: false,
+  button: false,
+  bevelMode: 1,
 };
 
-const vertexShaderSource = `
-  attribute vec2 a_position;
-
-  void main() {
-    gl_Position = vec4(a_position, 0.0, 1.0);
-  }
-`;
-
-const fragmentShaderSource = `
-  precision mediump float;
-
-  uniform sampler2D u_text;
-  uniform vec2 u_resolution;
-
-  float sampleText(vec2 coordinate) {
-    return texture2D(u_text, coordinate).a;
-  }
-
-  void main() {
-    vec2 uv = gl_FragCoord.xy / u_resolution;
-    vec2 pixel = 1.0 / u_resolution;
-    float text = sampleText(vec2(uv.x, 1.0 - uv.y));
-    float left = sampleText(vec2(uv.x - pixel.x * 1.6, 1.0 - uv.y));
-    float right = sampleText(vec2(uv.x + pixel.x * 1.6, 1.0 - uv.y));
-    float up = sampleText(vec2(uv.x, 1.0 - (uv.y + pixel.y * 1.6)));
-    float down = sampleText(vec2(uv.x, 1.0 - (uv.y - pixel.y * 1.6)));
-    float surrounding = max(max(left, right), max(up, down));
-    float recessedEdge = max(surrounding - text, 0.0);
-    float bevel = clamp((right - left) + (up - down), -1.0, 1.0);
-    float innerEdge = text * (1.0 - min(min(left, right), min(up, down)));
-    float sheen = smoothstep(0.08, 0.9, 1.0 - uv.y);
-    vec3 smokedUmber = vec3(0.12, 0.10, 0.07);
-    vec3 linenGlass = vec3(0.58, 0.53, 0.42);
-    vec3 champagne = vec3(0.98, 0.93, 0.81);
-    vec3 face = mix(smokedUmber, linenGlass, 0.48 + sheen * 0.20);
-    face += champagne * max(bevel, 0.0) * 0.34;
-    face -= smokedUmber * max(-bevel, 0.0) * 0.18;
-    face = mix(face, champagne, innerEdge * 0.30);
-    vec3 edge = mix(smokedUmber, champagne, 0.38 + sheen * 0.28);
-    float alpha = max(text * 0.82, recessedEdge * 0.34);
-    vec3 colour = mix(edge, face, text);
-
-    if (alpha < 0.001) {
-      gl_FragColor = vec4(0.0);
-      return;
-    }
-
-    gl_FragColor = vec4(colour, alpha);
-  }
-`;
-
-type TransparentShaderSurface = Pick<
-  WebGLRenderingContext,
-  "blendFunc" | "clear" | "clearColor" | "enable"
-> & {
-  BLEND: number;
-  COLOR_BUFFER_BIT: number;
-  ONE_MINUS_SRC_ALPHA: number;
-  SRC_ALPHA: number;
-};
-
-export function fitWordmarkFontSize({
-  maximumWidth,
-  measuredWidth,
-  preferredSize,
-}: {
-  maximumWidth: number;
-  measuredWidth: number;
-  preferredSize: number;
-}) {
-  if (measuredWidth <= maximumWidth || maximumWidth <= 0) {
-    return preferredSize;
-  }
-
-  return preferredSize * (maximumWidth / measuredWidth);
-}
-
-export function prepareTransparentShaderSurface(
-  context: TransparentShaderSurface,
-) {
-  context.clearColor(0, 0, 0, 0);
-  context.clear(context.COLOR_BUFFER_BIT);
-  context.enable(context.BLEND);
-  context.blendFunc(context.SRC_ALPHA, context.ONE_MINUS_SRC_ALPHA);
-}
-
-export function createFontReadyDraw(draw: () => void) {
-  let fontReady = false;
-
-  return {
-    onFontReady() {
-      fontReady = true;
-      draw();
-    },
-    onResize() {
-      if (fontReady) {
-        draw();
-      }
-    },
-  };
-}
-function compileShader(
-  context: WebGLRenderingContext,
-  type: number,
-  source: string,
-) {
-  const shader = context.createShader(type);
-  if (!shader) {
-    return null;
-  }
-
-  context.shaderSource(shader, source);
-  context.compileShader(shader);
-  if (context.getShaderParameter(shader, context.COMPILE_STATUS)) {
-    return shader;
-  }
-
-  context.deleteShader(shader);
-  return null;
-}
-
-export function SurfaceWordmark({ text }: SurfaceWordmarkProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+export function SurfaceWordmark({ text = WORDMARK_TEXT }: { text?: string }) {
+  const rootRef = useRef<HTMLSpanElement>(null);
+  const glassRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) {
+    const root = rootRef.current;
+    const glass = glassRef.current;
+    if (!root || !glass) {
       return;
     }
 
-    const context = canvas.getContext("webgl", {
-      alpha: true,
-      antialias: true,
-      premultipliedAlpha: false,
-    });
-    if (!context) {
-      return;
-    }
+    let isActive = true;
+    let glassInstance: { destroy(): void } | undefined;
 
-    const vertexShader = compileShader(
-      context,
-      context.VERTEX_SHADER,
-      vertexShaderSource,
-    );
-    const fragmentShader = compileShader(
-      context,
-      context.FRAGMENT_SHADER,
-      fragmentShaderSource,
-    );
-    const program = context.createProgram();
-    const buffer = context.createBuffer();
-    const texture = context.createTexture();
-    if (!vertexShader || !fragmentShader || !program || !buffer || !texture) {
-      context.deleteShader(vertexShader);
-      context.deleteShader(fragmentShader);
-      context.deleteProgram(program);
-      context.deleteBuffer(buffer);
-      context.deleteTexture(texture);
-      return;
-    }
-
-    context.attachShader(program, vertexShader);
-    context.attachShader(program, fragmentShader);
-    context.linkProgram(program);
-    context.deleteShader(vertexShader);
-    context.deleteShader(fragmentShader);
-    if (!context.getProgramParameter(program, context.LINK_STATUS)) {
-      context.deleteProgram(program);
-      context.deleteBuffer(buffer);
-      context.deleteTexture(texture);
-      return;
-    }
-
-    const position = context.getAttribLocation(program, "a_position");
-    const textUniform = context.getUniformLocation(program, "u_text");
-    const resolutionUniform = context.getUniformLocation(
-      program,
-      "u_resolution",
-    );
-    if (position < 0 || !textUniform || !resolutionUniform) {
-      context.deleteProgram(program);
-      context.deleteBuffer(buffer);
-      context.deleteTexture(texture);
-      return;
-    }
-
-    context.bindBuffer(context.ARRAY_BUFFER, buffer);
-    context.bufferData(
-      context.ARRAY_BUFFER,
-      new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
-      context.STATIC_DRAW,
-    );
-    context.bindTexture(context.TEXTURE_2D, texture);
-    context.texParameteri(
-      context.TEXTURE_2D,
-      context.TEXTURE_MIN_FILTER,
-      context.LINEAR,
-    );
-    context.texParameteri(
-      context.TEXTURE_2D,
-      context.TEXTURE_MAG_FILTER,
-      context.LINEAR,
-    );
-    context.texParameteri(
-      context.TEXTURE_2D,
-      context.TEXTURE_WRAP_S,
-      context.CLAMP_TO_EDGE,
-    );
-    context.texParameteri(
-      context.TEXTURE_2D,
-      context.TEXTURE_WRAP_T,
-      context.CLAMP_TO_EDGE,
-    );
-
-    const draw = () => {
-      const { width, height } = canvas.getBoundingClientRect();
-      const ratio = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.max(1, Math.round(width * ratio));
-      canvas.height = Math.max(1, Math.round(height * ratio));
-
-      const textCanvas = document.createElement("canvas");
-      textCanvas.width = canvas.width;
-      textCanvas.height = canvas.height;
-      const textContext = textCanvas.getContext("2d");
-      if (!textContext) {
-        return;
-      }
-
-      const styles = window.getComputedStyle(canvas);
-      const preferredSize = Number.parseFloat(styles.fontSize) * ratio;
-      const font = (size: number) =>
-        `${styles.fontWeight} ${size}px ${styles.fontFamily}`;
-      const uppercasedText = text.toUpperCase();
-      textContext.clearRect(0, 0, textCanvas.width, textCanvas.height);
-      textContext.font = font(preferredSize);
-      const fontSize = fitWordmarkFontSize({
-        maximumWidth: textCanvas.width * 0.9,
-        measuredWidth: textContext.measureText(uppercasedText).width,
-        preferredSize,
+    void LiquidGlass.init({
+      root,
+      glassElements: [glass],
+      defaults: glassConfig,
+    })
+      .then((instance) => {
+        if (!isActive) {
+          instance.destroy();
+          return;
+        }
+        glassInstance = instance;
+      })
+      .catch(() => {
+        // The styled text remains a readable fallback when WebGL is unavailable.
       });
-      textContext.font = font(fontSize);
-      textContext.fillStyle = "#ffffff";
-      textContext.textAlign = "center";
-      textContext.textBaseline = "middle";
-      textContext.fillText(
-        uppercasedText,
-        textCanvas.width / 2,
-        textCanvas.height / 2,
-      );
-
-      context.viewport(0, 0, canvas.width, canvas.height);
-      prepareTransparentShaderSurface(context);
-      context.useProgram(program);
-      context.bindBuffer(context.ARRAY_BUFFER, buffer);
-      context.enableVertexAttribArray(position);
-      context.vertexAttribPointer(position, 2, context.FLOAT, false, 0, 0);
-      context.activeTexture(context.TEXTURE0);
-      context.bindTexture(context.TEXTURE_2D, texture);
-      context.texImage2D(
-        context.TEXTURE_2D,
-        0,
-        context.RGBA,
-        context.RGBA,
-        context.UNSIGNED_BYTE,
-        textCanvas,
-      );
-      context.uniform1i(textUniform, 0);
-      context.uniform2f(resolutionUniform, canvas.width, canvas.height);
-      context.drawArrays(context.TRIANGLES, 0, 6);
-      canvas.parentElement?.setAttribute("data-ready", "true");
-    };
-
-    const renderer = createFontReadyDraw(draw);
-    const observer = new ResizeObserver(renderer.onResize);
-    observer.observe(canvas);
-    const fontLoad = document.fonts?.load('800 48px "IntraNet"');
-    void (fontLoad ?? Promise.resolve()).finally(renderer.onFontReady);
 
     return () => {
-      observer.disconnect();
-      context.deleteTexture(texture);
-      context.deleteBuffer(buffer);
-      context.deleteProgram(program);
+      isActive = false;
+      glassInstance?.destroy();
     };
-  }, [text]);
+  }, []);
 
   return (
-    <span class="planner-identity" role="img" aria-label={text}>
-      <span class="planner-identity__shader" aria-hidden="true">
-        <canvas ref={canvasRef} />
+    <span class="planner-identity" ref={rootRef} role="img" aria-label={text}>
+      <span class="planner-identity__backdrop" aria-hidden="true" />
+      <span class="planner-identity__glass" ref={glassRef} aria-hidden="true">
+        {text}
       </span>
-      <span class="planner-identity__label">{text}</span>
     </span>
   );
 }
