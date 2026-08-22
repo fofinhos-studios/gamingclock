@@ -5,6 +5,7 @@ import pytest
 from gamingclock.models.catalog import HLTBStatus, ListGame
 from gamingclock.models.schedule import (
     DayAvailability,
+    PlanningMode,
     PlaySession,
     ScheduleAlgorithm,
     ScheduleRequest,
@@ -85,6 +86,30 @@ def test_schedule_request():
     )
     assert req.algorithm == ScheduleAlgorithm.SEQUENTIAL
     assert req.availability.days[0].start_hour == 20
+
+
+def test_finish_by_request_requires_a_valid_deadline():
+    with pytest.raises(ValueError, match="finish_by_date is required"):
+        ScheduleRequest(
+            game_list_name="My List",
+            games=[],
+            availability=WeeklyAvailability(
+                days=[DayAvailability(day_of_week=0, hours=2)]
+            ),
+            planning_mode=PlanningMode.FINISH_BY,
+            start_date=datetime.date(2026, 4, 1),
+        )
+    with pytest.raises(ValueError, match="on or after"):
+        ScheduleRequest(
+            game_list_name="My List",
+            games=[],
+            availability=WeeklyAvailability(
+                days=[DayAvailability(day_of_week=0, hours=2)]
+            ),
+            planning_mode=PlanningMode.FINISH_BY,
+            start_date=datetime.date(2026, 4, 1),
+            finish_by_date=datetime.date(2026, 3, 31),
+        )
 
 
 def test_play_session():

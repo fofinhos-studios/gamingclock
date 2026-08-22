@@ -1,7 +1,7 @@
 import datetime
 from enum import StrEnum
 
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, computed_field, model_validator
 
 from gamingclock.models.catalog import ListGame
 
@@ -9,6 +9,11 @@ from gamingclock.models.catalog import ListGame
 class ScheduleAlgorithm(StrEnum):
     SEQUENTIAL = "sequential"
     ALTERNATING = "alternating"
+
+
+class PlanningMode(StrEnum):
+    WEEKLY = "weekly"
+    FINISH_BY = "finish_by"
 
 
 class DayAvailability(BaseModel):
@@ -33,13 +38,26 @@ class ScheduleRequest(BaseModel):
     availability: WeeklyAvailability
     algorithm: ScheduleAlgorithm = ScheduleAlgorithm.SEQUENTIAL
     start_date: datetime.date = datetime.date.today()
+    planning_mode: PlanningMode = PlanningMode.WEEKLY
+    finish_by_date: datetime.date | None = None
+    max_session_hours: float = Field(default=4.0, gt=0)
+
+    @model_validator(mode="after")
+    def validate_finish_by_settings(self) -> ScheduleRequest:
+        if self.planning_mode != PlanningMode.FINISH_BY:
+            return self
+        if self.finish_by_date is None:
+            raise ValueError("finish_by_date is required when planning_mode is finish_by")
+        if self.finish_by_date < self.start_date:
+            raise ValueError("finish_by_date must be on or after start_date")
+        return self
 
 
 class PlaySession(BaseModel):
     game_name: str
     date: datetime.date
     start_time: datetime.time
-    duration_hours: float
+    duration_hours: float = Field(gt=0)
 
 
 class ScheduleResponse(BaseModel):
@@ -48,3 +66,9 @@ class ScheduleResponse(BaseModel):
     sessions: list[PlaySession]
     total_hours: float
     estimated_end_date: datetime.date | None
+
+
+class IcalRequest(ScheduleRequest):
+    """Schedule export contract; accepts user-adjusted sessions when supplied."""
+
+    sessions: list[PlaySession] | None = None

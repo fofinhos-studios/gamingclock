@@ -8,7 +8,11 @@ import {
 } from "preact/hooks";
 
 import { useLanguage } from "../i18n/i18n";
-import type { DayAvailability, WeeklyAvailability } from "../types";
+import type {
+  DayAvailability,
+  PlanningMode,
+  WeeklyAvailability,
+} from "../types";
 import { Button } from "./ui";
 
 const START_MINUTES = 6 * 60;
@@ -42,6 +46,7 @@ type DragState = CreateDragState | EventDragState;
 
 interface Props {
   availability: WeeklyAvailability | null;
+  planningMode?: PlanningMode;
   onChange: (availability: WeeklyAvailability | null) => void;
 }
 
@@ -183,7 +188,11 @@ function maxDurationForEvent(events: CalendarEvent[], event: CalendarEvent) {
   return nextEventStart - event.startMinutes;
 }
 
-export function AvailabilityForm({ availability, onChange }: Props) {
+export function AvailabilityForm({
+  availability,
+  planningMode = "weekly",
+  onChange,
+}: Props) {
   const { t } = useLanguage();
   const [events, setEvents] = useState<CalendarEvent[]>(() =>
     eventsFromAvailability(availability),
@@ -452,7 +461,10 @@ export function AvailabilityForm({ availability, onChange }: Props) {
   );
 
   return (
-    <section class="availability-week" aria-labelledby="availability-heading">
+    <section
+      class={`availability-week${planningMode === "finish_by" ? " availability-week--finish-by" : ""}`}
+      aria-labelledby="availability-heading"
+    >
       <h3 id="availability-heading" class="sr-only">
         {t.availability.form.heading}
       </h3>
@@ -461,7 +473,9 @@ export function AvailabilityForm({ availability, onChange }: Props) {
         <div>
           <p class="section-eyebrow">{t.availability.form.weeklyCalendar}</p>
           <p class="availability-week__copy">
-            {t.availability.form.calendarCopy}
+            {planningMode === "finish_by"
+              ? t.availability.form.finishByCalendarCopy
+              : t.availability.form.calendarCopy}
           </p>
         </div>
         <div class="availability-week__actions">

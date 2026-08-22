@@ -40,7 +40,7 @@ test("uses the locked industrial palette and type pairing", async () => {
   expect(stylesheet).toMatch(/--rust-signal:\s*#ec4624/i);
   expect(stylesheet).toMatch(/--heat-marker:\s*#f39120/i);
   expect(stylesheet).toMatch(/--architectural-cream:\s*#e2dac2/i);
-  expect(stylesheet).toMatch(/--font-display:\s*"DotGothic16"/);
+  expect(stylesheet).toMatch(/--font-display:\s*"DM Sans"/);
   expect(stylesheet).toMatch(/--font-body:\s*"Space Mono"/);
 });
 

@@ -15,6 +15,7 @@ describe("PlannerAvailabilityStep", () => {
       <LanguageProvider browserLanguages={["en"]}>
         <PlannerAvailabilityStep
           availability={availability}
+          planningMode="weekly"
           onChange={vi.fn()}
         />
       </LanguageProvider>,

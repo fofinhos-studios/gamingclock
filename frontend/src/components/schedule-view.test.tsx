@@ -1,6 +1,6 @@
 import { render } from "@testing-library/preact";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 
 import type { ListGame, ScheduleResponse } from "../types";
 import { ScheduleView } from "./schedule-view";
@@ -64,7 +64,11 @@ const games: ListGame[] = [
 describe("ScheduleView", () => {
   test("renders sessions in month calendars instead of the old table layout", () => {
     const view = render(
-      <ScheduleView schedule={schedule} onDownloadIcal={() => {}} />,
+      <ScheduleView
+        schedule={schedule}
+        onScheduleChange={() => {}}
+        onDownloadIcal={() => {}}
+      />,
     );
 
     expect(view.getAllByText(/play sessions/i).length).toBeGreaterThan(0);
@@ -88,6 +92,7 @@ describe("ScheduleView", () => {
       <ScheduleView
         schedule={schedule}
         games={games}
+        onScheduleChange={() => {}}
         onDownloadIcal={() => {}}
       />,
     );
@@ -100,7 +105,11 @@ describe("ScheduleView", () => {
 
   test("shows the total elapsed days from the first and last session dates", () => {
     const view = render(
-      <ScheduleView schedule={schedule} onDownloadIcal={() => {}} />,
+      <ScheduleView
+        schedule={schedule}
+        onScheduleChange={() => {}}
+        onDownloadIcal={() => {}}
+      />,
     );
 
     expect(view.getByText(/days to finish/i)).toBeTruthy();
@@ -111,6 +120,7 @@ describe("ScheduleView", () => {
     const view = render(
       <ScheduleView
         schedule={schedule}
+        onScheduleChange={() => {}}
         onDownloadIcal={() => Promise.resolve(true)}
       />,
     );
@@ -125,6 +135,7 @@ describe("ScheduleView", () => {
     view.rerender(
       <ScheduleView
         schedule={{ sessions: [], total_hours: 0, estimated_end_date: null }}
+        onScheduleChange={() => {}}
         onDownloadIcal={() => Promise.resolve(true)}
       />,
     );
@@ -136,11 +147,47 @@ describe("ScheduleView", () => {
     const view = render(
       <ScheduleView
         schedule={schedule}
+        onScheduleChange={() => {}}
         onDownloadIcal={() => Promise.resolve(true)}
       />,
     );
 
     await user.click(view.getByRole("button", { name: /download \.ics/i }));
     expect(view.getByRole("button", { name: /downloaded/i })).toBeTruthy();
+  });
+
+  test("moves a focused session by date", async () => {
+    const user = userEvent.setup();
+    const onScheduleChange = vi.fn();
+    const view = render(
+      <ScheduleView
+        schedule={schedule}
+        finishByDate="2026-04-01"
+        onScheduleChange={onScheduleChange}
+        onDownloadIcal={() => Promise.resolve(true)}
+      />,
+    );
+
+    await user.click(
+      view.getByRole("button", { name: /move outer wilds session/i }),
+    );
+    await user.keyboard("{ArrowRight}");
+
+    expect(onScheduleChange).toHaveBeenCalledWith(
+      expect.objectContaining({ estimated_end_date: "2026-04-02" }),
+    );
+  });
+
+  test("warns when an edited plan extends past the Finish by date", () => {
+    const view = render(
+      <ScheduleView
+        schedule={schedule}
+        finishByDate="2026-03-31"
+        onScheduleChange={() => {}}
+        onDownloadIcal={() => Promise.resolve(true)}
+      />,
+    );
+
+    expect(view.getByText(/sessions now fall after/i)).toBeTruthy();
   });
 });

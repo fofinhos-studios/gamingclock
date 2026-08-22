@@ -65,6 +65,30 @@ describe("planner storage", () => {
 
     expect(reloadedState.activeBacklogId).toBe(initialState.activeBacklogId);
     expect(reloadedState.backlogs[0].id).toBe(initialState.backlogs[0].id);
+    expect(reloadedState.planningMode).toBe("weekly");
+    expect(reloadedState.maxSessionHours).toBe(4);
+  });
+
+  test("defaults older saved planners to weekly mode", () => {
+    window.localStorage.setItem(
+      "gaming-clock.planner.v2",
+      JSON.stringify({
+        activeTab: "games",
+        activeBacklogId: "list-a",
+        backlogs: [{ id: "list-a", name: "First", games: [] }],
+        availability: null,
+        algorithm: "sequential",
+        schedule: null,
+        startDate: "2026-08-21",
+      }),
+    );
+
+    const state = loadPlannerState("2026-08-21");
+    expect(state).toMatchObject({
+      planningMode: "weekly",
+      finishByDate: null,
+      maxSessionHours: 4,
+    });
   });
 
   test("keeps the selected list after stored lists are reordered or the old list is removed", () => {

@@ -8,6 +8,8 @@ from gamingclock.models.catalog import (
 from gamingclock.models.game import Game
 from gamingclock.models.schedule import (
     DayAvailability,
+    IcalRequest,
+    PlanningMode,
     PlaySession,
     ScheduleAlgorithm,
     ScheduleRequest,
@@ -20,7 +22,9 @@ __all__ = [
     "Game",
     "GameArtwork",
     "HLTBStatus",
+    "IcalRequest",
     "ListGame",
+    "PlanningMode",
     "PlaySession",
     "ResolveGameRequest",
     "ScheduleAlgorithm",

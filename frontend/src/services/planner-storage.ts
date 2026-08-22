@@ -4,6 +4,7 @@ import type {
   GameList,
   HLTBCategory,
   ListGame,
+  PlanningMode,
   ScheduleAlgorithm,
   ScheduleResponse,
   WeeklyAvailability,
@@ -18,6 +19,9 @@ export interface PlannerState {
   activeBacklogId: string;
   availability: WeeklyAvailability | null;
   algorithm: ScheduleAlgorithm;
+  planningMode: PlanningMode;
+  finishByDate: string | null;
+  maxSessionHours: number;
   schedule: ScheduleResponse | null;
   startDate: string;
 }
@@ -49,6 +53,9 @@ export function createInitialPlannerState(
     activeBacklogId: initialBacklog.id,
     availability: null,
     algorithm: "sequential",
+    planningMode: "weekly",
+    finishByDate: null,
+    maxSessionHours: 4,
     schedule: null,
     startDate,
   };
@@ -105,6 +112,9 @@ function migrateLegacyState(value: unknown): PlannerState | null {
     activeBacklogId: backlogs[value.activeBacklogIndex].id,
     availability: value.availability,
     algorithm: value.algorithm,
+    planningMode: "weekly",
+    finishByDate: null,
+    maxSessionHours: 4,
     schedule: value.schedule,
     startDate: value.startDate,
   };
@@ -139,6 +149,13 @@ function parsePlannerState(value: unknown): PlannerState | null {
     activeBacklogId,
     availability: value.availability,
     algorithm: value.algorithm,
+    planningMode: isPlanningMode(value.planningMode)
+      ? value.planningMode
+      : "weekly",
+    finishByDate: isOptionalDate(value.finishByDate),
+    maxSessionHours: isSessionHours(value.maxSessionHours)
+      ? value.maxSessionHours
+      : 4,
     schedule: value.schedule,
     startDate: value.startDate,
   };
@@ -182,6 +199,18 @@ function isPlannerTab(value: unknown): value is PlannerTab {
 
 function isScheduleAlgorithm(value: unknown): value is ScheduleAlgorithm {
   return value === "sequential" || value === "alternating";
+}
+
+function isPlanningMode(value: unknown): value is PlanningMode {
+  return value === "weekly" || value === "finish_by";
+}
+
+function isOptionalDate(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function isSessionHours(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
 
 function isBacklogList(value: unknown): value is GameList[] {
