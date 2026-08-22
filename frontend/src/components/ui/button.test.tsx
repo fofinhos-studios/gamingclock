@@ -14,13 +14,18 @@ describe("Button", () => {
     expect(button.className).not.toMatch(/(?:bg|text|border)-(?:black|white)/);
   });
 
-  test("keeps the primary border aligned with its hover surface", () => {
+  test("uses the aqua accent for button hover borders", () => {
     const view = render(<Button variant="primary">Continue</Button>);
     const button = view.getByRole("button", { name: "Continue" });
 
-    expect(button.className).toContain(
-      "hover:border-[var(--muted-foreground)]",
-    );
+    expect(button.className).toContain("hover:border-[var(--industrial-aqua)]");
+  });
+
+  test("uses the aqua accent for outlined button hover borders", () => {
+    const view = render(<Button variant="outline">Back</Button>);
+    const button = view.getByRole("button", { name: "Back" });
+
+    expect(button.className).toContain("hover:border-[var(--industrial-aqua)]");
   });
 
   test("offers an unstyled escape hatch for specialized selection controls", () => {
