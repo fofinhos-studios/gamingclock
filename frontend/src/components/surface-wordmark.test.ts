@@ -1,29 +1,15 @@
-import { render, waitFor } from "@testing-library/preact";
+import { render } from "@testing-library/preact";
 import { h } from "preact";
-import { expect, test, vi } from "vitest";
-
-const liquidGlass = vi.hoisted(() => ({ init: vi.fn() }));
-
-vi.mock("@ybouane/liquidglass", () => ({ LiquidGlass: liquidGlass }));
+import { expect, test } from "vitest";
 
 import { SurfaceWordmark } from "./surface-wordmark";
 
-test("initializes and disposes the glass effect within the wordmark", async () => {
-  const glassInstance = { destroy: vi.fn() };
-  liquidGlass.init.mockResolvedValue(glassInstance);
-
+test("renders an accessible plain-text wordmark", () => {
   const view = render(h(SurfaceWordmark, {}));
-  const wordmark = view.getByRole("img", { name: "Gaming Clock" });
-  const glassSurface = view.container.querySelector(".planner-identity__glass");
 
-  await waitFor(() => expect(liquidGlass.init).toHaveBeenCalledOnce());
-  expect(liquidGlass.init).toHaveBeenCalledWith(
-    expect.objectContaining({
-      root: wordmark,
-      glassElements: [glassSurface],
-    }),
-  );
-
-  view.unmount();
-  expect(glassInstance.destroy).toHaveBeenCalledOnce();
+  expect(view.getByRole("img", { name: "Gaming Clock" })).toBeTruthy();
+  expect(
+    view.container.querySelector(".planner-identity__label")?.textContent,
+  ).toBe("Gaming Clock");
+  expect(view.container.querySelector("canvas")).toBeNull();
 });

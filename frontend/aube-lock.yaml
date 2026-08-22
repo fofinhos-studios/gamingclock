@@ -20,9 +20,6 @@ importers:
       '@preact/preset-vite':
         specifier: ^2.10.6
         version: 2.10.6(@babel/core@7.29.6)(vite@8.2.1(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.0))
-      '@ybouane/liquidglass':
-        specifier: ^1.0.3
-        version: 1.0.3
       preact:
         specifier: ^10.29.8
         version: 10.29.8
@@ -513,9 +510,6 @@ packages:
 
   '@yarnpkg/lockfile@1.1.0':
     resolution: {integrity: sha512-GpSwvyXOcOOlV70vbnzjj4fW5xW/FdUF6nQEt1ENy7m4ZCczi1+/buVUPAqmGfqznsORNFzUMjctTIp8a9tuCQ==}
-
-  '@ybouane/liquidglass@1.0.3':
-    resolution: {integrity: sha512-Ro/Q3vaEduvj1yUp/TVz9AYmxY+cYhnBj76eJ/Y9VQoPlRA0DWrKPQufEzrDSYzAWXL3qxiFibi5XQVW/egTnA==}
 
   ansi-regex@5.0.1:
     resolution: {integrity: sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==}
@@ -1952,8 +1946,6 @@ snapshots:
       tinyrainbow: 3.1.1
 
   '@yarnpkg/lockfile@1.1.0': {}
-
-  '@ybouane/liquidglass@1.0.3': {}
 
   ansi-regex@5.0.1: {}
 
