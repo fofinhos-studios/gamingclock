@@ -68,6 +68,8 @@ Every commit must be signed and use a conventional commit message with a scope: 
 
 Push small, self-contained changes directly to `main`. For larger changes, create a pull request. If a change is too large for one pull request, split it into a stack of pull requests using GitHub's stacked PR functionality.
 
+For any self-contained change, agents must commit and push directly to `main` after successful validation unless the user explicitly says not to. Do not wait for a separate request to push.
+
 `hk` runs the same backend and frontend audit, lint, test, and build checks as GitHub Actions before every commit and push. Do not bypass it. Install the repository hooks with `hk install` and verify them with `hk run pre-commit`.
 
 ```bash
