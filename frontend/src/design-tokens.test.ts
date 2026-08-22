@@ -118,7 +118,7 @@ test("does not leave a detached frame around the desktop stepper", async () => {
   );
 });
 
-test("uses larger shared icons and an IntraNet shader wordmark", async () => {
+test("uses larger shared icons and an IntraNet glass wordmark", async () => {
   const stylesheet = await readStylesheet();
 
   expect(stylesheet).toMatch(
@@ -128,9 +128,10 @@ test("uses larger shared icons and an IntraNet shader wordmark", async () => {
     /@font-face\s*\{[\s\S]*?font-family:\s*"IntraNet";[\s\S]*?IntraNet-Bold\.otf/,
   );
   expect(stylesheet).toMatch(
-    /\.planner-identity__label\s*\{[\s\S]*?font-family:\s*"IntraNet"/,
+    /\.planner-identity\s*\{[\s\S]*?font-family:\s*"IntraNet"/,
   );
-  expect(stylesheet).toMatch(/\.planner-identity__shader\s*\{/);
+  expect(stylesheet).toMatch(/\.planner-identity__glass\s*\{/);
+  expect(stylesheet).toMatch(/\.planner-identity__backdrop\s*\{/);
   expect(stylesheet).not.toMatch(/\.planner-brand(?:__|\s|\{)/);
   expect(stylesheet).not.toMatch(/@keyframes planner-title-/);
 });

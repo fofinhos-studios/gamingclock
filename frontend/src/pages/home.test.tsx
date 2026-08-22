@@ -79,16 +79,16 @@ describe("HomePage", () => {
     expect(controls?.querySelector(".backlog-manager")).toBeTruthy();
   });
 
-  test("renders an IntraNet surface wordmark with a shader canvas", () => {
+  test("renders an IntraNet liquid glass wordmark", () => {
     const view = render(<HomePage path="/" />);
 
     expect(view.getByRole("img", { name: "Gaming Clock" })).toBeTruthy();
     expect(
-      view.container.querySelector(".planner-identity__shader canvas"),
-    ).toBeTruthy();
-    expect(
-      view.container.querySelector(".planner-identity__label")?.textContent,
+      view.container.querySelector(".planner-identity__glass")?.textContent,
     ).toBe("Gaming Clock");
+    expect(
+      view.container.querySelector(".planner-identity__backdrop"),
+    ).toBeTruthy();
     expect(view.container.querySelector(".planner-brand")).toBeNull();
   });
 

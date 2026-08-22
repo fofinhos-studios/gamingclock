@@ -328,8 +328,7 @@
     width: clamp(16rem, 30vw, 23rem);
     height: clamp(3.25rem, 5.8vw, 4.4rem);
     place-items: center;
-    overflow: hidden;
-    color: var(--foreground);
+    isolation: isolate;
     font-family: "IntraNet", sans-serif;
     font-size: clamp(2rem, 4vw, 3.45rem);
     font-weight: 800;
@@ -338,35 +337,31 @@
     text-transform: uppercase;
   }
 
-  .planner-identity__shader {
+  .planner-identity__backdrop,
+  .planner-identity__glass {
     position: absolute;
     inset: 0;
   }
 
-  .planner-identity__shader canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
+  .planner-identity__backdrop {
+    z-index: 0;
+    border: 1px solid var(--foreground-22);
+    border-radius: 0.875rem;
+    background:
+      linear-gradient(135deg, var(--foreground-16), var(--foreground-06)),
+      var(--brushed-metal);
+    box-shadow: inset 0 1px 0 var(--foreground-32);
   }
 
-  .planner-identity__shader[data-ready="true"] canvas {
-    opacity: 1;
-  }
-
-  .planner-identity__label {
-    position: relative;
+  .planner-identity__glass {
     z-index: 1;
+    display: grid;
+    place-items: center;
+    overflow: visible;
     color: var(--foreground);
-    font-family: "IntraNet", sans-serif;
-    font-size: inherit;
-    font-weight: inherit;
-    letter-spacing: inherit;
-    line-height: inherit;
     text-shadow:
-      -1px -1px 0 var(--metal-highlight),
-      1px 1px 0 var(--metal-shadow);
-    opacity: 0;
+      0 1px 0 var(--surface-92),
+      0 0.12rem 0.8rem var(--foreground-22);
   }
 
   .theme-toggle {
