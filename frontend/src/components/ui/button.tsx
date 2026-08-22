@@ -16,9 +16,9 @@ interface ButtonProps extends JSX.HTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "border border-[var(--foreground)] bg-[var(--foreground)] text-[var(--surface)] hover:border-[var(--muted-foreground)] hover:bg-[var(--muted-foreground)] hover:text-[var(--surface)]",
+    "border border-[var(--foreground)] bg-[var(--foreground)] text-[var(--surface)] hover:border-[var(--industrial-aqua)] hover:bg-[var(--muted-foreground)] hover:text-[var(--surface)]",
   outline:
-    "border border-[var(--foreground)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]",
+    "border border-[var(--foreground)] bg-[var(--surface)] text-[var(--foreground)] hover:border-[var(--industrial-aqua)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]",
   ghost:
     "border border-transparent bg-transparent px-0 py-1 text-[var(--foreground)] hover:bg-[var(--muted)]",
 };

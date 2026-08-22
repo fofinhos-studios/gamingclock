@@ -163,3 +163,14 @@ test("keeps buttons stationary and beveled through hover and press", async () =>
     /\.ui-button:hover\s*\{[^}]*?transform:\s*translateY\(/,
   );
 });
+
+test("uses the aqua accent instead of foreground-colored interaction outlines", async () => {
+  const stylesheet = await readStylesheet();
+
+  expect(stylesheet).toMatch(
+    /button:focus-visible,[\s\S]*?outline:\s*2px solid var\(--industrial-aqua\);/,
+  );
+  expect(stylesheet).not.toMatch(
+    /\.planner-backlog-row:hover\s*\{[^}]*?border-color:\s*var\(--foreground-85\);/,
+  );
+});

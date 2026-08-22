@@ -207,14 +207,14 @@
   a:focus-visible,
   [role="button"]:focus-visible,
   [role="tab"]:focus-visible {
-    outline: 2px solid var(--foreground);
+    outline: 2px solid var(--industrial-aqua);
     outline-offset: 2px;
   }
 
   input:focus-visible,
   select:focus-visible,
   textarea:focus-visible {
-    outline: 2px solid var(--foreground);
+    outline: 2px solid var(--industrial-aqua);
     outline-offset: -2px;
   }
 
@@ -1343,7 +1343,7 @@
   }
 
   .planner-hltb-option:focus-visible {
-    outline: 2px solid var(--foreground);
+    outline: 2px solid var(--industrial-aqua);
     outline-offset: 2px;
   }
 
@@ -1543,7 +1543,7 @@
   }
 
   .availability-week__event:focus-visible {
-    outline: 2px solid var(--foreground);
+    outline: 2px solid var(--industrial-aqua);
     outline-offset: 2px;
   }
 
@@ -1799,7 +1799,7 @@
   .planner-option-card:has(.planner-choice-input:focus-visible),
   .planner-day-card:has(.planner-choice-input:focus-visible),
   .planner-hour-chip:focus-visible {
-    outline: 2px solid var(--foreground);
+    outline: 2px solid var(--industrial-aqua);
     outline-offset: 2px;
   }
 
@@ -2363,7 +2363,7 @@
   }
 
   .planner-backlog-row:hover {
-    border-color: var(--foreground-85);
+    border-color: var(--industrial-aqua);
     background:
       linear-gradient(145deg, var(--foreground-08), var(--foreground-0)),
       var(--surface-72);
