@@ -25,9 +25,7 @@ export function PlannerGamesStep({
 }: Props) {
   return (
     <div class="planner-games-workspace">
-      <div class="planner-pane planner-pane--search">
-        <GameSearch games={games} onAddGame={onAddGame} />
-      </div>
+      <GameSearch games={games} onAddGame={onAddGame} />
 
       <div class="planner-pane planner-pane--backlog">
         <GameListView
