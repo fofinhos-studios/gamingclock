@@ -1,6 +1,11 @@
 import { CalendarIcon, InfoIcon, WarningIcon } from "@phosphor-icons/react";
 import { useLanguage } from "../i18n/i18n";
-import type { ListGame, ScheduleAlgorithm, ScheduleResponse } from "../types";
+import type {
+  ListGame,
+  PlanningMode,
+  ScheduleAlgorithm,
+  ScheduleResponse,
+} from "../types";
 import type { PlannerTab } from "./planner-tabs";
 import { ScheduleView } from "./schedule-view";
 import { Button, Field, Input, Select } from "./ui";
@@ -20,6 +25,9 @@ interface Props {
   weeklyHours: number;
   algorithm: ScheduleAlgorithm;
   startDate: string;
+  planningMode: PlanningMode;
+  finishByDate: string | null;
+  maxSessionHours: number;
   schedule: ScheduleResponse | null;
   isGenerating: boolean;
   actionError: string;
@@ -28,6 +36,10 @@ interface Props {
   onNavigate: (tab: Exclude<PlannerTab, "schedule">) => void;
   onAlgorithmChange: (algorithm: ScheduleAlgorithm) => void;
   onStartDateChange: (startDate: string) => void;
+  onPlanningModeChange: (planningMode: PlanningMode) => void;
+  onFinishByDateChange: (finishByDate: string) => void;
+  onMaxSessionHoursChange: (maxSessionHours: number) => void;
+  onScheduleChange: (schedule: ScheduleResponse) => void;
   onDownloadIcal: () => Promise<boolean>;
 }
 
@@ -40,6 +52,9 @@ export function PlannerScheduleStep({
   weeklyHours,
   algorithm,
   startDate,
+  planningMode,
+  finishByDate,
+  maxSessionHours,
   schedule,
   isGenerating,
   actionError,
@@ -48,6 +63,10 @@ export function PlannerScheduleStep({
   onNavigate,
   onAlgorithmChange,
   onStartDateChange,
+  onPlanningModeChange,
+  onFinishByDateChange,
+  onMaxSessionHoursChange,
+  onScheduleChange,
   onDownloadIcal,
 }: Props) {
   const { language, t } = useLanguage();
@@ -60,6 +79,8 @@ export function PlannerScheduleStep({
       ? t.schedule.sequentialCopy
       : t.schedule.alternatingCopy;
   const excludedGameNames = excludedGames.map((game) => game.name).join(", ");
+  const hasValidFinishByDate =
+    finishByDate !== null && finishByDate >= startDate;
 
   return (
     <section
@@ -82,6 +103,20 @@ export function PlannerScheduleStep({
           </div>
         </div>
         <div class="planner-controls">
+          <Field label={t.schedule.planningMode} controlId="planning-mode">
+            <Select
+              id="planning-mode"
+              value={planningMode}
+              onChange={(event) =>
+                onPlanningModeChange(
+                  (event.target as HTMLSelectElement).value as PlanningMode,
+                )
+              }
+            >
+              <option value="weekly">{t.schedule.weeklyMode}</option>
+              <option value="finish_by">{t.schedule.finishByMode}</option>
+            </Select>
+          </Field>
           <Field label={t.schedule.startDate} controlId="schedule-start-date">
             <Input
               id="schedule-start-date"
@@ -92,6 +127,47 @@ export function PlannerScheduleStep({
               }
             />
           </Field>
+
+          {planningMode === "finish_by" && (
+            <Field
+              label={t.schedule.finishByDate}
+              controlId="schedule-finish-by-date"
+            >
+              <Input
+                id="schedule-finish-by-date"
+                type="date"
+                min={startDate}
+                value={finishByDate ?? ""}
+                onInput={(event) =>
+                  onFinishByDateChange((event.target as HTMLInputElement).value)
+                }
+              />
+            </Field>
+          )}
+
+          {planningMode === "finish_by" && (
+            <Field
+              label={t.schedule.maxSessionHours}
+              controlId="schedule-max-session-hours"
+            >
+              <Input
+                id="schedule-max-session-hours"
+                type="number"
+                min="0.5"
+                max="24"
+                step="0.5"
+                value={String(maxSessionHours)}
+                onInput={(event) => {
+                  const value = Number(
+                    (event.target as HTMLInputElement).value,
+                  );
+                  if (Number.isFinite(value) && value > 0) {
+                    onMaxSessionHoursChange(value);
+                  }
+                }}
+              />
+            </Field>
+          )}
 
           <div class="planner-algorithm-field">
             <Field label={t.schedule.algorithm} controlId="schedule-algorithm">
@@ -123,6 +199,14 @@ export function PlannerScheduleStep({
             <output aria-live="polite">{t.schedule.generating}</output>
           )}
         </div>
+
+        {planningMode === "finish_by" && !hasValidFinishByDate && (
+          <p class="planner-inline-notice">{t.schedule.finishByRequired}</p>
+        )}
+
+        {planningMode === "finish_by" && hasValidFinishByDate && (
+          <p class="planner-mode-guidance">{t.schedule.finishByGuidance}</p>
+        )}
 
         {prerequisiteMessages.length > 0 && (
           <output id={prerequisitesDescriptionId} class="planner-inline-notice">
@@ -192,8 +276,16 @@ export function PlannerScheduleStep({
                 <dd>{t.schedule.hours(totalSelectedHours)}</dd>
               </div>
               <div>
-                <dt>{t.schedule.previewWeekly}</dt>
-                <dd>{t.schedule.hoursPerWeek(weeklyHours)}</dd>
+                <dt>
+                  {planningMode === "finish_by"
+                    ? t.schedule.previewSessionCap
+                    : t.schedule.previewWeekly}
+                </dt>
+                <dd>
+                  {planningMode === "finish_by"
+                    ? t.schedule.hours(maxSessionHours)
+                    : t.schedule.hoursPerWeek(weeklyHours)}
+                </dd>
               </div>
               <div>
                 <dt>{t.schedule.previewStart}</dt>
@@ -207,6 +299,12 @@ export function PlannerScheduleStep({
                     : t.schedule.alternating}
                 </dd>
               </div>
+              {planningMode === "finish_by" && finishByDate && (
+                <div>
+                  <dt>{t.schedule.finishByDate}</dt>
+                  <dd>{formatReadableDate(finishByDate, language)}</dd>
+                </div>
+              )}
             </dl>
           </section>
         )}
@@ -217,6 +315,8 @@ export function PlannerScheduleStep({
           <ScheduleView
             schedule={schedule}
             games={games}
+            finishByDate={planningMode === "finish_by" ? finishByDate : null}
+            onScheduleChange={onScheduleChange}
             onDownloadIcal={onDownloadIcal}
           />
         </div>

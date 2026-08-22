@@ -32,6 +32,7 @@ import {
   type GameList,
   type HLTBCategory,
   type ListGame,
+  type PlanningMode,
   type ScheduleAlgorithm,
   type ScheduleResponse,
   type WeeklyAvailability,
@@ -70,6 +71,15 @@ export function HomePage() {
   const [algorithm, setAlgorithm] = useState<ScheduleAlgorithm>(
     initialState.algorithm,
   );
+  const [planningMode, setPlanningMode] = useState<PlanningMode>(
+    initialState.planningMode,
+  );
+  const [finishByDate, setFinishByDate] = useState<string | null>(
+    initialState.finishByDate,
+  );
+  const [maxSessionHours, setMaxSessionHours] = useState(
+    initialState.maxSessionHours,
+  );
   const [schedule, setSchedule] = useState<ScheduleResponse | null>(
     initialState.schedule,
   );
@@ -84,6 +94,9 @@ export function HomePage() {
       activeBacklogId,
       availability,
       algorithm,
+      planningMode,
+      finishByDate,
+      maxSessionHours,
       schedule,
       startDate,
     });
@@ -93,6 +106,9 @@ export function HomePage() {
     activeBacklogId,
     availability,
     algorithm,
+    planningMode,
+    finishByDate,
+    maxSessionHours,
     schedule,
     startDate,
   ]);
@@ -142,7 +158,11 @@ export function HomePage() {
     (game) => !schedulableGames.includes(game),
   );
   const gamesReady = games.length > 0 && !hasLoadingGames;
-  const canGenerateSchedule = availability !== null && gamesReady;
+  const hasFinishByDate =
+    planningMode !== "finish_by" ||
+    (finishByDate !== null && finishByDate >= startDate);
+  const canGenerateSchedule =
+    availability !== null && gamesReady && hasFinishByDate;
 
   useEffect(() => {
     let isCurrent = true;
@@ -160,6 +180,9 @@ export function HomePage() {
       availability,
       algorithm,
       startDate,
+      planningMode,
+      finishByDate,
+      maxSessionHours,
     )
       .then((result) => {
         if (isCurrent) {
@@ -186,6 +209,9 @@ export function HomePage() {
     backlogName,
     canGenerateSchedule,
     games,
+    planningMode,
+    finishByDate,
+    maxSessionHours,
     startDate,
     t.app.scheduleFailed,
   ]);
@@ -443,6 +469,10 @@ export function HomePage() {
         availability,
         algorithm,
         startDate,
+        planningMode,
+        finishByDate,
+        maxSessionHours,
+        schedule?.sessions ?? null,
       );
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
@@ -473,6 +503,26 @@ export function HomePage() {
   const handleStartDateChange = (nextStartDate: string) => {
     setStartDate(nextStartDate);
     clearGeneratedSchedule();
+  };
+
+  const handlePlanningModeChange = (nextPlanningMode: PlanningMode) => {
+    setPlanningMode(nextPlanningMode);
+    clearGeneratedSchedule();
+  };
+
+  const handleFinishByDateChange = (nextFinishByDate: string) => {
+    setFinishByDate(nextFinishByDate || null);
+    clearGeneratedSchedule();
+  };
+
+  const handleMaxSessionHoursChange = (nextMaxSessionHours: number) => {
+    setMaxSessionHours(nextMaxSessionHours);
+    clearGeneratedSchedule();
+  };
+
+  const handleScheduleChange = (nextSchedule: ScheduleResponse) => {
+    setSchedule(nextSchedule);
+    setActionError("");
   };
 
   return (
@@ -587,6 +637,7 @@ export function HomePage() {
                 >
                   <PlannerAvailabilityStep
                     availability={availability}
+                    planningMode={planningMode}
                     onChange={handleSetAvailability}
                   />
                 </section>
@@ -610,6 +661,9 @@ export function HomePage() {
                     weeklyHours={currentListWeeklyHours}
                     algorithm={algorithm}
                     startDate={startDate}
+                    planningMode={planningMode}
+                    finishByDate={finishByDate}
+                    maxSessionHours={maxSessionHours}
                     schedule={schedule}
                     isGenerating={isGenerating}
                     actionError={actionError}
@@ -618,6 +672,10 @@ export function HomePage() {
                     onNavigate={setActiveTab}
                     onAlgorithmChange={handleAlgorithmChange}
                     onStartDateChange={handleStartDateChange}
+                    onPlanningModeChange={handlePlanningModeChange}
+                    onFinishByDateChange={handleFinishByDateChange}
+                    onMaxSessionHoursChange={handleMaxSessionHoursChange}
+                    onScheduleChange={handleScheduleChange}
                     onDownloadIcal={handleDownloadIcal}
                   />
                 </section>

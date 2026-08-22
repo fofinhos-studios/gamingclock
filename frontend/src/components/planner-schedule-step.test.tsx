@@ -15,9 +15,12 @@ const schedule: ScheduleResponse = {
 function renderStep(
   overrides: Partial<Parameters<typeof PlannerScheduleStep>[0]> = {},
 ) {
-  const props: Parameters<typeof PlannerScheduleStep>[0] = {
+  const props = {
     algorithm: "sequential",
     startDate: "2026-03-30",
+    planningMode: "weekly",
+    finishByDate: null,
+    maxSessionHours: 4,
     schedule: null,
     actionError: "",
     canGenerateSchedule: false,
@@ -29,10 +32,13 @@ function renderStep(
     onNavigate: vi.fn(),
     onAlgorithmChange: vi.fn(),
     onStartDateChange: vi.fn(),
-    onGenerateSchedule: vi.fn().mockResolvedValue(true),
+    onPlanningModeChange: vi.fn(),
+    onFinishByDateChange: vi.fn(),
+    onMaxSessionHoursChange: vi.fn(),
+    onScheduleChange: vi.fn(),
     onDownloadIcal: vi.fn().mockResolvedValue(true),
     ...overrides,
-  };
+  } as Parameters<typeof PlannerScheduleStep>[0];
 
   return {
     props,
@@ -133,5 +139,17 @@ describe("PlannerScheduleStep", () => {
     ).toBeTruthy();
     expect(view.queryByText(/finish one game before the next/i)).toBeNull();
     expect(view.queryByText(/rotate between games/i)).toBeNull();
+  });
+
+  test("shows deadline controls only in Finish by mode", () => {
+    const view = renderStep({
+      planningMode: "finish_by",
+      finishByDate: "2026-04-30",
+      maxSessionHours: 4,
+    });
+
+    expect(view.getByLabelText(/finish by date/i)).toBeTruthy();
+    expect(view.getByLabelText(/max session length/i)).toBeTruthy();
+    expect(view.getByText(/selected days and start times/i)).toBeTruthy();
   });
 });

@@ -1,8 +1,10 @@
 import datetime
 
+import pytest
+
 from gamingclock.models.game import Game
-from gamingclock.models.schedule import DayAvailability, ScheduleAlgorithm, WeeklyAvailability
-from gamingclock.services.scheduler import SchedulerService
+from gamingclock.models.schedule import DayAvailability, PlanningMode, ScheduleAlgorithm, WeeklyAvailability
+from gamingclock.services.scheduler import DeadlineCapacityError, SchedulerService
 
 
 def _make_game(name: str, hours: float) -> Game:
@@ -188,3 +190,66 @@ def test_scheduler_uses_multiple_play_windows_on_the_same_day():
         (datetime.date(2026, 3, 30), datetime.time(12, 0), 1.0),
         (datetime.date(2026, 3, 30), datetime.time(20, 0), 1.0),
     ]
+
+
+def test_finish_by_uses_every_selected_date_and_respects_the_session_cap():
+    sessions = SchedulerService().generate(
+        games=[_make_game("Deadline game", 8.0)],
+        availability=WeeklyAvailability(
+            days=[
+                DayAvailability(day_of_week=0, hours=1.0, start_hour=18),
+                DayAvailability(day_of_week=2, hours=1.0, start_hour=18),
+            ]
+        ),
+        algorithm=ScheduleAlgorithm.SEQUENTIAL,
+        start_date=datetime.date(2026, 3, 30),
+        planning_mode=PlanningMode.FINISH_BY,
+        finish_by_date=datetime.date(2026, 4, 1),
+        max_session_hours=4.0,
+    )
+
+    assert [(session.date, session.duration_hours) for session in sessions] == [
+        (datetime.date(2026, 3, 30), 4.0),
+        (datetime.date(2026, 4, 1), 4.0),
+    ]
+
+
+def test_finish_by_splits_game_boundaries_without_overlapping_sessions():
+    sessions = SchedulerService().generate(
+        games=[_make_game("First", 2.0), _make_game("Second", 6.0)],
+        availability=WeeklyAvailability(
+            days=[
+                DayAvailability(day_of_week=0, hours=1.0, start_hour=18),
+                DayAvailability(day_of_week=2, hours=1.0, start_hour=18),
+            ]
+        ),
+        algorithm=ScheduleAlgorithm.SEQUENTIAL,
+        start_date=datetime.date(2026, 3, 30),
+        planning_mode=PlanningMode.FINISH_BY,
+        finish_by_date=datetime.date(2026, 4, 1),
+        max_session_hours=4.0,
+    )
+
+    assert [(session.game_name, session.start_time, session.duration_hours) for session in sessions] == [
+        ("First", datetime.time(18, 0), 2.0),
+        ("Second", datetime.time(20, 0), 2.0),
+        ("Second", datetime.time(18, 0), 4.0),
+    ]
+
+
+def test_finish_by_rejects_deadlines_that_exceed_session_capacity():
+    with pytest.raises(DeadlineCapacityError, match=r"requires 5\.0-hour sessions"):
+        SchedulerService().generate(
+            games=[_make_game("Too long", 10.0)],
+            availability=WeeklyAvailability(
+                days=[
+                    DayAvailability(day_of_week=0, hours=1.0),
+                    DayAvailability(day_of_week=2, hours=1.0),
+                ]
+            ),
+            algorithm=ScheduleAlgorithm.SEQUENTIAL,
+            start_date=datetime.date(2026, 3, 30),
+            planning_mode=PlanningMode.FINISH_BY,
+            finish_by_date=datetime.date(2026, 4, 1),
+            max_session_hours=4.0,
+        )

@@ -93,6 +93,9 @@ describe("api client errors and contracts", () => {
       availability,
       "alternating",
       "2026-08-22",
+      "finish_by",
+      "2026-09-30",
+      4,
     );
 
     const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
@@ -100,6 +103,9 @@ describe("api client errors and contracts", () => {
       game_list_name: "Weekend RPGs",
       algorithm: "alternating",
       start_date: "2026-08-22",
+      planning_mode: "finish_by",
+      finish_by_date: "2026-09-30",
+      max_session_hours: 4,
       games: [
         { igdb_id: 7, selected_hltb_category: "completionist" },
         { igdb_id: 8, name: "Chrono Trigger" },

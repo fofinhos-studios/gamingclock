@@ -121,6 +121,8 @@ export const strings = {
         weeklyCalendar: "Your week",
         calendarCopy:
           "Click a time to add one hour. Drag a block to move it, or pull its lower edge to change the duration.",
+        finishByCalendarCopy:
+          "Choose the days and preferred start times for your sessions. Finish by will calculate the duration needed for each date.",
         calendarLabel: "Weekly play calendar",
         presets: "Quick presets",
         weeknights: "Weeknights",
@@ -167,7 +169,15 @@ export const strings = {
     },
     schedule: {
       heading: "Date and method",
+      planningMode: "Planning mode",
+      weeklyMode: "Weekly availability",
+      finishByMode: "Finish by",
       startDate: "Start date",
+      finishByDate: "Finish by date",
+      maxSessionHours: "Max session length (hours)",
+      finishByRequired: "Choose a Finish by date on or after the start date.",
+      finishByGuidance:
+        "Your selected days and start times set when sessions begin; Gaming Clock fills the hours needed to reach the deadline.",
       algorithm: "Schedule method",
       sequential: "One game at a time",
       alternating: "Rotate games",
@@ -180,6 +190,7 @@ export const strings = {
       previewGames: "Games",
       previewTotal: "Selected play time",
       previewWeekly: "Weekly play time",
+      previewSessionCap: "Session limit",
       previewStart: "Starts",
       previewMethod: "Method",
       games: (count: number) => `${count} game${count === 1 ? "" : "s"}`,
@@ -203,6 +214,11 @@ export const strings = {
       elapsed: "Days to finish",
       days: (count: number) => `${count} day${count === 1 ? "" : "s"}`,
       timeline: "Play sessions",
+      moveSessions:
+        "Drag a session to another day, or use the left and right arrow keys when it is focused.",
+      moveSession: (name: string) => `Move ${name} session`,
+      deadlineMissed:
+        "One or more moved sessions now fall after your Finish by date. Export remains available.",
       noSessions: "No sessions yet.",
       starts: (date: string, time: string) => `${date} at ${time}`,
       plannedHours: (hours: string) => `${hours} hours planned`,
@@ -333,6 +349,8 @@ export const strings = {
         weeklyCalendar: "Sua semana",
         calendarCopy:
           "Clique em um horário para adicionar uma hora. Arraste um bloco para movê-lo ou puxe a borda inferior para ajustar a duração.",
+        finishByCalendarCopy:
+          "Escolha os dias e horários preferidos para começar as sessões. Terminar até calculará a duração necessária em cada data.",
         calendarLabel: "Calendário semanal de jogo",
         presets: "Atalhos rápidos",
         weeknights: "Dias úteis",
@@ -380,7 +398,16 @@ export const strings = {
     },
     schedule: {
       heading: "Data e método",
+      planningMode: "Modo de planejamento",
+      weeklyMode: "Disponibilidade semanal",
+      finishByMode: "Terminar até",
       startDate: "Data de início",
+      finishByDate: "Data para terminar",
+      maxSessionHours: "Duração máxima da sessão (horas)",
+      finishByRequired:
+        "Escolha uma data para terminar igual ou posterior à data de início.",
+      finishByGuidance:
+        "Os dias e horários escolhidos definem quando as sessões começam; o Gaming Clock preenche as horas necessárias para chegar à data.",
       algorithm: "Método de cronograma",
       sequential: "Um jogo por vez",
       alternating: "Alternar jogos",
@@ -393,6 +420,7 @@ export const strings = {
       previewGames: "Jogos",
       previewTotal: "Tempo de jogo selecionado",
       previewWeekly: "Tempo semanal de jogo",
+      previewSessionCap: "Limite por sessão",
       previewStart: "Início",
       previewMethod: "Método",
       games: (count: number) => `${count} jogo${count === 1 ? "" : "s"}`,
@@ -416,6 +444,11 @@ export const strings = {
       elapsed: "Dias para terminar",
       days: (count: number) => `${count} dia${count === 1 ? "" : "s"}`,
       timeline: "Sessões de jogo",
+      moveSessions:
+        "Arraste uma sessão para outro dia ou use as setas esquerda e direita quando ela estiver selecionada.",
+      moveSession: (name: string) => `Mover sessão de ${name}`,
+      deadlineMissed:
+        "Uma ou mais sessões movidas agora ficam depois da data para terminar. A exportação continua disponível.",
       noSessions: "Nenhuma sessão ainda.",
       starts: (date: string, time: string) => `${date} às ${time}`,
       plannedHours: (hours: string) => `${hours} horas planejadas`,

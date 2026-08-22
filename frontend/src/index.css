@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=DotGothic16&family=Space+Mono:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,100..1000&family=Space+Mono:wght@400;700&display=swap");
 @import "tailwindcss";
 
 @font-face {
@@ -16,7 +16,7 @@
   --color-muted: #344240;
   --color-muted-foreground: #b5b5a5;
   --color-border-light: #5a6761;
-  --font-display: "DotGothic16", sans-serif;
+  --font-display: "DM Sans", sans-serif;
   --font-body: "Space Mono", monospace;
   --font-mono: "Space Mono", monospace;
 }
@@ -77,7 +77,7 @@
   --surface-82: rgb(45 56 55 / 0.82);
   --surface-92: rgb(45 56 55 / 0.92);
   --brand-glow: rgb(79 187 188 / 0.22);
-  --font-display: "DotGothic16", sans-serif;
+  --font-display: "DM Sans", sans-serif;
   --font-body: "Space Mono", monospace;
   --font-mono: "Space Mono", monospace;
 }
@@ -133,7 +133,7 @@
   --surface-82: rgb(240 234 219 / 0.82);
   --surface-92: rgb(240 234 219 / 0.92);
   --brand-glow: rgb(36 127 128 / 0.2);
-  --font-display: "DotGothic16", sans-serif;
+  --font-display: "DM Sans", sans-serif;
   --font-body: "Space Mono", monospace;
   --font-mono: "Space Mono", monospace;
 }
@@ -1569,6 +1569,12 @@
     outline-offset: 2px;
   }
 
+  .availability-week--finish-by .availability-week__event {
+    opacity: 0.68;
+    outline: 1px dashed var(--industrial-aqua);
+    outline-offset: -0.2rem;
+  }
+
   .availability-week__resize-handle {
     position: absolute;
     right: 0;
@@ -1833,7 +1839,7 @@
 
   .planner-controls {
     display: grid;
-    grid-template-columns: minmax(0, 14rem) minmax(0, 14rem) minmax(0, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
     gap: 0.75rem;
     align-items: end;
   }
@@ -2421,6 +2427,12 @@
     gap: 0.55rem;
   }
 
+  .schedule-calendar__move-copy {
+    margin: 0;
+    color: var(--muted-foreground);
+    font-size: 0.82rem;
+  }
+
   .schedule-calendar {
     display: grid;
     gap: 1rem;
@@ -2516,6 +2528,26 @@
     display: grid;
     align-content: start;
     gap: 0.4rem;
+  }
+
+  .schedule-calendar__session-move {
+    display: block;
+    width: 100%;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    text-align: inherit;
+    cursor: grab;
+  }
+
+  .schedule-calendar__session-move:active {
+    cursor: grabbing;
+  }
+
+  .schedule-calendar__session-move:focus-visible {
+    outline: 2px solid var(--industrial-aqua);
+    outline-offset: 0.2rem;
   }
 
   .game-cartridge--calendar {

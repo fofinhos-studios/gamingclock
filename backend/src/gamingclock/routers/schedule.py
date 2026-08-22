@@ -1,11 +1,16 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 
 from gamingclock.calendar.ical import generate_ical
 from gamingclock.models.catalog import HLTBCategory, HLTBStatus
 from gamingclock.models.game import Game
-from gamingclock.models.schedule import ScheduleRequest, ScheduleResponse
-from gamingclock.services.scheduler import SchedulerService
+from gamingclock.models.schedule import (
+    IcalRequest,
+    PlaySession,
+    ScheduleRequest,
+    ScheduleResponse,
+)
+from gamingclock.services.scheduler import DeadlineCapacityError, SchedulerService
 
 router = APIRouter(prefix="/schedule", tags=["schedule"])
 
@@ -34,18 +39,26 @@ def _build_schedule_games(request: ScheduleRequest) -> list[Game]:
     return schedule_games
 
 
+def _generate_sessions(request: ScheduleRequest) -> list[PlaySession]:
+    try:
+        return scheduler_service.generate(
+            games=_build_schedule_games(request),
+            availability=request.availability,
+            algorithm=request.algorithm,
+            start_date=request.start_date,
+            planning_mode=request.planning_mode,
+            finish_by_date=request.finish_by_date,
+            max_session_hours=request.max_session_hours,
+        )
+    except DeadlineCapacityError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
 @router.post("/generate", response_model=ScheduleResponse)
 async def generate_schedule(request: ScheduleRequest) -> ScheduleResponse:
-    games = _build_schedule_games(request)
-    if not games:
+    if not _build_schedule_games(request):
         return ScheduleResponse(sessions=[], total_hours=0, estimated_end_date=None)
-
-    sessions = scheduler_service.generate(
-        games=games,
-        availability=request.availability,
-        algorithm=request.algorithm,
-        start_date=request.start_date,
-    )
+    sessions = _generate_sessions(request)
     total_hours = sum(session.duration_hours for session in sessions)
     end_date = sessions[-1].date if sessions else None
     return ScheduleResponse(
@@ -56,14 +69,8 @@ async def generate_schedule(request: ScheduleRequest) -> ScheduleResponse:
 
 
 @router.post("/ical")
-async def download_ical(request: ScheduleRequest) -> Response:
-    games = _build_schedule_games(request)
-    sessions = scheduler_service.generate(
-        games=games,
-        availability=request.availability,
-        algorithm=request.algorithm,
-        start_date=request.start_date,
-    )
+async def download_ical(request: IcalRequest) -> Response:
+    sessions = request.sessions if request.sessions is not None else _generate_sessions(request)
     ical_content = generate_ical(sessions, calendar_name=request.game_list_name)
     return Response(
         content=ical_content,

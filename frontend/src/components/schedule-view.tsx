@@ -7,6 +7,7 @@ import {
   FlagIcon,
   HourglassIcon,
   RowsIcon,
+  WarningIcon,
 } from "@phosphor-icons/react";
 import { useState } from "preact/hooks";
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
@@ -18,12 +19,15 @@ import { Button } from "./ui";
 interface Props {
   schedule: ScheduleResponse;
   games?: ListGame[];
+  finishByDate?: string | null;
+  onScheduleChange: (schedule: ScheduleResponse) => void;
   onDownloadIcal: () => Promise<boolean>;
 }
 
 function calculateElapsedDays(schedule: ScheduleResponse): number | null {
-  const firstSessionDate = schedule.sessions[0]?.date;
-  const lastDate = schedule.sessions.at(-1)?.date;
+  const sessionDates = schedule.sessions.map((session) => session.date).sort();
+  const firstSessionDate = sessionDates[0];
+  const lastDate = sessionDates.at(-1);
 
   if (!firstSessionDate || !lastDate) {
     return null;
@@ -53,7 +57,12 @@ function formatReadableDate(date: string, language: string): string {
 interface CalendarDay {
   date: string;
   isCurrentMonth: boolean;
-  sessions: PlaySession[];
+  sessions: CalendarSession[];
+}
+
+interface CalendarSession {
+  index: number;
+  session: PlaySession;
 }
 
 interface CalendarMonth {
@@ -62,11 +71,11 @@ interface CalendarMonth {
 }
 
 function getCalendarMonths(sessions: PlaySession[]): CalendarMonth[] {
-  const sessionsByDate = new Map<string, PlaySession[]>();
-  for (const session of sessions) {
+  const sessionsByDate = new Map<string, CalendarSession[]>();
+  for (const [index, session] of sessions.entries()) {
     sessionsByDate.set(session.date, [
       ...(sessionsByDate.get(session.date) ?? []),
-      session,
+      { index, session },
     ]);
   }
 
@@ -120,7 +129,13 @@ function getCalendarMonths(sessions: PlaySession[]): CalendarMonth[] {
   return months;
 }
 
-export function ScheduleView({ schedule, games = [], onDownloadIcal }: Props) {
+export function ScheduleView({
+  schedule,
+  games = [],
+  finishByDate = null,
+  onScheduleChange,
+  onDownloadIcal,
+}: Props) {
   const { language, t } = useLanguage();
   const [isDownloading, setIsDownloading] = useState(false);
   const feedback = useTransientFeedback<"success">();
@@ -148,6 +163,39 @@ export function ScheduleView({ schedule, games = [], onDownloadIcal }: Props) {
     { length: 7 },
     (_, index) => new Date(Date.UTC(2024, 0, index + 1)),
   );
+  const missesDeadline =
+    finishByDate !== null &&
+    schedule.sessions.some((session) => session.date > finishByDate);
+
+  const moveSession = (index: number, date: string) => {
+    const currentSession = schedule.sessions[index];
+    if (!currentSession || currentSession.date === date) {
+      return;
+    }
+    const sessions = schedule.sessions.map((session, sessionIndex) =>
+      sessionIndex === index ? { ...session, date } : session,
+    );
+    const estimatedEndDate = sessions.reduce<string | null>(
+      (latest, session) =>
+        !latest || session.date > latest ? session.date : latest,
+      null,
+    );
+    onScheduleChange({
+      ...schedule,
+      sessions,
+      estimated_end_date: estimatedEndDate,
+    });
+  };
+
+  const moveSessionByDays = (index: number, days: number) => {
+    const session = schedule.sessions[index];
+    if (!session) {
+      return;
+    }
+    const date = new Date(`${session.date}T12:00:00Z`);
+    date.setUTCDate(date.getUTCDate() + days);
+    moveSession(index, date.toISOString().slice(0, 10));
+  };
 
   const handleDownloadClick = async () => {
     setIsDownloading(true);
@@ -259,8 +307,19 @@ export function ScheduleView({ schedule, games = [], onDownloadIcal }: Props) {
         )}
       </div>
 
+      {missesDeadline && (
+        <output class="planner-inline-notice planner-inline-notice--warning">
+          <WarningIcon
+            class="planner-inline-notice__icon planner-icon"
+            aria-hidden="true"
+          />
+          <p>{t.schedule.deadlineMissed}</p>
+        </output>
+      )}
+
       <div class="schedule-calendar-section">
         <p class="section-eyebrow">{t.schedule.timeline}</p>
+        <p class="schedule-calendar__move-copy">{t.schedule.moveSessions}</p>
         <div class="schedule-calendar" aria-label={t.schedule.timeline}>
           {calendarMonths.map(({ month, days }) => (
             <section
@@ -285,30 +344,56 @@ export function ScheduleView({ schedule, games = [], onDownloadIcal }: Props) {
                 ))}
                 {days.map((day) => {
                   const date = new Date(`${day.date}T12:00:00Z`);
-                  const gameSessions = day.sessions.map((session, index) => {
-                    const game = games.find(
-                      (candidate) =>
-                        candidate.name.toLocaleLowerCase() ===
-                        session.game_name.toLocaleLowerCase(),
-                    );
-                    return game ? (
-                      <GameCartridge
-                        key={`${session.game_name}-${index}`}
-                        game={game}
-                        plannedHours={session.duration_hours}
-                        startTime={session.start_time}
-                        variant="calendar"
-                      />
-                    ) : (
-                      <div
-                        key={`${session.game_name}-${index}`}
-                        class="schedule-calendar__session-fallback"
-                      >
-                        <strong>{session.game_name}</strong>
-                        <span>{session.duration_hours.toFixed(1)}h</span>
-                      </div>
-                    );
-                  });
+                  const gameSessions = day.sessions.map(
+                    ({ session, index }) => {
+                      const game = games.find(
+                        (candidate) =>
+                          candidate.name.toLocaleLowerCase() ===
+                          session.game_name.toLocaleLowerCase(),
+                      );
+                      const card = game ? (
+                        <GameCartridge
+                          game={game}
+                          plannedHours={session.duration_hours}
+                          startTime={session.start_time}
+                          variant="calendar"
+                        />
+                      ) : (
+                        <div class="schedule-calendar__session-fallback">
+                          <strong>{session.game_name}</strong>
+                          <span>{session.duration_hours.toFixed(1)}h</span>
+                        </div>
+                      );
+
+                      return (
+                        <button
+                          key={`${session.game_name}-${session.date}-${session.start_time}-${index}`}
+                          class="schedule-calendar__session-move"
+                          type="button"
+                          draggable
+                          aria-label={t.schedule.moveSession(session.game_name)}
+                          onDragStart={(event) =>
+                            event.dataTransfer?.setData(
+                              "text/plain",
+                              String(index),
+                            )
+                          }
+                          onKeyDown={(event) => {
+                            if (event.key === "ArrowLeft") {
+                              event.preventDefault();
+                              moveSessionByDays(index, -1);
+                            }
+                            if (event.key === "ArrowRight") {
+                              event.preventDefault();
+                              moveSessionByDays(index, 1);
+                            }
+                          }}
+                        >
+                          {card}
+                        </button>
+                      );
+                    },
+                  );
 
                   return (
                     <div
@@ -322,6 +407,16 @@ export function ScheduleView({ schedule, games = [], onDownloadIcal }: Props) {
                           ? ""
                           : " schedule-calendar__day--adjacent"
                       }`}
+                      onDragOver={(event) => event.preventDefault()}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        const index = Number(
+                          event.dataTransfer?.getData("text/plain"),
+                        );
+                        if (Number.isInteger(index)) {
+                          moveSession(index, day.date);
+                        }
+                      }}
                     >
                       <div class="schedule-calendar__date">
                         <time

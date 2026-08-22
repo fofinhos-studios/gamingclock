@@ -80,3 +80,26 @@ def test_download_ical_skips_unresolved_games(client):
     assert response.status_code == 200
     assert "FF7" in response.text
     assert "Unknown Game" not in response.text
+
+
+def test_download_ical_uses_edited_sessions_when_provided(client):
+    response = client.post(
+        "/schedule/ical",
+        json={
+            "game_list_name": "Edited",
+            "games": [],
+            "availability": {"days": [{"day_of_week": 0, "hours": 1}]},
+            "sessions": [
+                {
+                    "game_name": "Moved game",
+                    "date": "2026-04-03",
+                    "start_time": "17:30:00",
+                    "duration_hours": 4,
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+    assert "Moved game" in response.text
+    assert "20260403T173000" in response.text

@@ -48,6 +48,7 @@ export interface WeeklyAvailability {
 }
 
 export type ScheduleAlgorithm = "sequential" | "alternating";
+export type PlanningMode = "weekly" | "finish_by";
 
 export interface PlaySession {
   game_name: string;
