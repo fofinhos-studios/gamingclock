@@ -325,20 +325,20 @@
   .planner-identity {
     position: relative;
     display: inline-grid;
-    width: clamp(16rem, 30vw, 23rem);
-    height: clamp(3.25rem, 5.8vw, 4.4rem);
+    width: auto;
+    max-width: none;
+    height: clamp(2.75rem, 4.5vw, 3.5rem);
     place-items: center;
     isolation: isolate;
     font-family: "IntraNet", sans-serif;
-    font-size: clamp(2rem, 4vw, 3.45rem);
+    font-size: clamp(1.65rem, 3vw, 2.45rem);
     font-weight: 800;
     letter-spacing: 0.025em;
     line-height: 1;
     text-transform: uppercase;
   }
 
-  .planner-identity__backdrop,
-  .planner-identity__glass {
+  .planner-identity__backdrop {
     position: absolute;
     inset: 0;
   }
@@ -354,11 +354,17 @@
   }
 
   .planner-identity__glass {
+    position: relative;
     z-index: 1;
     display: grid;
     place-items: center;
+    width: max-content;
+    min-width: 0;
+    height: 100%;
+    padding: 0 0.6em;
     overflow: visible;
     color: var(--foreground);
+    white-space: nowrap;
     text-shadow:
       0 1px 0 var(--surface-92),
       0 0.12rem 0.8rem var(--foreground-22);
