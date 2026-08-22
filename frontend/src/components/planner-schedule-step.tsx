@@ -103,20 +103,30 @@ export function PlannerScheduleStep({
           </div>
         </div>
         <div class="planner-controls">
-          <Field label={t.schedule.planningMode} controlId="planning-mode">
-            <Select
-              id="planning-mode"
-              value={planningMode}
-              onChange={(event) =>
-                onPlanningModeChange(
-                  (event.target as HTMLSelectElement).value as PlanningMode,
-                )
-              }
+          <div class="planner-planning-mode-field">
+            <Field label={t.schedule.planningMode} controlId="planning-mode">
+              <Select
+                id="planning-mode"
+                value={planningMode}
+                onChange={(event) =>
+                  onPlanningModeChange(
+                    (event.target as HTMLSelectElement).value as PlanningMode,
+                  )
+                }
+              >
+                <option value="weekly">{t.schedule.weeklyMode}</option>
+                <option value="finish_by">{t.schedule.finishByMode}</option>
+              </Select>
+            </Field>
+            <Button
+              unstyled
+              class="planner-planning-mode-field__hint"
+              aria-label={t.schedule.planningModeHint}
+              data-tooltip={t.schedule.planningModeHint}
             >
-              <option value="weekly">{t.schedule.weeklyMode}</option>
-              <option value="finish_by">{t.schedule.finishByMode}</option>
-            </Select>
-          </Field>
+              <InfoIcon class="planner-icon" aria-hidden="true" />
+            </Button>
+          </div>
           <Field label={t.schedule.startDate} controlId="schedule-start-date">
             <Input
               id="schedule-start-date"

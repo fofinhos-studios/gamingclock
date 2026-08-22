@@ -141,6 +141,16 @@ describe("PlannerScheduleStep", () => {
     expect(view.queryByText(/rotate between games/i)).toBeNull();
   });
 
+  test("explains both planning modes in a hint", () => {
+    const view = renderStep();
+
+    expect(
+      view.getByLabelText(
+        /weekly availability plans only within your chosen hours.*finish by adds the hours/i,
+      ),
+    ).toBeTruthy();
+  });
+
   test("shows deadline controls only in Finish by mode", () => {
     const view = renderStep({
       planningMode: "finish_by",
