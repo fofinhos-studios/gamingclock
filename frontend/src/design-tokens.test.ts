@@ -65,7 +65,7 @@ test("uses distinct raised surfaces for planner panes and empty states", async (
   );
 });
 
-test("builds the workspace from inset metal, glass, and brushed material layers", async () => {
+test("builds the workspace from inset metal and solid planner surfaces", async () => {
   const stylesheet = await readStylesheet();
 
   expect(stylesheet).toMatch(/--panel-glass:\s*var\(--surface-\d+\);/);
@@ -74,6 +74,9 @@ test("builds the workspace from inset metal, glass, and brushed material layers"
     /\.planner-app__workspace\s*\{[\s\S]*?box-shadow:\s*[\s\S]*?inset/,
   );
   expect(stylesheet).toMatch(
+    /\.planner-pane\s*\{[\s\S]*?background:\s*var\(--surface\);/,
+  );
+  expect(stylesheet).not.toMatch(
     /\.planner-pane\s*\{[\s\S]*?backdrop-filter:\s*blur\(/,
   );
   expect(stylesheet).toMatch(
@@ -130,8 +133,9 @@ test("uses larger shared icons and an embossed IntraNet wordmark", async () => {
   expect(stylesheet).toMatch(
     /@font-face\s*\{[\s\S]*?font-family:\s*"IntraNet";[\s\S]*?font-display:\s*block;/,
   );
+  expect(stylesheet).toMatch(/--font-brand:\s*"IntraNet",\s*sans-serif;/);
   expect(stylesheet).toMatch(
-    /\.planner-identity\s*\{[\s\S]*?font-family:\s*"IntraNet"/,
+    /\.planner-identity\s*\{[\s\S]*?font-family:\s*var\(--font-brand\);/,
   );
   expect(stylesheet).toMatch(/\.planner-identity__label\s*\{/);
   expect(stylesheet).not.toMatch(/\.planner-brand(?:__|\s|\{)/);
