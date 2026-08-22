@@ -37,7 +37,8 @@ export function GameCartridge({
   variant = "backlog",
 }: Props) {
   const primaryHours = plannedHours ?? getSelectedGameHours(game);
-  const primaryLabel = plannedHours === undefined ? "PLAY TIME" : "TODAY";
+  const primaryLabel =
+    plannedHours === undefined ? "PLAY TIME" : "TIME TO PLAY";
   const artworkUrls = getArtworkUrls(game);
   const [settledArtwork, setSettledArtwork] = useState<string[]>([]);
   const isReady =
