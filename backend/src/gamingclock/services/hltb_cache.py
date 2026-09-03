@@ -13,12 +13,20 @@ from gamingclock.models.game import Game
 class UpstashHLTBCache:
     """Store serialised HLTB matches in an Upstash Redis REST database."""
 
-    _KEY_PREFIX = "gamingclock:hltb:v2:"
+    _KEY_PREFIX = "gamingclock:hltb:"
+    _DEFAULT_CACHE_VERSION = "v2"
 
-    def __init__(self, url: str, token: str, ttl_seconds: int = 604800) -> None:
+    def __init__(
+        self,
+        url: str,
+        token: str,
+        ttl_seconds: int = 604800,
+        cache_version: str = _DEFAULT_CACHE_VERSION,
+    ) -> None:
         self._url = url.rstrip("/")
         self._headers = {"Authorization": f"Bearer {token}"}
         self._ttl_seconds = ttl_seconds
+        self._cache_version = cache_version
 
     @classmethod
     def from_environment(cls) -> UpstashHLTBCache | None:
@@ -26,7 +34,8 @@ class UpstashHLTBCache:
         token = os.getenv("KV_REST_API_TOKEN") or os.getenv("UPSTASH_REDIS_REST_TOKEN")
         if not url or not token:
             return None
-        return cls(url=url, token=token)
+        cache_version = os.getenv("HLTB_CACHE_VERSION", cls._DEFAULT_CACHE_VERSION).strip()
+        return cls(url=url, token=token, cache_version=cache_version or cls._DEFAULT_CACHE_VERSION)
 
     async def get(self, normalized_query: str) -> list[Game] | None:
         key = self._key(normalized_query)
@@ -46,4 +55,4 @@ class UpstashHLTBCache:
             response.raise_for_status()
 
     def _key(self, normalized_query: str) -> str:
-        return f"{self._KEY_PREFIX}{normalized_query}"
+        return f"{self._KEY_PREFIX}{self._cache_version}:{normalized_query}"
