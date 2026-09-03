@@ -1,10 +1,13 @@
 import asyncio
 import logging
+import time
 from collections import OrderedDict
 from collections.abc import Awaitable, Callable
+from difflib import SequenceMatcher
 from typing import Any, Protocol
 
-from howlongtobeatpy import HowLongToBeat
+import httpx
+from pydantic import BaseModel, Field
 
 from gamingclock.models.game import Game
 from gamingclock.services.hltb_cache import UpstashHLTBCache
@@ -19,6 +22,105 @@ class HLTBResultCache(Protocol):
 logger = logging.getLogger(__name__)
 
 
+class HLTBSearchToken(BaseModel):
+    token: str
+    hp_key: str = Field(validation_alias="hpKey")
+    hp_value: str = Field(validation_alias="hpVal")
+
+
+class HLTBSearchResult(BaseModel):
+    game_name: str
+    game_image: str | None = None
+    comp_main: float | None = None
+    comp_plus: float | None = None
+    comp_100: float | None = None
+
+
+class HLTBSearchResponse(BaseModel):
+    data: list[HLTBSearchResult] = Field(default_factory=list)
+
+
+class HLTBWebClient:
+    """Client for HowLongToBeat's current public search endpoints."""
+
+    _base_url = "https://howlongtobeat.com"
+
+    def __init__(
+        self,
+        http_client: httpx.AsyncClient | None = None,
+        clock: Callable[[], int] | None = None,
+    ) -> None:
+        self._http_client = http_client
+        self._clock = clock or _current_timestamp
+
+    async def async_search(self, game_name: str, similarity_case_sensitive: bool = False) -> list[HLTBSearchResult]:
+        del similarity_case_sensitive
+        if self._http_client is not None:
+            return await self._search(self._http_client, game_name)
+
+        async with httpx.AsyncClient(timeout=15.0) as http_client:
+            return await self._search(http_client, game_name)
+
+    async def _search(self, http_client: httpx.AsyncClient, game_name: str) -> list[HLTBSearchResult]:
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+            ),
+            "Referer": f"{self._base_url}/",
+            "Origin": self._base_url,
+        }
+        token_response = await http_client.get(
+            f"{self._base_url}/api/search/site/init",
+            params={"t": self._clock()},
+            headers=headers,
+        )
+        token_response.raise_for_status()
+        token = HLTBSearchToken.model_validate(token_response.json())
+
+        payload = {
+            "searchType": "games",
+            "searchTerms": game_name.split(),
+            "searchPage": 1,
+            "size": 20,
+            "searchOptions": {
+                "games": {
+                    "userId": 0,
+                    "platform": "",
+                    "sortCategory": "popular",
+                    "rangeCategory": "main",
+                    "rangeTime": {"min": 0, "max": 0},
+                    "gameplay": {"perspective": "", "flow": "", "genre": "", "difficulty": ""},
+                    "rangeYear": {"max": "", "min": ""},
+                    "modifier": "",
+                },
+                "users": {"sortCategory": "postcount"},
+                "lists": {"sortCategory": "follows"},
+                "filter": "",
+                "sort": 0,
+                "randomizer": 0,
+            },
+            "useCache": True,
+            token.hp_key: token.hp_value,
+        }
+        search_response = await http_client.post(
+            f"{self._base_url}/api/search/site",
+            json=payload,
+            headers={
+                **headers,
+                "x-auth-token": token.token,
+                "x-hp-key": token.hp_key,
+                "x-hp-val": token.hp_value,
+            },
+        )
+        search_response.raise_for_status()
+        return HLTBSearchResponse.model_validate(search_response.json()).data
+
+
+def _current_timestamp() -> int:
+    return int(time.time() * 1000)
+
+
 class HLTBService:
     def __init__(
         self,
@@ -31,7 +133,8 @@ class HLTBService:
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
     ):
         self._max_cache_entries = max_cache_entries
-        self._api = api or HowLongToBeat(input_minimum_similarity=similarity_threshold)
+        self._api = api or HLTBWebClient()
+        self._similarity_threshold = similarity_threshold
         self._cache: OrderedDict[str, list[Game]] = OrderedDict()
         self._shared_cache = shared_cache if shared_cache is not None else UpstashHLTBCache.from_environment()
         self._retry_attempts = retry_attempts
@@ -60,7 +163,15 @@ class HLTBService:
                     return shared_results
 
         matches = await self._search_with_retries(normalized_query)
-        sorted_matches = sorted(matches or [], key=lambda match: match.similarity, reverse=True)
+        sorted_matches = sorted(
+            (
+                match
+                for match in matches or []
+                if self._similarity(match, normalized_query) >= self._similarity_threshold
+            ),
+            key=lambda match: self._similarity(match, normalized_query),
+            reverse=True,
+        )
         results = [self._to_game(match) for match in sorted_matches]
 
         self._remember(cache_key, results)
@@ -97,11 +208,28 @@ class HLTBService:
             self._cache.popitem(last=False)
 
     @staticmethod
+    def _similarity(result: Any, query: str) -> float:
+        similarity = getattr(result, "similarity", None)
+        if similarity is not None:
+            return float(similarity)
+        return SequenceMatcher(None, query.casefold(), result.game_name.casefold()).ratio()
+
+    @staticmethod
     def _to_game(result: Any) -> Game:
+        main_story = getattr(result, "main_story", None)
+        if main_story is not None:
+            main_extra = result.main_extra
+            completionist = result.completionist
+            image_url = result.game_image_url or ""
+        else:
+            main_story = (result.comp_main or 0.0) / 3600
+            main_extra = result.comp_plus / 3600 if result.comp_plus is not None else None
+            completionist = result.comp_100 / 3600 if result.comp_100 is not None else None
+            image_url = f"https://howlongtobeat.com/games/{result.game_image}" if result.game_image else ""
         return Game(
             name=result.game_name or "",
-            image_url=result.game_image_url or "",
-            main_story_hours=result.main_story or 0.0,
-            main_extra_hours=result.main_extra,
-            completionist_hours=result.completionist,
+            image_url=image_url,
+            main_story_hours=main_story,
+            main_extra_hours=main_extra,
+            completionist_hours=completionist,
         )
