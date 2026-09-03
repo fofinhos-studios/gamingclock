@@ -1,8 +1,13 @@
-# Gaming Clock
+<h1 align="center">
+  <img src="https://raw.githubusercontent.com/phosphor-icons/core/main/assets/regular/game-controller.svg" width="32" height="32" alt="" align="absmiddle" />
+  Gaming Clock
+</h1>
 
-Made with love by 🧡💜 fofinhos.studios
+<p align="center">Turn your game backlog into a plan you can actually play <img src="https://raw.githubusercontent.com/phosphor-icons/core/main/assets/regular/clock.svg" width="16" height="16" alt="" align="absmiddle" /></p>
 
-Turn your game backlog into a plan you can actually play. Gaming Clock helps you see how much time your list will take and fit it around your real week.
+<p align="center">Made with <img src="https://raw.githubusercontent.com/phosphor-icons/core/main/assets/regular/heart.svg" width="16" height="16" alt="love" align="absmiddle" /> by fofinhos.studios</p>
+
+Gaming Clock helps you see how much time your list will take and fit it around your real week.
 
 ## What you can do
 
