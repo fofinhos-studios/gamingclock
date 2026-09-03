@@ -1,10 +1,20 @@
 import asyncio
 import logging
+import os
+import secrets
 
 import httpx
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
-from gamingclock.models.catalog import CatalogGame, GameArtwork, HLTBStatus, ListGame, ResolveGameRequest
+from gamingclock.models.catalog import (
+    CacheWarmResult,
+    CatalogGame,
+    GameArtwork,
+    HLTBStatus,
+    ListGame,
+    ResolveGameRequest,
+)
+from gamingclock.services.cache_warmer import PopularCacheWarmer
 from gamingclock.services.hltb import HLTBService
 from gamingclock.services.igdb import IGDBService
 from gamingclock.services.steamgriddb import SteamGridDBService
@@ -15,7 +25,10 @@ hltb_service = HLTBService()
 igdb_service = IGDBService()
 steamgriddb_service = SteamGridDBService()
 SEARCH_ENRICHMENT_LIMIT = 8
+DEFAULT_WARM_CACHE_GAME_LIMIT = 20
+MAX_WARM_CACHE_GAME_LIMIT = 50
 logger = logging.getLogger(__name__)
+popular_cache_warmer = PopularCacheWarmer(igdb_service.popular_games, hltb_service.warm)
 
 
 @router.get("/search", response_model=list[CatalogGame])
@@ -61,6 +74,13 @@ async def get_game_artwork_legacy(request: ResolveGameRequest) -> GameArtwork:
     if not request.name:
         return GameArtwork()
     return await _get_steamgriddb_artwork(request.name)
+
+
+@router.get("/internal/warm-popular", response_model=CacheWarmResult)
+async def warm_popular_cache(request: Request) -> CacheWarmResult:
+    """Warm shared HLTB matches for IGDB's most-visited games via Vercel Cron."""
+    _validate_cron_request(request)
+    return await popular_cache_warmer.warm(_warm_cache_game_limit())
 
 
 async def _enrich_catalog_game(catalog_game: CatalogGame) -> ListGame:
@@ -135,3 +155,23 @@ def _unresolved_game(catalog_game: CatalogGame, artwork: GameArtwork) -> ListGam
         rating=catalog_game.rating,
         hltb_status=HLTBStatus.UNRESOLVED,
     )
+
+
+def _validate_cron_request(request: Request) -> None:
+    cron_secret = os.getenv("CRON_SECRET")
+    authorization = request.headers.get("authorization", "")
+    if not cron_secret:
+        raise HTTPException(status_code=503, detail="Cron jobs are not configured")
+    if not secrets.compare_digest(authorization, f"Bearer {cron_secret}"):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+
+def _warm_cache_game_limit() -> int:
+    raw_limit = os.getenv("WARM_CACHE_GAME_LIMIT")
+    if raw_limit is None:
+        return DEFAULT_WARM_CACHE_GAME_LIMIT
+    try:
+        limit = int(raw_limit)
+    except ValueError:
+        return DEFAULT_WARM_CACHE_GAME_LIMIT
+    return min(max(limit, 1), MAX_WARM_CACHE_GAME_LIMIT)

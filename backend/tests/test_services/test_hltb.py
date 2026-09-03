@@ -36,6 +36,11 @@ class SlowSharedCacheFake(SharedCacheFake):
         await self.release_write.wait()
 
 
+class FailingSharedCacheFake(SharedCacheFake):
+    async def set(self, normalized_query: str, results: list[Game]) -> None:
+        raise RuntimeError("Redis is unavailable")
+
+
 def _result(
     name: str,
     similarity: float,
@@ -251,6 +256,26 @@ async def test_search_returns_before_a_slow_shared_cache_write_finishes():
     assert [result.name for result in results] == ["Final Fantasy VII"]
     await asyncio.wait_for(shared_cache.write_started.wait(), timeout=0.1)
     shared_cache.release_write.set()
+
+
+@pytest.mark.asyncio
+async def test_warm_reports_a_successful_shared_cache_write():
+    shared_cache = SharedCacheFake(None)
+    api = SimpleNamespace(async_search=AsyncMock(return_value=[_result("Final Fantasy VII", 1.0, 36.03)]))
+
+    warmed = await HLTBService(api=api, shared_cache=shared_cache).warm("Final Fantasy VII")
+
+    assert warmed is True
+    assert shared_cache.set_calls[0][0] == "final fantasy vii"
+
+
+@pytest.mark.asyncio
+async def test_warm_reports_a_failed_shared_cache_write():
+    api = SimpleNamespace(async_search=AsyncMock(return_value=[_result("Final Fantasy VII", 1.0, 36.03)]))
+
+    warmed = await HLTBService(api=api, shared_cache=FailingSharedCacheFake(None)).warm("Final Fantasy VII")
+
+    assert warmed is False
 
 
 @pytest.mark.asyncio

@@ -132,3 +132,46 @@ async def test_igdb_get_by_id_returns_mocked_game(monkeypatch):
 
     assert result.igdb_id == 22
     assert result.name == "Chrono Trigger"
+
+
+@pytest.mark.asyncio
+async def test_igdb_popular_games_blends_current_recent_and_all_time_candidates(monkeypatch):
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "id.twitch.tv":
+            return _token_response()
+        assert request.url.host == "api.igdb.com"
+        body = request.content.decode()
+        if request.url.path == "/v4/popularity_primitives":
+            assert "sort value desc;" in body
+            assert "limit 6;" in body
+            if "where popularity_type = 1;" in body:
+                return httpx.Response(200, json=[{"game_id": 2}, {"game_id": 4}])
+            assert "where popularity_type = 8;" in body
+            return httpx.Response(200, json=[{"game_id": 3}, {"game_id": 1}])
+        assert request.url.path == "/v4/games"
+        if body.startswith("fields id;"):
+            assert "first_release_date >" in body
+            assert "sort total_rating_count desc;" in body
+            return httpx.Response(200, json=[{"id": 4}, {"id": 2}])
+        assert "where id = (2,4,3,1);" in body
+        return httpx.Response(
+            200,
+            json=[
+                {"id": 1, "name": "All Time Runner-up", "game_type": 0},
+                {"id": 2, "name": "Current Visit", "game_type": 0},
+                {"id": 3, "name": "All Time Leader", "game_type": 0},
+                {"id": 4, "name": "Recent Release", "game_type": 0},
+            ],
+        )
+
+    transport = httpx.MockTransport(handler)
+    monkeypatch.setenv("IGDB_CLIENT_ID", "client-id")
+    monkeypatch.setenv("IGDB_CLIENT_SECRET", "client-secret")
+    service = IGDBService(
+        http_client=httpx.AsyncClient(transport=transport),
+        token_client=httpx.AsyncClient(transport=transport),
+    )
+
+    games = await service.popular_games(3)
+
+    assert [game.name for game in games] == ["Current Visit", "Recent Release", "All Time Leader"]

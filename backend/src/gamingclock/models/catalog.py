@@ -21,6 +21,12 @@ class GameArtwork(BaseModel):
     hero_url: str = ""
 
 
+class CacheWarmResult(BaseModel):
+    requested_games: int
+    warmed_games: int
+    failed_games: int
+
+
 class CatalogGame(BaseModel):
     igdb_id: int
     name: str

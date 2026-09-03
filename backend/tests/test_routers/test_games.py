@@ -1,5 +1,7 @@
 from unittest.mock import AsyncMock, patch
 
+from gamingclock.models.catalog import CacheWarmResult
+
 
 def test_search_games(client):
     mock_games = [
@@ -130,3 +132,38 @@ def test_search_games_is_available_when_hltb_is_unavailable(client):
     assert response.status_code == 200
     assert response.json() == mock_games
     mock_hltb.search.assert_not_called()
+
+
+def test_warm_popular_cache_requires_a_configured_cron_secret(client, monkeypatch):
+    monkeypatch.delenv("CRON_SECRET", raising=False)
+
+    response = client.get("/games/internal/warm-popular")
+
+    assert response.status_code == 503
+
+
+def test_warm_popular_cache_rejects_an_invalid_cron_secret(client, monkeypatch):
+    monkeypatch.setenv("CRON_SECRET", "expected-secret")
+
+    response = client.get(
+        "/games/internal/warm-popular",
+        headers={"Authorization": "Bearer wrong-secret"},
+    )
+
+    assert response.status_code == 401
+
+
+def test_warm_popular_cache_warms_the_configured_number_of_games(client, monkeypatch):
+    monkeypatch.setenv("CRON_SECRET", "expected-secret")
+    monkeypatch.setenv("WARM_CACHE_GAME_LIMIT", "21")
+    result = CacheWarmResult(requested_games=21, warmed_games=20, failed_games=1)
+    with patch("gamingclock.routers.games.popular_cache_warmer") as mock_warmer:
+        mock_warmer.warm = AsyncMock(return_value=result)
+        response = client.get(
+            "/games/internal/warm-popular",
+            headers={"Authorization": "Bearer expected-secret"},
+        )
+
+    assert response.status_code == 200
+    assert response.json() == result.model_dump()
+    mock_warmer.warm.assert_awaited_once_with(21)

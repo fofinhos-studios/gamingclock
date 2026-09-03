@@ -143,7 +143,7 @@ class HLTBService:
         self._sleep = sleep
         self._cache_write_tasks: set[asyncio.Task[None]] = set()
 
-    async def search(self, query: str) -> list[Game]:
+    async def search(self, query: str, *, write_shared_cache: bool = True) -> list[Game]:
         normalized_query = query.strip()
         if not normalized_query:
             return []
@@ -182,7 +182,7 @@ class HLTBService:
         results = [self._to_game(match) for match in sorted_matches]
 
         self._remember(cache_key, results)
-        if self._shared_cache is not None:
+        if write_shared_cache and self._shared_cache is not None:
             cache_write_task = asyncio.create_task(self._write_shared_cache(cache_key, results))
             self._cache_write_tasks.add(cache_write_task)
             cache_write_task.add_done_callback(self._cache_write_tasks.discard)
@@ -193,6 +193,20 @@ class HLTBService:
             (time.perf_counter() - started_at) * 1000,
         )
         return results
+
+    async def warm(self, query: str) -> bool:
+        """Persist a match to the shared cache and report whether that write succeeded."""
+        normalized_query = query.strip()
+        if not normalized_query or self._shared_cache is None:
+            return False
+
+        results = await self.search(normalized_query, write_shared_cache=False)
+        try:
+            await self._shared_cache.set(normalized_query.lower(), results)
+        except Exception:
+            logger.warning("Shared HLTB cache warming write failed", exc_info=True)
+            return False
+        return True
 
     async def _search_with_retries(self, query: str) -> list[Any] | None:
         for attempt in range(self._retry_attempts):

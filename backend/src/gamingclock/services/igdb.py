@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import re
@@ -17,6 +18,10 @@ class IGDBService:
     """Use IGDB in configured environments and a small catalog for local work."""
 
     _SEARCH_FETCH_LIMIT: ClassVar[int] = 40
+    _POPULARITY_CANDIDATE_MULTIPLIER: ClassVar[int] = 2
+    _VISITS_POPULARITY_TYPE: ClassVar[int] = 1
+    _TOTAL_REVIEWS_POPULARITY_TYPE: ClassVar[int] = 8
+    _RECENT_RELEASE_SECONDS: ClassVar[int] = 365 * 24 * 60 * 60
     _ALLOWED_GAME_TYPES: ClassVar[frozenset[int]] = frozenset({0, 8, 9, 10})
     _GAME_TYPE_PREFERENCE: ClassVar[dict[int, float]] = {0: 1.0, 10: 0.95, 9: 0.9, 8: 0.85}
 
@@ -124,6 +129,89 @@ class IGDBService:
             (time.perf_counter() - started_at) * 1000,
         )
         return game
+
+    async def popular_games(self, limit: int = 20) -> list[CatalogGame]:
+        """Blend current, recent-release, and all-time games for cache warming."""
+        if limit <= 0:
+            return []
+        if not self._is_configured():
+            return self._local_catalog[:limit]
+
+        client_id, token = await self._get_auth_headers()
+        headers = {"Client-ID": client_id, "Authorization": f"Bearer {token}"}
+        candidate_limit = limit * self._POPULARITY_CANDIDATE_MULTIPLIER
+        current_ids, recent_release_ids, all_time_ids = await asyncio.gather(
+            self._popularity_game_ids(headers, self._VISITS_POPULARITY_TYPE, candidate_limit),
+            self._recent_release_game_ids(headers, candidate_limit),
+            self._popularity_game_ids(headers, self._TOTAL_REVIEWS_POPULARITY_TYPE, candidate_limit),
+        )
+        game_ids = self._interleave_unique_game_ids(current_ids, recent_release_ids, all_time_ids)
+        if not game_ids:
+            return []
+
+        games_response = await self._http_client.post(
+            "https://api.igdb.com/v4/games",
+            headers=headers,
+            content=(
+                "fields id,name,summary,rating,first_release_date,cover.url,genres.name,platforms.name,"
+                "game_type,version_parent;"
+                f"where id = ({','.join(map(str, game_ids))});"
+                f"limit {len(game_ids)};"
+            ),
+        )
+        games_response.raise_for_status()
+        games_by_id = {
+            item["id"]: self._to_catalog_game(item)
+            for item in games_response.json()
+            if self._is_search_candidate(item)
+        }
+        return [games_by_id[game_id] for game_id in game_ids if game_id in games_by_id][:limit]
+
+    async def _popularity_game_ids(
+        self, headers: dict[str, str], popularity_type: int, limit: int
+    ) -> list[int]:
+        response = await self._http_client.post(
+            "https://api.igdb.com/v4/popularity_primitives",
+            headers=headers,
+            content=(
+                "fields game_id,value;"
+                f"where popularity_type = {popularity_type};"
+                "sort value desc;"
+                f"limit {limit};"
+            ),
+        )
+        response.raise_for_status()
+        return [item["game_id"] for item in response.json() if isinstance(item.get("game_id"), int)]
+
+    async def _recent_release_game_ids(self, headers: dict[str, str], limit: int) -> list[int]:
+        cutoff = int(time.time()) - self._RECENT_RELEASE_SECONDS
+        response = await self._http_client.post(
+            "https://api.igdb.com/v4/games",
+            headers=headers,
+            content=(
+                "fields id;"
+                "where version_parent = null & game_type = (0,8,9,10)"
+                f" & first_release_date > {cutoff};"
+                "sort total_rating_count desc;"
+                f"limit {limit};"
+            ),
+        )
+        response.raise_for_status()
+        return [item["id"] for item in response.json() if isinstance(item.get("id"), int)]
+
+    @staticmethod
+    def _interleave_unique_game_ids(*game_id_lists: list[int]) -> list[int]:
+        game_ids: list[int] = []
+        seen_game_ids: set[int] = set()
+        for index in range(max((len(game_ids) for game_ids in game_id_lists), default=0)):
+            for game_id_list in game_id_lists:
+                if index >= len(game_id_list):
+                    continue
+                game_id = game_id_list[index]
+                if game_id not in seen_game_ids:
+                    seen_game_ids.add(game_id)
+                    game_ids.append(game_id)
+        return game_ids
 
     @staticmethod
     def _is_configured() -> bool:

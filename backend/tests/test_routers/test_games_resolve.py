@@ -115,9 +115,9 @@ def test_get_game_artwork_returns_only_search_card_artwork(client):
             )
         )
 
-        response = client.post(
+        response = client.get(
             "/games/artwork",
-            json={"igdb_id": 10, "name": "Final Fantasy VII"},
+            params={"igdb_id": 10, "name": "Final Fantasy VII"},
         )
 
     assert response.status_code == 200
@@ -126,4 +126,7 @@ def test_get_game_artwork_returns_only_search_card_artwork(client):
         "logo_url": "https://cdn.example/ff7-logo.png",
         "hero_url": "https://cdn.example/ff7-hero.jpg",
     }
+    assert response.headers["cache-control"] == (
+        "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800"
+    )
     mock_steamgriddb.get_artwork.assert_awaited_once_with("Final Fantasy VII")

@@ -11,6 +11,12 @@
       "framework": "fastapi"
     }
   },
+  "crons": [
+    {
+      "path": "/api/games/internal/warm-popular",
+      "schedule": "0 4 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/api/games/search",
@@ -18,6 +24,15 @@
         {
           "key": "Cache-Control",
           "value": "public, s-maxage=300, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/api/games/artwork",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800"
         }
       ]
     }

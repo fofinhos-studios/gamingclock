@@ -1,4 +1,5 @@
 from gamingclock.models.catalog import (
+    CacheWarmResult,
     CatalogGame,
     GameArtwork,
     HLTBStatus,
@@ -17,6 +18,7 @@ from gamingclock.models.schedule import (
 )
 
 __all__ = [
+    "CacheWarmResult",
     "CatalogGame",
     "DayAvailability",
     "Game",
