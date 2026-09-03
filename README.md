@@ -5,8 +5,6 @@
 
 <p align="center">Turn your game backlog into a plan you can actually play <img src="https://raw.githubusercontent.com/phosphor-icons/core/main/assets/regular/clock.svg" width="16" height="16" alt="" align="absmiddle" /></p>
 
-<p align="center">Made with <img src="https://raw.githubusercontent.com/phosphor-icons/core/main/assets/regular/heart.svg" width="16" height="16" alt="love" align="absmiddle" /> by <a href="https://www.fofinhos.studio/">fofinhos.studios</a></p>
-
 Gaming Clock helps you see how much time your list will take and fit it around your real week.
 
 ## What you can do
@@ -20,3 +18,5 @@ Gaming Clock helps you see how much time your list will take and fit it around y
 ## Data credits
 
 Game information is provided by [IGDB](https://www.igdb.com/). Playtime estimates are sourced from [HowLongToBeat](https://howlongtobeat.com/). Game logos and hero banners are provided by [SteamGridDB](https://www.steamgriddb.com/).
+
+<p align="center">Made with <img src="https://raw.githubusercontent.com/phosphor-icons/core/main/assets/regular/heart.svg" width="16" height="16" alt="love" align="absmiddle" /> by <a href="https://www.fofinhos.studio/">fofinhos.studios</a></p>
