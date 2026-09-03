@@ -258,14 +258,28 @@ export function HomePage() {
     ...(schedule ? (["schedule"] as const) : []),
   ];
 
-  const resolveBacklogGame = (game: CatalogGame, backlogId: string) => {
+  const resolveBacklogGame = (
+    game: CatalogGame | ListGame,
+    backlogId: string,
+    preserveCardData = false,
+  ) => {
     void resolveGame(game)
       .then((resolvedGame) => {
-        const nextGame: ListGame = {
-          ...resolvedGame,
-          hltb_error: null,
-          selected_hltb_category: "main",
-        };
+        const nextGame: ListGame = preserveCardData
+          ? {
+              ...game,
+              hltb_status: resolvedGame.hltb_status,
+              hltb_error: null,
+              hltb_match_name: resolvedGame.hltb_match_name,
+              main_story_hours: resolvedGame.main_story_hours,
+              main_extra_hours: resolvedGame.main_extra_hours,
+              completionist_hours: resolvedGame.completionist_hours,
+            }
+          : {
+              ...resolvedGame,
+              hltb_error: null,
+              selected_hltb_category: "main",
+            };
         setBacklogs((currentBacklogs) =>
           currentBacklogs.map((backlog) =>
             backlog.id === backlogId
@@ -358,7 +372,7 @@ export function HomePage() {
       ),
     );
     clearGeneratedSchedule();
-    resolveBacklogGame(game, targetBacklogId);
+    resolveBacklogGame(game, targetBacklogId, true);
   };
 
   const removeGame = (igdbId: number) => {

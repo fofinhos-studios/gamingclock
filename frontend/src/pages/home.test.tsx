@@ -961,6 +961,88 @@ describe("HomePage", () => {
     }
   });
 
+  test("retries only HLTB fields without replacing saved card artwork", async () => {
+    const user = userEvent.setup();
+    const originalFetch = globalThis.fetch;
+    let resolveAttempt = 0;
+    const unresolvedGame = createSearchResult({
+      hltb_status: "unresolved",
+      hltb_match_name: null,
+      main_story_hours: null,
+      main_extra_hours: null,
+      completionist_hours: null,
+    });
+    const retryResult = createSearchResult({
+      cover_url: "https://example.com/retried-cover.jpg",
+      logo_url: "https://example.com/retried-logo.png",
+      hero_url: "https://example.com/retried-hero.jpg",
+      main_story_hours: 42,
+      main_extra_hours: 60,
+      completionist_hours: 80,
+    });
+
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith("/api/games/search?")) {
+        return createJsonResponse([createCatalogResult()]);
+      }
+      if (url === "/api/games/resolve") {
+        resolveAttempt += 1;
+        return createJsonResponse(
+          resolveAttempt === 1 ? unresolvedGame : retryResult,
+        );
+      }
+      throw new Error(`Unexpected fetch call: ${url}`);
+    }) as typeof fetch;
+
+    try {
+      const view = render(<HomePage path="/" />);
+      const gamesPanel = view.getByRole("tabpanel");
+      const searchInput = within(gamesPanel).getByRole("textbox", {
+        name: /search by title/i,
+      });
+
+      await user.type(searchInput, "ho");
+      await waitFor(() =>
+        expect(
+          view.getByRole("button", { name: /add hollow knight to backlog/i }),
+        ).toBeTruthy(),
+      );
+      await user.click(
+        view.getByRole("button", { name: /add hollow knight to backlog/i }),
+      );
+      await waitFor(() =>
+        expect(
+          within(gamesPanel).getByRole("button", {
+            name: /retry hollow knight playtime/i,
+          }),
+        ).toBeTruthy(),
+      );
+
+      const originalCoverUrl = view.container
+        .querySelector(".planner-backlog-row .game-cartridge__cover")
+        ?.getAttribute("src");
+
+      await user.click(
+        within(gamesPanel).getByRole("button", {
+          name: /retry hollow knight playtime/i,
+        }),
+      );
+
+      await waitFor(() =>
+        expect(within(gamesPanel).getByText(/42h main/i)).toBeTruthy(),
+      );
+      expect(
+        view.container
+          .querySelector(".planner-backlog-row .game-cartridge__cover")
+          ?.getAttribute("src"),
+      ).toBe(originalCoverUrl);
+      expect(resolveAttempt).toBe(2);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   test("keeps duplicate add feedback stable without key warnings", async () => {
     const user = userEvent.setup();
     const originalFetch = globalThis.fetch;

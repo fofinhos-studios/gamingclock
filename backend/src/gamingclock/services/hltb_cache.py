@@ -13,7 +13,7 @@ from gamingclock.models.game import Game
 class UpstashHLTBCache:
     """Store serialised HLTB matches in an Upstash Redis REST database."""
 
-    _KEY_PREFIX = "gamingclock:hltb:v1:"
+    _KEY_PREFIX = "gamingclock:hltb:v2:"
 
     def __init__(self, url: str, token: str, ttl_seconds: int = 604800) -> None:
         self._url = url.rstrip("/")
