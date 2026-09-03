@@ -114,8 +114,8 @@ export const strings = {
       moveLater: (name: string) => `Move ${name} later`,
       earlier: "Earlier",
       later: "Later",
-      useTime: (label: string, hours: number) =>
-        `Use ${label} time: ${hours} hours`,
+      useTime: (label: string, duration: string) =>
+        `Use ${label} time: ${duration}`,
     },
     availability: {
       heading: "Days and times",
@@ -350,8 +350,8 @@ export const strings = {
       moveLater: (name: string) => `Mover ${name} para depois`,
       earlier: "Antes",
       later: "Depois",
-      useTime: (label: string, hours: number) =>
-        `Usar duração ${label}: ${hours} horas`,
+      useTime: (label: string, duration: string) =>
+        `Usar duração ${label}: ${duration}`,
     },
     availability: {
       heading: "Dias e horários",

@@ -78,6 +78,25 @@ describe("GameListView", () => {
     ).not.toContain("2017");
   });
 
+  test("formats fractional HLTB durations as hours and minutes", () => {
+    const view = render(
+      <LanguageProvider browserLanguages={["en"]}>
+        <GameListView
+          name="My backlog"
+          games={[{ ...game, main_story_hours: 28.438333333333333 }]}
+          onRemoveGame={vi.fn()}
+          onSelectGameTime={vi.fn()}
+          onRetryGame={vi.fn()}
+          onMoveGame={vi.fn()}
+          onReorderGames={vi.fn()}
+          onRenameList={vi.fn()}
+        />
+      </LanguageProvider>,
+    );
+
+    expect(view.getByText("28h 26m main")).toBeTruthy();
+  });
+
   test("reorders a game when it is dropped onto another card", async () => {
     const onReorderGames = vi.fn();
     const secondGame = { ...game, igdb_id: 2, name: "Celeste" };

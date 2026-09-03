@@ -164,7 +164,7 @@ describe("release journey", () => {
       );
       await user.click(
         within(gamesPanel()).getByRole("button", {
-          name: /use completionist time: 50 hours/i,
+          name: /use completionist time: 50h/i,
         }),
       );
       await user.click(

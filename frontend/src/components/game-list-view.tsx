@@ -32,6 +32,16 @@ type DropTarget = {
   position: "before" | "after";
 };
 
+function formatPlaytime(hours: number): string {
+  const totalMinutes = Math.round(hours * 60);
+  const wholeHours = Math.floor(totalMinutes / 60);
+  const remainingMinutes = totalMinutes % 60;
+
+  return remainingMinutes === 0
+    ? `${wholeHours}h`
+    : `${wholeHours}h ${remainingMinutes}m`;
+}
+
 export function GameListView({
   name,
   games,
@@ -263,7 +273,10 @@ export function GameListView({
                               (game.selected_hltb_category ?? "main") ===
                               category
                             }
-                            aria-label={t.list.useTime(String(label), hours)}
+                            aria-label={t.list.useTime(
+                              String(label),
+                              formatPlaytime(hours),
+                            )}
                             onClick={() =>
                               onSelectGameTime(index, category as HLTBCategory)
                             }
@@ -272,7 +285,7 @@ export function GameListView({
                               class="planner-hltb-option__icon"
                               aria-hidden="true"
                             />
-                            {`${hours}h ${String(label).toLowerCase()}`}
+                            {`${formatPlaytime(hours)} ${String(label).toLowerCase()}`}
                           </Button>
                         ) : null,
                       )}

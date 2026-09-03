@@ -154,7 +154,7 @@ describe("HomePage", () => {
       await waitFor(() =>
         expect(
           firstView.getByRole("button", {
-            name: /use main time: 27\.5 hours/i,
+            name: /use main time: 27h 30m/i,
           }),
         ).toBeTruthy(),
       );
@@ -200,7 +200,7 @@ describe("HomePage", () => {
       await user.click(reloadedView.getByRole("tab", { name: /games/i }));
       expect(
         reloadedView.getByRole("button", {
-          name: /use main time: 27\.5 hours/i,
+          name: /use main time: 27h 30m/i,
         }),
       ).toBeTruthy();
       await user.click(
@@ -443,7 +443,7 @@ describe("HomePage", () => {
 
       await waitFor(() =>
         expect(
-          view.getByRole("button", { name: /use main time: 27\.5 hours/i }),
+          view.getByRole("button", { name: /use main time: 27h 30m/i }),
         ).toBeTruthy(),
       );
       expect(
@@ -453,7 +453,7 @@ describe("HomePage", () => {
       ).toBeTruthy();
       expect(
         view
-          .getByRole("button", { name: /use main time: 27\.5 hours/i })
+          .getByRole("button", { name: /use main time: 27h 30m/i })
           .getAttribute("aria-pressed"),
       ).toBe("true");
       expect(view.queryByText(/playstation/i)).toBeNull();
@@ -462,13 +462,13 @@ describe("HomePage", () => {
 
       await user.click(
         view.getByRole("button", {
-          name: /use completionist time: 60 hours/i,
+          name: /use completionist time: 60h/i,
         }),
       );
       expect(
         view
           .getByRole("button", {
-            name: /use completionist time: 60 hours/i,
+            name: /use completionist time: 60h/i,
           })
           .getAttribute("aria-pressed"),
       ).toBe("true");
@@ -811,7 +811,7 @@ describe("HomePage", () => {
 
       await waitFor(() =>
         expect(
-          view.getByRole("button", { name: /use main time: 27\.5 hours/i }),
+          view.getByRole("button", { name: /use main time: 27h 30m/i }),
         ).toBeTruthy(),
       );
 
@@ -1181,7 +1181,7 @@ describe("HomePage", () => {
 
       await waitFor(() =>
         expect(
-          view.getByRole("button", { name: /use main time: 27\.5 hours/i }),
+          view.getByRole("button", { name: /use main time: 27h 30m/i }),
         ).toBeTruthy(),
       );
 
@@ -1282,7 +1282,7 @@ describe("HomePage", () => {
 
       await waitFor(() =>
         expect(
-          view.getByRole("button", { name: /use main time: 27\.5 hours/i }),
+          view.getByRole("button", { name: /use main time: 27h 30m/i }),
         ).toBeTruthy(),
       );
 
