@@ -28,3 +28,13 @@ dist/
 .superpowers/
 docs/superpowers/plans/
 .vercel
+
+# Local agent artifacts and planning material
+.agents/
+.codebase-memory/
+docs/
+AGENTS.md
+SKILL.md
+PLAN.md
+resources.md
+skills-lock.json
