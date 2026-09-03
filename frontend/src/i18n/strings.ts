@@ -75,7 +75,8 @@ export const strings = {
     search: {
       title: "Find your games",
       label: "Search by title",
-      placeholder: "Try “Hollow Knight” or “Mario Kart”",
+      placeholder: (firstGame: string, secondGame: string) =>
+        `Try “${firstGame}” or “${secondGame}”`,
       clear: "Clear search",
       finding: "Finding games...",
       noMatches: "No matches found.",
@@ -311,7 +312,8 @@ export const strings = {
     search: {
       title: "Encontre seus jogos",
       label: "Buscar por título",
-      placeholder: "Tente “Hollow Knight” ou “Mario Kart”",
+      placeholder: (firstGame: string, secondGame: string) =>
+        `Tente “${firstGame}” ou “${secondGame}”`,
       clear: "Limpar busca",
       finding: "Buscando jogos...",
       noMatches: "Nenhum resultado encontrado.",

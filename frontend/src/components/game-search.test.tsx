@@ -29,6 +29,22 @@ describe("GameSearch", () => {
     expect(view.container.querySelector(".planner-search-results")).toBeNull();
   });
 
+  test("uses a randomly selected pair of games in the search placeholder", () => {
+    const random = vi.spyOn(Math, "random").mockReturnValue(0);
+    const view = render(
+      <LanguageProvider browserLanguages={["en"]}>
+        <GameSearch games={[]} onAddGame={vi.fn()} />
+      </LanguageProvider>,
+    );
+
+    expect(
+      view
+        .getByRole("textbox", { name: /search by title/i })
+        .getAttribute("placeholder"),
+    ).toBe("Try “Hollow Knight” or “Mario Kart 8 Deluxe”");
+    random.mockRestore();
+  });
+
   test("keeps a result name and cover visible while its cartridge artwork loads", async () => {
     const user = userEvent.setup();
     const artwork = Promise.withResolvers<{

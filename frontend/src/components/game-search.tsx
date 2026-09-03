@@ -16,12 +16,33 @@ interface Props {
   onAddGame: (game: CatalogGame) => void;
 }
 
+const searchExamples = [
+  "Hollow Knight",
+  "Mario Kart 8 Deluxe",
+  "Hades",
+  "Stardew Valley",
+  "Elden Ring",
+  "The Legend of Zelda: Tears of the Kingdom",
+  "Baldur's Gate 3",
+  "Celeste",
+] as const;
+
+function getSearchExamples(): [string, string] {
+  const firstIndex = Math.floor(Math.random() * searchExamples.length);
+  const secondIndex =
+    (firstIndex + 1 + Math.floor(Math.random() * (searchExamples.length - 1))) %
+    searchExamples.length;
+
+  return [searchExamples[firstIndex], searchExamples[secondIndex]];
+}
+
 function previewCoverUrl(coverUrl: string) {
   return coverUrl.replace("/t_thumb/", "/t_cover_small/");
 }
 
 export function GameSearch({ games, onAddGame }: Props) {
   const { t } = useLanguage();
+  const [searchExamples] = useState(getSearchExamples);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const resultRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const searchRequestId = useRef(0);
@@ -240,7 +261,7 @@ export function GameSearch({ games, onAddGame }: Props) {
               onInput={(event) =>
                 setQuery((event.target as HTMLInputElement).value)
               }
-              placeholder={t.search.placeholder}
+              placeholder={t.search.placeholder(...searchExamples)}
               autoComplete="off"
             />
           </Field>
