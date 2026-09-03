@@ -19,9 +19,3 @@ Game information is provided by [IGDB](https://www.igdb.com/). Playtime estimate
 ## Optional artwork configuration
 
 Set `STEAMGRIDDB_API_KEY` in your local `.env` file or deployment environment to retrieve a selected game's logo and hero banner. Without it, the app continues normally and returns empty artwork URLs.
-
-## Vercel cache warming
-
-Production deployments schedule a daily Vercel Cron Job for 04:00 UTC. It blends current IGDB visits, high-engagement games released in the past 12 months, and Steam's all-time review leaders before warming their shared HowLongToBeat matches in Upstash Redis. This makes frequently selected games less likely to need an upstream HLTB request.
-
-Set `CRON_SECRET` to a random value of at least 16 characters in Vercel. Vercel sends it automatically to the protected cron route. Optionally set `WARM_CACHE_GAME_LIMIT` to warm between 1 and 50 games; the default is 20. The job needs both IGDB credentials and the Upstash Redis environment variables to warm the production cache.
