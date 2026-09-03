@@ -74,6 +74,7 @@ describe("GameSearch", () => {
     });
 
     const logo = await view.findByAltText("Dragon Quest XI logo");
+    expect(view.getByRole("heading", { name: "Dragon Quest XI" })).toBeTruthy();
     const hero = view.container.querySelector(".planner-result__hero");
     expect(hero).toBeTruthy();
     fireEvent.load(logo);

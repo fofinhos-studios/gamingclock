@@ -420,9 +420,7 @@ function SearchResultCartridge({
                 onError={() => markArtworkSettled(artwork.logo_url)}
               />
             )}
-            {(!isArtworkReady || !artwork?.logo_url) && (
-              <h3 class="planner-result__title">{game.name}</h3>
-            )}
+            <h3 class="planner-result__title">{game.name}</h3>
           </div>
           <div class="planner-result__meta-group">
             <p class="planner-result__meta">

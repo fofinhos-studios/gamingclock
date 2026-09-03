@@ -116,11 +116,10 @@ export function GameCartridge({
               onLoad={() => markArtworkSettled(game.logo_url)}
               onError={() => markArtworkSettled(game.logo_url)}
             />
-          ) : (
-            <h3 class="game-cartridge__title planner-backlog-row__title">
-              {game.name}
-            </h3>
-          )}
+          ) : null}
+          <h3 class="game-cartridge__title planner-backlog-row__title">
+            {game.name}
+          </h3>
         </div>
 
         <dl class="game-cartridge__label" aria-label={`${game.name} details`}>

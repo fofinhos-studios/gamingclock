@@ -66,6 +66,7 @@ describe("GameCartridge", () => {
       ).toBe("false"),
     );
     expect(view.getByAltText("Hollow Knight logo")).toBeTruthy();
+    expect(view.getByRole("heading", { name: "Hollow Knight" })).toBeTruthy();
     expect(view.getByAltText("Hollow Knight cover")).toBeTruthy();
     expect(
       view.container
