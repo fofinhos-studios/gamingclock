@@ -17,6 +17,6 @@ Gaming Clock helps you see how much time your list will take and fit it around y
 
 ## Data credits
 
-Game information is provided by [IGDB](https://www.igdb.com/). Playtime estimates are sourced from [HowLongToBeat](https://howlongtobeat.com/). Game logos and hero banners are provided by [SteamGridDB](https://www.steamgriddb.com/).
+Game information is provided by <img src="https://upload.wikimedia.org/wikipedia/commons/1/19/IGDB_logo.svg" width="32" height="16" alt="" align="absmiddle" /> [IGDB](https://www.igdb.com/). Playtime estimates are sourced from <img src="https://howlongtobeat.com/img/icons/apple-touch-icon-57x57.png" width="16" height="16" alt="" align="absmiddle" /> [HowLongToBeat](https://howlongtobeat.com/). Game logos and hero banners are provided by <img src="https://www.steamgriddb.com/static/img/logo-512.png" width="16" height="16" alt="" align="absmiddle" /> [SteamGridDB](https://www.steamgriddb.com/).
 
 <p align="center">Made with <img src="https://raw.githubusercontent.com/phosphor-icons/core/main/assets/regular/heart.svg" width="16" height="16" alt="love" align="absmiddle" /> by <a href="https://www.fofinhos.studio/">fofinhos.studios</a></p>
