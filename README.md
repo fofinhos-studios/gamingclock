@@ -11,11 +11,11 @@ Gaming Clock helps you see how much time your list will take and fit it around y
 
 ## What you can do
 
-- Search for games and build a personal backlog.
-- See estimated playtime for every game and your whole list.
-- Tell Gaming Clock which days you play and how much time you have.
-- Create a schedule that plays games one at a time or rotates between them.
-- Download your plan as an iCalendar file to add it to your calendar.
+- <img src="https://raw.githubusercontent.com/phosphor-icons/core/main/assets/regular/magnifying-glass.svg" width="16" height="16" alt="" align="absmiddle" /> Search for games and build a personal backlog.
+- <img src="https://raw.githubusercontent.com/phosphor-icons/core/main/assets/regular/timer.svg" width="16" height="16" alt="" align="absmiddle" /> See estimated playtime for every game and your whole list.
+- <img src="https://raw.githubusercontent.com/phosphor-icons/core/main/assets/regular/calendar-check.svg" width="16" height="16" alt="" align="absmiddle" /> Tell Gaming Clock which days you play and how much time you have.
+- <img src="https://raw.githubusercontent.com/phosphor-icons/core/main/assets/regular/shuffle.svg" width="16" height="16" alt="" align="absmiddle" /> Create a schedule that plays games one at a time or rotates between them.
+- <img src="https://raw.githubusercontent.com/phosphor-icons/core/main/assets/regular/download-simple.svg" width="16" height="16" alt="" align="absmiddle" /> Download your plan as an iCalendar file to add it to your calendar.
 
 ## Data credits
 
