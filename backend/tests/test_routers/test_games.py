@@ -23,6 +23,7 @@ def test_search_games(client):
         response = client.get("/games/search", params={"query": "Final Fantasy VII"})
 
     assert response.status_code == 200
+    assert float(response.headers["x-process-time-ms"]) >= 0
     data = response.json()
     assert len(data) == 1
     assert data[0]["name"] == "Final Fantasy VII"

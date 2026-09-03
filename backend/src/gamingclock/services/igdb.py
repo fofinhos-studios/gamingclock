@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import time
@@ -8,6 +9,8 @@ from typing import ClassVar
 import httpx
 
 from gamingclock.models.catalog import CatalogGame, release_year_from_epoch
+
+logger = logging.getLogger(__name__)
 
 
 class IGDBService:
@@ -51,11 +54,19 @@ class IGDBService:
         self._expires_at = 0.0
 
     async def search(self, query: str, limit: int = 10) -> list[CatalogGame]:
+        started_at = time.perf_counter()
         normalized = query.strip()
         if not normalized:
             return []
         if not self._is_configured():
-            return self._search_local_catalog(normalized, limit)
+            results = self._search_local_catalog(normalized, limit)
+            logger.info(
+                "IGDB search complete source=local query_length=%d result_count=%d duration_ms=%.1f",
+                len(normalized),
+                len(results),
+                (time.perf_counter() - started_at) * 1000,
+            )
+            return results
 
         client_id, token = await self._get_auth_headers()
         body = (
@@ -71,12 +82,24 @@ class IGDBService:
             content=body,
         )
         response.raise_for_status()
-        return self._clean_search_results(normalized, response.json(), limit)
+        results = self._clean_search_results(normalized, response.json(), limit)
+        logger.info(
+            "IGDB search complete source=remote query_length=%d result_count=%d duration_ms=%.1f",
+            len(normalized),
+            len(results),
+            (time.perf_counter() - started_at) * 1000,
+        )
+        return results
 
     async def get_by_id(self, igdb_id: int) -> CatalogGame:
+        started_at = time.perf_counter()
         if not self._is_configured():
             for game in self._local_catalog:
                 if game.igdb_id == igdb_id:
+                    logger.info(
+                        "IGDB get-by-id complete source=local duration_ms=%.1f",
+                        (time.perf_counter() - started_at) * 1000,
+                    )
                     return game
             raise RuntimeError(f"IGDB game not found: {igdb_id}")
 
@@ -95,7 +118,12 @@ class IGDBService:
         results = response.json()
         if not results:
             raise RuntimeError(f"IGDB game not found: {igdb_id}")
-        return self._to_catalog_game(results[0])
+        game = self._to_catalog_game(results[0])
+        logger.info(
+            "IGDB get-by-id complete source=remote duration_ms=%.1f",
+            (time.perf_counter() - started_at) * 1000,
+        )
+        return game
 
     @staticmethod
     def _is_configured() -> bool:
@@ -142,9 +170,7 @@ class IGDBService:
         for index, item in enumerate(candidates):
             groups.setdefault(find(item["id"]), []).append((index, item))
 
-        popularity_scale = max(
-            (log1p(item.get("total_rating_count") or 0) for item in candidates), default=1.0
-        )
+        popularity_scale = max((log1p(item.get("total_rating_count") or 0) for item in candidates), default=1.0)
         popularity_scale = max(popularity_scale, 1.0)
         selected_groups = [
             cls._select_group_representative(query, group, len(candidates), popularity_scale)
@@ -193,9 +219,7 @@ class IGDBService:
         return score, selected[1], [item for _, item in group]
 
     @classmethod
-    def _search_score(
-        cls, query: str, index: int, item: dict, candidate_count: int, popularity_scale: float
-    ) -> float:
+    def _search_score(cls, query: str, index: int, item: dict, candidate_count: int, popularity_scale: float) -> float:
         normalized_query = cls._normalize_title(query)
         normalized_name = cls._normalize_title(item["name"])
         relevance = 1 - index / max(candidate_count - 1, 1)
@@ -224,10 +248,7 @@ class IGDBService:
     def _merged_platforms(items: list[dict]) -> list[str]:
         return list(
             dict.fromkeys(
-                platform["name"]
-                for item in items
-                for platform in item.get("platforms") or []
-                if platform.get("name")
+                platform["name"] for item in items for platform in item.get("platforms") or [] if platform.get("name")
             )
         )
 
@@ -240,6 +261,7 @@ class IGDBService:
         if self._access_token and time.time() < self._expires_at:
             return client_id, self._access_token
 
+        started_at = time.perf_counter()
         response = await self._token_client.post(
             "https://id.twitch.tv/oauth2/token",
             params={
@@ -252,6 +274,7 @@ class IGDBService:
         payload = response.json()
         self._access_token = payload["access_token"]
         self._expires_at = time.time() + max(payload.get("expires_in", 0) - 60, 0)
+        logger.info("IGDB token refresh complete duration_ms=%.1f", (time.perf_counter() - started_at) * 1000)
         return client_id, self._access_token
 
     @staticmethod

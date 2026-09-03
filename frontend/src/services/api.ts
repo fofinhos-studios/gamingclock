@@ -10,6 +10,19 @@ import type {
 } from "../types";
 
 const API_BASE = "/api";
+const MAX_CACHED_SEARCHES = 24;
+const MAX_CACHED_ARTWORK = 48;
+const MAX_CACHED_RESOLVED_GAMES = 48;
+
+const searchCache = new Map<string, CatalogGame[]>();
+const artworkCache = new Map<string, GameArtwork>();
+const resolvedGameCache = new Map<number, ListGame>();
+
+export function clearGameRequestCache(): void {
+  searchCache.clear();
+  artworkCache.clear();
+  resolvedGameCache.clear();
+}
 
 export type ApiOperation = "search" | "resolve" | "schedule" | "ical";
 export type ApiErrorKind = "network" | "backend";
@@ -39,6 +52,18 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
     return error.message;
   }
   return error instanceof Error && error.message ? error.message : fallback;
+}
+
+function remember<K, V>(cache: Map<K, V>, key: K, value: V, limit: number): V {
+  cache.delete(key);
+  cache.set(key, value);
+  if (cache.size > limit) {
+    const oldestKey = cache.keys().next().value;
+    if (oldestKey !== undefined) {
+      cache.delete(oldestKey);
+    }
+  }
+  return value;
 }
 
 async function parseError(
@@ -78,27 +103,48 @@ async function request(
   }
 }
 
-export async function searchGames(query: string): Promise<CatalogGame[]> {
+export async function searchGames(
+  query: string,
+  signal?: AbortSignal,
+): Promise<CatalogGame[]> {
+  const cacheKey = query.trim().toLocaleLowerCase();
+  const cachedResults = searchCache.get(cacheKey);
+  if (cachedResults) {
+    return cachedResults;
+  }
   const params = new URLSearchParams({ query });
   const response = await request(
     `${API_BASE}/games/search?${params.toString()}`,
-    {},
+    { signal },
     "Search failed",
     "search",
   );
   if (!response.ok) {
     throw await parseError(response, "Search failed", "search");
   }
-  return response.json();
+  return remember(
+    searchCache,
+    cacheKey,
+    await response.json(),
+    MAX_CACHED_SEARCHES,
+  );
 }
 
-export async function resolveGame(game: CatalogGame): Promise<ListGame> {
+export async function resolveGame(
+  game: CatalogGame,
+  signal?: AbortSignal,
+): Promise<ListGame> {
+  const cachedGame = resolvedGameCache.get(game.igdb_id);
+  if (cachedGame) {
+    return cachedGame;
+  }
   const response = await request(
     `${API_BASE}/games/resolve`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(game),
+      signal,
     },
     "Could not find a playtime estimate",
     "resolve",
@@ -110,24 +156,45 @@ export async function resolveGame(game: CatalogGame): Promise<ListGame> {
       "resolve",
     );
   }
-  return response.json();
+  const resolvedGame = (await response.json()) as ListGame;
+  return resolvedGame.hltb_status === "resolved"
+    ? remember(
+        resolvedGameCache,
+        game.igdb_id,
+        resolvedGame,
+        MAX_CACHED_RESOLVED_GAMES,
+      )
+    : resolvedGame;
 }
 
-export async function getGameArtwork(game: CatalogGame): Promise<GameArtwork> {
+export async function getGameArtwork(
+  game: CatalogGame,
+  signal?: AbortSignal,
+): Promise<GameArtwork> {
+  const cacheKey = `${game.igdb_id}:${game.name.toLocaleLowerCase()}`;
+  const cachedArtwork = artworkCache.get(cacheKey);
+  if (cachedArtwork) {
+    return cachedArtwork;
+  }
+  const params = new URLSearchParams({
+    igdb_id: String(game.igdb_id),
+    name: game.name,
+  });
   const response = await request(
-    `${API_BASE}/games/artwork`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(game),
-    },
+    `${API_BASE}/games/artwork?${params.toString()}`,
+    { signal },
     "Could not load game artwork",
     "search",
   );
   if (!response.ok) {
     throw await parseError(response, "Could not load game artwork", "search");
   }
-  return response.json();
+  return remember(
+    artworkCache,
+    cacheKey,
+    await response.json(),
+    MAX_CACHED_ARTWORK,
+  );
 }
 
 export async function generateSchedule(

@@ -22,11 +22,14 @@ class UpstashHLTBCache:
         token: str,
         ttl_seconds: int = 604800,
         cache_version: str = _DEFAULT_CACHE_VERSION,
+        http_client: httpx.AsyncClient | None = None,
     ) -> None:
         self._url = url.rstrip("/")
         self._headers = {"Authorization": f"Bearer {token}"}
         self._ttl_seconds = ttl_seconds
         self._cache_version = cache_version
+        self._http_client = http_client or httpx.AsyncClient(timeout=0.5)
+        self._owns_http_client = http_client is None
 
     @classmethod
     def from_environment(cls) -> UpstashHLTBCache | None:
@@ -39,9 +42,8 @@ class UpstashHLTBCache:
 
     async def get(self, normalized_query: str) -> list[Game] | None:
         key = self._key(normalized_query)
-        async with httpx.AsyncClient(timeout=1.0) as client:
-            response = await client.get(f"{self._url}/get/{quote(key, safe='')}", headers=self._headers)
-            response.raise_for_status()
+        response = await self._http_client.get(f"{self._url}/get/{quote(key, safe='')}", headers=self._headers)
+        response.raise_for_status()
         value = response.json().get("result")
         if value is None:
             return None
@@ -50,9 +52,12 @@ class UpstashHLTBCache:
     async def set(self, normalized_query: str, results: list[Game]) -> None:
         value = json.dumps([result.model_dump(mode="json") for result in results])
         command: list[Any] = ["SET", self._key(normalized_query), value, "EX", self._ttl_seconds]
-        async with httpx.AsyncClient(timeout=1.0) as client:
-            response = await client.post(self._url, headers=self._headers, json=command)
-            response.raise_for_status()
+        response = await self._http_client.post(self._url, headers=self._headers, json=command)
+        response.raise_for_status()
+
+    async def aclose(self) -> None:
+        if self._owns_http_client:
+            await self._http_client.aclose()
 
     def _key(self, normalized_query: str) -> str:
         return f"{self._KEY_PREFIX}{self._cache_version}:{normalized_query}"

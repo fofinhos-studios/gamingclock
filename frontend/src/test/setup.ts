@@ -1,6 +1,8 @@
 import { cleanup } from "@testing-library/preact";
 import { afterEach } from "vitest";
 
+import { clearGameRequestCache } from "../services/api";
+
 const storageValues = new Map<string, string>();
 const storage: Storage = {
   get length() {
@@ -20,5 +22,6 @@ Object.defineProperty(globalThis, "localStorage", {
 
 afterEach(() => {
   cleanup();
+  clearGameRequestCache();
   window.localStorage.clear();
 });

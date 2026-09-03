@@ -50,16 +50,17 @@ class HLTBWebClient:
         http_client: httpx.AsyncClient | None = None,
         clock: Callable[[], int] | None = None,
     ) -> None:
-        self._http_client = http_client
+        self._http_client = http_client or httpx.AsyncClient(timeout=4.0)
+        self._owns_http_client = http_client is None
         self._clock = clock or _current_timestamp
 
     async def async_search(self, game_name: str, similarity_case_sensitive: bool = False) -> list[HLTBSearchResult]:
         del similarity_case_sensitive
-        if self._http_client is not None:
-            return await self._search(self._http_client, game_name)
+        return await self._search(self._http_client, game_name)
 
-        async with httpx.AsyncClient(timeout=15.0) as http_client:
-            return await self._search(http_client, game_name)
+    async def aclose(self) -> None:
+        if self._owns_http_client:
+            await self._http_client.aclose()
 
     async def _search(self, http_client: httpx.AsyncClient, game_name: str) -> list[HLTBSearchResult]:
         headers = {
@@ -128,8 +129,8 @@ class HLTBService:
         max_cache_entries: int = 256,
         api: Any | None = None,
         shared_cache: HLTBResultCache | None = None,
-        retry_attempts: int = 4,
-        retry_backoff_seconds: float = 0.5,
+        retry_attempts: int = 2,
+        retry_backoff_seconds: float = 0.25,
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
     ):
         self._max_cache_entries = max_cache_entries
@@ -140,6 +141,7 @@ class HLTBService:
         self._retry_attempts = retry_attempts
         self._retry_backoff_seconds = retry_backoff_seconds
         self._sleep = sleep
+        self._cache_write_tasks: set[asyncio.Task[None]] = set()
 
     async def search(self, query: str) -> list[Game]:
         normalized_query = query.strip()
@@ -147,9 +149,11 @@ class HLTBService:
             return []
 
         cache_key = normalized_query.lower()
+        started_at = time.perf_counter()
         cached_results = self._cache.get(cache_key)
         if cached_results is not None:
             self._cache.move_to_end(cache_key)
+            logger.info("HLTB cache hit cache=memory query_length=%d", len(normalized_query))
             return cached_results
 
         if self._shared_cache is not None:
@@ -160,7 +164,10 @@ class HLTBService:
             else:
                 if shared_results is not None:
                     self._remember(cache_key, shared_results)
+                    logger.info("HLTB cache hit cache=shared query_length=%d", len(normalized_query))
                     return shared_results
+
+        logger.info("HLTB cache miss query_length=%d", len(normalized_query))
 
         matches = await self._search_with_retries(normalized_query)
         sorted_matches = sorted(
@@ -176,10 +183,15 @@ class HLTBService:
 
         self._remember(cache_key, results)
         if self._shared_cache is not None:
-            try:
-                await self._shared_cache.set(cache_key, results)
-            except Exception:
-                logger.warning("Shared HLTB cache write failed", exc_info=True)
+            cache_write_task = asyncio.create_task(self._write_shared_cache(cache_key, results))
+            self._cache_write_tasks.add(cache_write_task)
+            cache_write_task.add_done_callback(self._cache_write_tasks.discard)
+        logger.info(
+            "HLTB lookup complete query_length=%d result_count=%d duration_ms=%.1f",
+            len(normalized_query),
+            len(results),
+            (time.perf_counter() - started_at) * 1000,
+        )
         return results
 
     async def _search_with_retries(self, query: str) -> list[Any] | None:
@@ -206,6 +218,24 @@ class HLTBService:
         self._cache.move_to_end(cache_key)
         if len(self._cache) > self._max_cache_entries:
             self._cache.popitem(last=False)
+
+    async def _write_shared_cache(self, cache_key: str, results: list[Game]) -> None:
+        if self._shared_cache is None:
+            return
+        try:
+            await self._shared_cache.set(cache_key, results)
+        except Exception:
+            logger.warning("Shared HLTB cache write failed", exc_info=True)
+
+    async def aclose(self) -> None:
+        if self._cache_write_tasks:
+            await asyncio.gather(*self._cache_write_tasks, return_exceptions=True)
+        close = getattr(self._api, "aclose", None)
+        if close is not None:
+            await close()
+        close_shared_cache = getattr(self._shared_cache, "aclose", None)
+        if close_shared_cache is not None:
+            await close_shared_cache()
 
     @staticmethod
     def _similarity(result: Any, query: str) -> float:

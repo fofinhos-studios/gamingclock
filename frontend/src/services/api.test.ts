@@ -6,7 +6,9 @@ import {
   createCalendarUrl,
   generateSchedule,
   getApiErrorMessage,
+  getGameArtwork,
   resolveGame,
+  searchGames,
 } from "./api";
 
 const originalFetch = globalThis.fetch;
@@ -76,6 +78,46 @@ describe("api client errors and contracts", () => {
       kind: "network",
       operation: "resolve",
     });
+  });
+
+  test("uses a cacheable GET URL for game artwork", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ cover_url: "", logo_url: "", hero_url: "" }),
+    });
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    await getGameArtwork(catalogGame);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/games/artwork?igdb_id=7&name=Final+Fantasy+VII",
+      {},
+    );
+  });
+
+  test("reuses recent search and resolved-game responses", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [catalogGame],
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => listGame,
+      });
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    await expect(searchGames("Final Fantasy VII")).resolves.toEqual([
+      catalogGame,
+    ]);
+    await expect(searchGames("final fantasy vii")).resolves.toEqual([
+      catalogGame,
+    ]);
+    await expect(resolveGame(catalogGame)).resolves.toEqual(listGame);
+    await expect(resolveGame(catalogGame)).resolves.toEqual(listGame);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   test("serializes queue order and selected duration in schedule requests", async () => {

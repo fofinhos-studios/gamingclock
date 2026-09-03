@@ -85,4 +85,76 @@ describe("GameSearch", () => {
       ).toBeNull(),
     );
   });
+
+  test("keeps the newest search results when an earlier request finishes late", async () => {
+    const user = userEvent.setup();
+    const firstSearch =
+      Promise.withResolvers<
+        Parameters<typeof searchGames>[0] extends string
+          ? Awaited<ReturnType<typeof searchGames>>
+          : never
+      >();
+    const secondSearch =
+      Promise.withResolvers<
+        Parameters<typeof searchGames>[0] extends string
+          ? Awaited<ReturnType<typeof searchGames>>
+          : never
+      >();
+    vi.mocked(searchGames)
+      .mockReturnValueOnce(firstSearch.promise)
+      .mockReturnValueOnce(secondSearch.promise);
+
+    const view = render(
+      <LanguageProvider browserLanguages={["en"]}>
+        <GameSearch games={[]} onAddGame={vi.fn()} />
+      </LanguageProvider>,
+    );
+    const searchInput = view.getByRole("textbox", {
+      name: /search by title/i,
+    });
+
+    await user.type(searchInput, "fi");
+    await waitFor(() =>
+      expect(searchGames).toHaveBeenCalledWith("fi", expect.any(AbortSignal)),
+    );
+    await user.type(searchInput, "nal");
+    await waitFor(() =>
+      expect(searchGames).toHaveBeenLastCalledWith(
+        "final",
+        expect.any(AbortSignal),
+      ),
+    );
+
+    secondSearch.resolve([
+      {
+        igdb_id: 22,
+        name: "Chrono Trigger",
+        cover_url: "",
+        summary: "",
+        genres: [],
+        platforms: [],
+        release_year: 1995,
+        rating: null,
+      },
+    ]);
+    expect(await view.findByText("Chrono Trigger")).toBeTruthy();
+
+    firstSearch.resolve([
+      {
+        igdb_id: 7,
+        name: "Final Fantasy VII",
+        cover_url: "",
+        summary: "",
+        genres: [],
+        platforms: [],
+        release_year: 1997,
+        rating: null,
+      },
+    ]);
+
+    await waitFor(() =>
+      expect(view.queryByText("Final Fantasy VII")).toBeNull(),
+    );
+    expect(view.getByText("Chrono Trigger")).toBeTruthy();
+  });
 });

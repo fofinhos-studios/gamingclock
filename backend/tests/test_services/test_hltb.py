@@ -1,3 +1,4 @@
+import asyncio
 from json import loads
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, call
@@ -21,6 +22,18 @@ class SharedCacheFake:
 
     async def set(self, normalized_query: str, results: list[Game]) -> None:
         self.set_calls.append((normalized_query, results))
+
+
+class SlowSharedCacheFake(SharedCacheFake):
+    def __init__(self) -> None:
+        super().__init__(None)
+        self.write_started = asyncio.Event()
+        self.release_write = asyncio.Event()
+
+    async def set(self, normalized_query: str, results: list[Game]) -> None:
+        self.set_calls.append((normalized_query, results))
+        self.write_started.set()
+        await self.release_write.wait()
 
 
 def _result(
@@ -147,11 +160,16 @@ async def test_search_returns_empty_list_when_library_request_fails():
     api = SimpleNamespace(async_search=AsyncMock(return_value=None))
     sleep = AsyncMock()
 
-    results = await HLTBService(api=api, retry_attempts=3, sleep=sleep).search("Unknown")
+    results = await HLTBService(
+        api=api,
+        retry_attempts=3,
+        shared_cache=SharedCacheFake(None),
+        sleep=sleep,
+    ).search("Unknown")
 
     assert results == []
     assert api.async_search.await_count == 3
-    sleep.assert_has_awaits([call(0.5), call(1.0)])
+    sleep.assert_has_awaits([call(0.25), call(0.5)])
 
 
 @pytest.mark.asyncio
@@ -163,11 +181,31 @@ async def test_search_retries_transient_errors_with_exponential_backoff():
     )
     sleep = AsyncMock()
 
-    results = await HLTBService(api=api, sleep=sleep).search("Final Fantasy VII")
+    results = await HLTBService(
+        api=api,
+        shared_cache=SharedCacheFake(None),
+        sleep=sleep,
+    ).search("Final Fantasy VII")
 
     assert [result.name for result in results] == ["Final Fantasy VII"]
     assert api.async_search.await_count == 2
-    sleep.assert_awaited_once_with(0.5)
+    sleep.assert_awaited_once_with(0.25)
+
+
+@pytest.mark.asyncio
+async def test_interactive_search_limits_default_provider_retries():
+    api = SimpleNamespace(async_search=AsyncMock(return_value=None))
+    sleep = AsyncMock()
+
+    results = await HLTBService(
+        api=api,
+        shared_cache=SharedCacheFake(None),
+        sleep=sleep,
+    ).search("Unknown")
+
+    assert results == []
+    assert api.async_search.await_count == 2
+    sleep.assert_awaited_once_with(0.25)
 
 
 @pytest.mark.asyncio
@@ -198,6 +236,21 @@ async def test_search_uses_shared_cache_before_calling_hltb():
     assert shared_cache.get_calls == ["final fantasy vii"]
     assert shared_cache.set_calls == []
     api.async_search.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_search_returns_before_a_slow_shared_cache_write_finishes():
+    shared_cache = SlowSharedCacheFake()
+    api = SimpleNamespace(async_search=AsyncMock(return_value=[_result("Final Fantasy VII", 1.0, 36.03)]))
+
+    results = await asyncio.wait_for(
+        HLTBService(api=api, shared_cache=shared_cache).search("Final Fantasy VII"),
+        timeout=0.1,
+    )
+
+    assert [result.name for result in results] == ["Final Fantasy VII"]
+    await asyncio.wait_for(shared_cache.write_started.wait(), timeout=0.1)
+    shared_cache.release_write.set()
 
 
 @pytest.mark.asyncio

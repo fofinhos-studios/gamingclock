@@ -24,6 +24,7 @@ export function GameSearch({ games, onAddGame }: Props) {
   const { t } = useLanguage();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const resultRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const searchRequestId = useRef(0);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CatalogGame[]>([]);
   const [artworkById, setArtworkById] = useState<Record<number, GameArtwork>>(
@@ -54,6 +55,8 @@ export function GameSearch({ games, onAddGame }: Props) {
 
   useEffect(() => {
     const trimmedQuery = query.trim();
+    const requestId = ++searchRequestId.current;
+    const controller = new AbortController();
     if (trimmedQuery.length < 2) {
       setResults([]);
       setArtworkById({});
@@ -71,7 +74,10 @@ export function GameSearch({ games, onAddGame }: Props) {
       setError("");
       setInfoMessage("");
       try {
-        const nextResults = await searchGames(trimmedQuery);
+        const nextResults = await searchGames(trimmedQuery, controller.signal);
+        if (requestId !== searchRequestId.current) {
+          return;
+        }
         const visibleResults = nextResults.slice(0, 8);
         setResults(visibleResults);
         setArtworkById({});
@@ -81,23 +87,35 @@ export function GameSearch({ games, onAddGame }: Props) {
         setIsDropdownOpen(true);
         setHighlightedIndex(nextResults.length > 0 ? 0 : -1);
       } catch (searchError) {
+        if (
+          controller.signal.aborted ||
+          requestId !== searchRequestId.current
+        ) {
+          return;
+        }
         setResults([]);
         setError(
           searchError instanceof Error ? searchError.message : t.search.failed,
         );
       } finally {
-        setLoading(false);
+        if (requestId === searchRequestId.current) {
+          setLoading(false);
+        }
       }
     }, 250);
 
-    return () => window.clearTimeout(timeoutId);
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, [query, t.search.failed]);
 
   useEffect(() => {
     let isCurrent = true;
+    const controller = new AbortController();
 
     for (const game of results) {
-      void getGameArtwork(game)
+      void getGameArtwork(game, controller.signal)
         .then((artwork) => {
           if (isCurrent) {
             setArtworkById((current) => ({
@@ -120,6 +138,7 @@ export function GameSearch({ games, onAddGame }: Props) {
 
     return () => {
       isCurrent = false;
+      controller.abort();
     };
   }, [results]);
 
