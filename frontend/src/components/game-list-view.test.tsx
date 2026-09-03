@@ -1,4 +1,4 @@
-import { render } from "@testing-library/preact";
+import { fireEvent, render, waitFor } from "@testing-library/preact";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 
@@ -37,6 +37,7 @@ describe("GameListView", () => {
           onSelectGameTime={vi.fn()}
           onRetryGame={vi.fn()}
           onMoveGame={vi.fn()}
+          onReorderGames={vi.fn()}
           onRenameList={onRenameList}
         />
       </LanguageProvider>,
@@ -66,6 +67,7 @@ describe("GameListView", () => {
           onSelectGameTime={vi.fn()}
           onRetryGame={vi.fn()}
           onMoveGame={vi.fn()}
+          onReorderGames={vi.fn()}
           onRenameList={vi.fn()}
         />
       </LanguageProvider>,
@@ -74,5 +76,36 @@ describe("GameListView", () => {
     expect(
       view.container.querySelector(".planner-chip-group")?.textContent,
     ).not.toContain("2017");
+  });
+
+  test("reorders a game when it is dropped onto another card", async () => {
+    const onReorderGames = vi.fn();
+    const secondGame = { ...game, igdb_id: 2, name: "Celeste" };
+    const view = render(
+      <LanguageProvider browserLanguages={["en"]}>
+        <GameListView
+          name="My backlog"
+          games={[game, secondGame]}
+          onRemoveGame={vi.fn()}
+          onSelectGameTime={vi.fn()}
+          onRetryGame={vi.fn()}
+          onMoveGame={vi.fn()}
+          onReorderGames={onReorderGames}
+          onRenameList={vi.fn()}
+        />
+      </LanguageProvider>,
+    );
+
+    const cards = view.container.querySelectorAll(".planner-backlog-row");
+    fireEvent.dragStart(cards[1]);
+    await waitFor(() =>
+      expect(
+        cards[1]?.classList.contains("planner-backlog-row--dragging"),
+      ).toBe(true),
+    );
+    fireEvent.dragOver(cards[0]);
+    fireEvent.drop(cards[0]);
+
+    expect(onReorderGames).toHaveBeenCalledWith(1, 0);
   });
 });

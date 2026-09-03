@@ -393,9 +393,14 @@ export function HomePage() {
     clearGeneratedSchedule();
   };
 
-  const moveGame = (index: number, direction: -1 | 1) => {
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= games.length) {
+  const reorderGames = (sourceIndex: number, targetIndex: number) => {
+    if (
+      sourceIndex < 0 ||
+      sourceIndex >= games.length ||
+      targetIndex < 0 ||
+      targetIndex >= games.length ||
+      sourceIndex === targetIndex
+    ) {
       return;
     }
 
@@ -406,7 +411,7 @@ export function HomePage() {
         }
 
         const nextGames = [...backlog.games];
-        const [movedGame] = nextGames.splice(index, 1);
+        const [movedGame] = nextGames.splice(sourceIndex, 1);
         if (!movedGame) {
           return backlog;
         }
@@ -415,6 +420,10 @@ export function HomePage() {
       }),
     );
     clearGeneratedSchedule();
+  };
+
+  const moveGame = (index: number, direction: -1 | 1) => {
+    reorderGames(index, index + direction);
   };
 
   const renameBacklog = (name: string) => {
@@ -643,6 +652,7 @@ export function HomePage() {
                     onRemoveGame={removeGame}
                     onRetryGame={retryGame}
                     onMoveGame={moveGame}
+                    onReorderGames={reorderGames}
                     onRenameBacklog={renameBacklog}
                   />
                 </section>

@@ -10,6 +10,7 @@ interface Props {
   onRemoveGame: (igdbId: number) => void;
   onRetryGame: (igdbId: number) => void;
   onMoveGame: (index: number, direction: -1 | 1) => void;
+  onReorderGames: (sourceIndex: number, targetIndex: number) => void;
   onRenameBacklog: (name: string) => void;
 }
 
@@ -21,6 +22,7 @@ export function PlannerGamesStep({
   onRemoveGame,
   onRetryGame,
   onMoveGame,
+  onReorderGames,
   onRenameBacklog,
 }: Props) {
   return (
@@ -35,6 +37,7 @@ export function PlannerGamesStep({
           onSelectGameTime={onSelectGameTime}
           onRetryGame={onRetryGame}
           onMoveGame={onMoveGame}
+          onReorderGames={onReorderGames}
           onRenameList={onRenameBacklog}
         />
       </div>

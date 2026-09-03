@@ -2405,6 +2405,11 @@
       inset 1px 1px 0 var(--metal-highlight),
       inset -1px -1px 0 var(--metal-shadow),
       0 0.45rem 0.9rem var(--foreground-08);
+    cursor: grab;
+    transition:
+      border-color 150ms ease,
+      opacity 150ms ease,
+      transform 150ms ease;
   }
 
   .planner-backlog-row:hover {
@@ -2412,6 +2417,20 @@
     background:
       linear-gradient(145deg, var(--foreground-08), var(--foreground-0)),
       var(--surface-72);
+  }
+
+  .planner-backlog-row--dragging {
+    cursor: grabbing;
+    opacity: 0.45;
+    transform: scale(0.985);
+  }
+
+  .planner-backlog-row--drop-before {
+    border-top: 3px solid var(--brand-focus-edge);
+  }
+
+  .planner-backlog-row--drop-after {
+    border-bottom: 3px solid var(--brand-focus-edge);
   }
 
   .planner-backlog-row__controls {
@@ -2443,6 +2462,15 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
+  }
+
+  .planner-drag-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    color: var(--muted-foreground);
+    font-size: 0.78rem;
+    user-select: none;
   }
 
   .schedule-calendar-section {

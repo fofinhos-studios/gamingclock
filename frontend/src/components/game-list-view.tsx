@@ -4,6 +4,7 @@ import {
   ArrowUpIcon,
   CircleNotchIcon,
   ClockIcon,
+  DotsSixVerticalIcon,
   ListBulletsIcon,
   PencilSimpleIcon,
   TrashIcon,
@@ -22,8 +23,14 @@ interface Props {
   onSelectGameTime: (index: number, category: HLTBCategory) => void;
   onRetryGame: (igdbId: number) => void;
   onMoveGame: (index: number, direction: -1 | 1) => void;
+  onReorderGames: (sourceIndex: number, targetIndex: number) => void;
   onRenameList: (name: string) => void;
 }
+
+type DropTarget = {
+  index: number;
+  position: "before" | "after";
+};
 
 export function GameListView({
   name,
@@ -32,11 +39,14 @@ export function GameListView({
   onSelectGameTime,
   onRetryGame,
   onMoveGame,
+  onReorderGames,
   onRenameList,
 }: Props) {
   const { t } = useLanguage();
   const [isRenaming, setIsRenaming] = useState(false);
   const [draftName, setDraftName] = useState(name);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -58,6 +68,20 @@ export function GameListView({
   const cancelRename = () => {
     setDraftName(name);
     setIsRenaming(false);
+  };
+
+  const getDropTarget = (index: number, event: DragEvent): DropTarget => {
+    const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    return {
+      index,
+      position:
+        event.clientY > bounds.top + bounds.height / 2 ? "after" : "before",
+    };
+  };
+
+  const resetDragState = () => {
+    setDraggedIndex(null);
+    setDropTarget(null);
   };
 
   return (
@@ -135,7 +159,51 @@ export function GameListView({
       ) : (
         <div class="planner-backlog-list">
           {games.map((game, index) => (
-            <article key={game.igdb_id} class="planner-backlog-row">
+            <article
+              key={game.igdb_id}
+              class={`planner-backlog-row${
+                draggedIndex === index ? " planner-backlog-row--dragging" : ""
+              }${
+                dropTarget?.index === index
+                  ? ` planner-backlog-row--drop-${dropTarget.position}`
+                  : ""
+              }`}
+              draggable
+              onDragStart={(event) => {
+                event.dataTransfer?.setData("text/plain", String(game.igdb_id));
+                if (event.dataTransfer) {
+                  event.dataTransfer.effectAllowed = "move";
+                }
+                setDraggedIndex(index);
+              }}
+              onDragOver={(event) => {
+                if (draggedIndex === null || draggedIndex === index) {
+                  return;
+                }
+                event.preventDefault();
+                if (event.dataTransfer) {
+                  event.dataTransfer.dropEffect = "move";
+                }
+                setDropTarget(getDropTarget(index, event));
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                if (draggedIndex === null || draggedIndex === index) {
+                  resetDragState();
+                  return;
+                }
+
+                const target = getDropTarget(index, event);
+                let targetIndex =
+                  target.index + (target.position === "after" ? 1 : 0);
+                if (draggedIndex < targetIndex) {
+                  targetIndex -= 1;
+                }
+                resetDragState();
+                onReorderGames(draggedIndex, targetIndex);
+              }}
+              onDragEnd={resetDragState}
+            >
               <GameCartridge game={game} />
 
               <div class="planner-backlog-row__controls">
@@ -218,6 +286,17 @@ export function GameListView({
                   class="planner-backlog-row__reorder"
                   aria-label={t.list.reorder(game.name)}
                 >
+                  <span
+                    class="planner-drag-hint"
+                    aria-label={t.list.dragToReorder(game.name)}
+                    title={t.list.dragToReorder(game.name)}
+                  >
+                    <DotsSixVerticalIcon
+                      class="planner-icon"
+                      aria-hidden="true"
+                    />
+                    <span>{t.list.drag}</span>
+                  </span>
                   <Button
                     type="button"
                     size="sm"
