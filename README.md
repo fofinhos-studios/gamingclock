@@ -9,6 +9,8 @@
 
 Gaming Clock helps you see how much time your list will take and fit it around your real week.
 
+<p align="center"><a href="https://gamingclock.fofinhos.studio/">Visit Gaming Clock</a></p>
+
 ## What you can do
 
 - Search for games and build a personal backlog.
