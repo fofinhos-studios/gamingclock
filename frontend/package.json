@@ -29,7 +29,8 @@
     "preact": "^10.29.8"
   },
   "overrides": {
-    "@babel/core": "7.29.6"
+    "@babel/core": "7.29.6",
+    "browserslist": "4.28.7"
   },
   "engines": {
     "node": "24.x"
