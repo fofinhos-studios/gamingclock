@@ -215,6 +215,60 @@ describe("GameSearch", () => {
     );
   });
 
+  test("remains dismissible when a lower-ranked result omits its rating", async () => {
+    const user = userEvent.setup();
+    vi.mocked(searchGames).mockResolvedValue([
+      {
+        igdb_id: 1802,
+        name: "Chrono Trigger",
+        cover_url: "",
+        summary: "The original release.",
+        genres: ["RPG"],
+        platforms: ["Super Nintendo"],
+        release_year: 1995,
+        rating: 93.2,
+      },
+      {
+        igdb_id: 263447,
+        name: "Chrono Trigger",
+        cover_url: "",
+        summary: "A mobile port.",
+        genres: ["RPG"],
+        platforms: ["Legacy Mobile Device"],
+        game_type: "port",
+      },
+    ] as Awaited<ReturnType<typeof searchGames>>);
+
+    const view = render(
+      <LanguageProvider browserLanguages={["en"]}>
+        <GameSearch games={[]} onAddGame={vi.fn()} />
+      </LanguageProvider>,
+    );
+
+    await user.type(
+      view.getByRole("textbox", { name: /search by title/i }),
+      "ch",
+    );
+
+    await waitFor(() =>
+      expect(
+        view.getAllByRole("button", {
+          name: "Add Chrono Trigger to backlog",
+        }),
+      ).toHaveLength(2),
+    );
+
+    fireEvent.mouseDown(document.body);
+
+    await waitFor(() =>
+      expect(
+        view.queryAllByRole("button", {
+          name: "Add Chrono Trigger to backlog",
+        }),
+      ).toHaveLength(0),
+    );
+  });
+
   test("shows preview members after expanding a group card", async () => {
     const user = userEvent.setup();
     vi.mocked(searchGames).mockResolvedValue([]);

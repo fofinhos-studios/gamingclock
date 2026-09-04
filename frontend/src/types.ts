@@ -77,8 +77,8 @@ export interface CatalogGame {
   summary: string;
   genres: string[];
   platforms: string[];
-  release_year: number | null;
-  rating: number | null;
+  release_year?: number | null;
+  rating?: number | null;
   game_type?: IGDBGameType | null;
   version_parent?: number | null;
   parent_game?: number | null;
@@ -97,8 +97,8 @@ export interface CatalogGameVariant {
   summary: string;
   genres: string[];
   platforms: string[];
-  release_year: number | null;
-  rating: number | null;
+  release_year?: number | null;
+  rating?: number | null;
   game_type: IGDBGameType | null;
   version_parent: number | null;
   parent_game: number | null;

@@ -997,10 +997,12 @@ function SearchResultCartridge({
           </div>
           <div class="planner-result__meta-group">
             <p class="planner-result__meta">
-              {game.release_year === null
+              {typeof game.release_year !== "number"
                 ? t.search.unknownYear
                 : game.release_year}
-              {game.rating === null ? "" : ` / ${game.rating.toFixed(1)}`}
+              {typeof game.rating === "number"
+                ? ` / ${game.rating.toFixed(1)}`
+                : ""}
             </p>
           </div>
         </div>
