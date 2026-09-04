@@ -1,5 +1,6 @@
 import asyncio
 
+import httpx
 import pytest
 
 from gamingclock.models.catalog import CatalogGame
@@ -8,8 +9,10 @@ from gamingclock.models.game_groups import (
     GameGroupSource,
     ResolveGameGroupSelectionRequest,
 )
+from gamingclock.services.game_group_cache import CachedPayload
 from gamingclock.services.game_groups import (
     GameGroupExplorer,
+    RAWGAdapter,
     _Candidate,
     _canonical_games,
     _ExternalGame,
@@ -140,3 +143,129 @@ async def test_selection_reconciles_only_checked_source_members(monkeypatch):
     assert response.resolutions[0].name == "Two"
     assert response.resolutions[0].game is None
     await explorer.aclose()
+
+
+@pytest.mark.asyncio
+async def test_rawg_search_uses_only_the_best_seed_and_caches_it(monkeypatch):
+    monkeypatch.setenv("RAWG_API_KEY", "test-key")
+    requests: list[httpx.Request] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            200,
+            json={
+                "results": [
+                    {"id": 1, "name": "First"},
+                    {"id": 2, "name": "Second"},
+                ]
+            },
+        )
+
+    class Cache:
+        def __init__(self):
+            self.writes: list[tuple[str, object, int, int]] = []
+
+        async def get(self, key: str):
+            return None
+
+        async def set(self, key: str, value: object, *, fresh_seconds: int, stale_seconds: int = 0):
+            self.writes.append((key, value, fresh_seconds, stale_seconds))
+
+        async def try_acquire_refresh_lock(self, key: str, *, seconds: int = 30):
+            return True
+
+        async def aclose(self):
+            return None
+
+    cache = Cache()
+    adapter = RAWGAdapter(
+        client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+        shared_cache=cache,
+    )
+    results = await adapter.search("Final Fantasy")
+
+    assert [group[0] for group in results] == ["rawg:related:1"]
+    assert requests[0].url.params["page_size"] == "1"
+    assert cache.writes[0][0] == "rawg:search:final fantasy"
+    await adapter.aclose()
+
+
+@pytest.mark.asyncio
+async def test_rawg_returns_stale_payload_without_waiting_for_a_losing_refresh_lock(monkeypatch):
+    monkeypatch.setenv("RAWG_API_KEY", "test-key")
+
+    class Cache:
+        async def get(self, key: str):
+            return CachedPayload(
+                value=[{"key": "rawg:related:1", "title": "Final Fantasy", "members": []}],
+                is_fresh=False,
+            )
+
+        async def try_acquire_refresh_lock(self, key: str, *, seconds: int = 30):
+            return False
+
+        async def set(self, key: str, value: object, *, fresh_seconds: int, stale_seconds: int = 0):
+            return None
+
+        async def aclose(self):
+            return None
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError("stale response must not make a RAWG request")
+
+    adapter = RAWGAdapter(
+        client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+        shared_cache=Cache(),
+    )
+    results = await adapter.search("Final Fantasy")
+    await asyncio.sleep(0)
+
+    assert results[0][1] == "Final Fantasy"
+    await adapter.aclose()
+
+
+@pytest.mark.asyncio
+async def test_popular_warmer_caps_cold_rawg_attempts(monkeypatch):
+    explorer = GameGroupExplorer()
+    popular_games = [
+        CatalogGame(
+            igdb_id=index,
+            name=f"Game {index}",
+            cover_url="",
+            summary="",
+            genres=[],
+            platforms=[],
+            release_year=None,
+            rating=None,
+        )
+        for index in range(1, 9)
+    ]
+    attempts: list[str] = []
+
+    class IGDB:
+        async def popular_games(self, limit: int):
+            return popular_games[:limit]
+
+    class RAWG:
+        configured = True
+
+        async def get_warm_cursor(self):
+            return 0
+
+        async def is_seed_cold(self, query: str):
+            return True
+
+        async def warm_seed_if_needed(self, query: str):
+            attempts.append(query)
+            return False
+
+        async def set_warm_cursor(self, cursor: int):
+            return None
+
+    monkeypatch.setattr(explorer, "_igdb", IGDB())
+    monkeypatch.setattr(explorer, "_rawg", RAWG())
+    result = await explorer.warm_rawg_popular(2)
+
+    assert attempts == ["Game 1", "Game 2"]
+    assert result.failed_games == 2

@@ -5,8 +5,9 @@ import logging
 import os
 import re
 import time
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Protocol
 
 import httpx
 
@@ -27,7 +28,7 @@ from gamingclock.models.game_groups import (
     ResolveGameGroupSelectionRequest,
     ResolveGameGroupSelectionResponse,
 )
-from gamingclock.services.game_group_cache import UpstashGameGroupCache
+from gamingclock.services.game_group_cache import CachedPayload, UpstashGameGroupCache
 from gamingclock.services.igdb import IGDBService
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,11 @@ _CACHE_SECONDS = 300
 _CACHE_MAX_ENTRIES = 100
 _OPTIONAL_SOURCE_TIMEOUT_SECONDS = 0.75
 _RAWG_ATTRIBUTION_URL = "https://rawg.io/"
+_RAWG_SEARCH_FRESH_SECONDS = 60 * 60 * 24 * 45
+_RAWG_SEARCH_STALE_SECONDS = 60 * 60 * 24 * 15
+_RAWG_GROUP_FRESH_SECONDS = 60 * 60 * 24 * 60
+_RAWG_GROUP_STALE_SECONDS = 60 * 60 * 24 * 30
+_RAWG_FAILURE_SECONDS = 60 * 60
 
 
 @dataclass
@@ -65,14 +71,25 @@ class _Candidate:
         self.unavailable_sources.update(other.unavailable_sources)
 
 
+class _GameGroupCache(Protocol):
+    async def get(self, key: str) -> CachedPayload | None: ...
+
+    async def set(self, key: str, value: Any, *, fresh_seconds: int, stale_seconds: int = 0) -> None: ...
+
+    async def try_acquire_refresh_lock(self, key: str, *, seconds: int = 30) -> bool: ...
+
+    async def aclose(self) -> None: ...
+
+
 class RAWGAdapter:
     def __init__(
         self,
         client: httpx.AsyncClient | None = None,
-        shared_cache: UpstashGameGroupCache | None = None,
+        shared_cache: _GameGroupCache | None = None,
     ):
         self._client = client or httpx.AsyncClient(timeout=10)
         self._shared_cache = shared_cache if shared_cache is not None else UpstashGameGroupCache.from_environment()
+        self._refresh_tasks: set[asyncio.Task[None]] = set()
 
     @property
     def configured(self) -> bool:
@@ -84,10 +101,107 @@ class RAWGAdapter:
         cache_key = f"rawg:search:{_normalize(query)}"
         cached = await self._get_cached(cache_key)
         if cached is not None:
-            return cached
+            groups, is_fresh = cached
+            if not is_fresh:
+                self._schedule_refresh(cache_key, lambda: self._fetch_search(query))
+            return groups
+        try:
+            return await self._fetch_search(query)
+        except httpx.HTTPError:
+            await self._set_cached(cache_key, [], fresh_seconds=_RAWG_FAILURE_SECONDS)
+            raise
+
+    async def warm_search_if_needed(self, query: str) -> bool:
+        """Refresh a cold seed once across all serverless instances."""
+        cache_key = f"rawg:search:{_normalize(query)}"
+        cached = await self._get_cached(cache_key)
+        if cached is not None and cached[1]:
+            return False
+        if self._shared_cache is not None and not await self._try_lock(cache_key):
+            return False
+        try:
+            await self._fetch_search(query)
+        except httpx.HTTPError:
+            if cached is None:
+                await self._set_cached(cache_key, [], fresh_seconds=_RAWG_FAILURE_SECONDS)
+            return False
+        return True
+
+    async def warm_seed_if_needed(self, query: str) -> bool:
+        """Warm one search record and its one selected group, if either is cold."""
+        search_key = f"rawg:search:{_normalize(query)}"
+        cached = await self._get_cached(search_key)
+        if cached is not None and cached[1]:
+            groups = cached[0]
+            search_warmed = False
+        else:
+            search_warmed = await self.warm_search_if_needed(query)
+            refreshed = await self._get_cached(search_key)
+            groups = refreshed[0] if refreshed is not None else []
+        if not groups:
+            return search_warmed
+        group_key = groups[0][0]
+        group_warmed = await self._warm_group_if_needed(group_key)
+        return search_warmed or group_warmed
+
+    async def is_seed_cold(self, query: str) -> bool:
+        """Check both RAWG tiers without spending a provider request."""
+        cached = await self._get_cached(f"rawg:search:{_normalize(query)}")
+        if cached is None or not cached[1]:
+            return True
+        groups = cached[0]
+        if not groups:
+            return False
+        _, _, raw_id = groups[0][0].partition("rawg:related:")
+        if not raw_id.isdigit():
+            return False
+        group = await self._get_cached(f"rawg:group:{raw_id}")
+        return group is None or not group[1]
+
+    async def _warm_group_if_needed(self, group_key: str) -> bool:
+        _, _, raw_id = group_key.partition("rawg:related:")
+        if not raw_id.isdigit():
+            return False
+        cache_key = f"rawg:group:{raw_id}"
+        cached = await self._get_cached(cache_key)
+        if cached is not None and cached[1]:
+            return False
+        if self._shared_cache is not None and not await self._try_lock(cache_key):
+            return False
+        try:
+            await self._fetch_group(group_key, int(raw_id))
+        except httpx.HTTPError, LookupError:
+            if cached is None:
+                await self._set_cached(cache_key, [], fresh_seconds=_RAWG_FAILURE_SECONDS)
+            return False
+        return True
+
+    async def get_warm_cursor(self) -> int:
+        if self._shared_cache is None:
+            return 0
+        try:
+            cached = await self._shared_cache.get("rawg:warm:cursor")
+            return cached.value if cached and isinstance(cached.value, int) else 0
+        except Exception:
+            logger.info("RAWG warm cursor read failed")
+            return 0
+
+    async def set_warm_cursor(self, cursor: int) -> None:
+        if self._shared_cache is None:
+            return
+        try:
+            await self._shared_cache.set(
+                "rawg:warm:cursor",
+                cursor,
+                fresh_seconds=60 * 60 * 24 * 365,
+            )
+        except Exception:
+            logger.info("RAWG warm cursor write failed")
+
+    async def _fetch_search(self, query: str) -> list[tuple[str, str, list[_ExternalGame]]]:
         response = await self._client.get(
             "https://api.rawg.io/api/games",
-            params={"key": os.environ["RAWG_API_KEY"], "search": query, "page_size": 5},
+            params={"key": os.environ["RAWG_API_KEY"], "search": query, "page_size": 1},
         )
         response.raise_for_status()
         source_games = [
@@ -96,15 +210,20 @@ class RAWGAdapter:
             if isinstance(game.get("id"), int) and isinstance(game.get("name"), str)
         ]
         candidates: list[tuple[str, str, list[_ExternalGame]]] = []
-        for game in source_games:
+        for game in source_games[:1]:
             game_id = game.get("id")
             name = game.get("name")
             if not isinstance(game_id, int) or not isinstance(name, str):
                 continue
-            # A search card is just an invitation to explore. Related members
-            # cost up to ten RAWG calls and are fetched only after expansion.
+            # A search card is just an invitation to explore. Its membership is
+            # fetched only after expansion (one detail and two related calls).
             candidates.append((f"rawg:related:{game_id}", name, []))
-        await self._set_cached(cache_key, candidates)
+        await self._set_cached(
+            f"rawg:search:{_normalize(query)}",
+            candidates,
+            fresh_seconds=_RAWG_SEARCH_FRESH_SECONDS if candidates else _RAWG_FAILURE_SECONDS,
+            stale_seconds=_RAWG_SEARCH_STALE_SECONDS if candidates else 0,
+        )
         return candidates
 
     async def by_key(self, group_key: str) -> tuple[str, list[_ExternalGame]]:
@@ -113,9 +232,21 @@ class RAWGAdapter:
             raise LookupError(group_key)
         cache_key = f"rawg:group:{raw_id}"
         cached = await self._get_cached(cache_key)
-        if cached is not None and cached:
-            _, name, members = cached[0]
+        if cached is not None and cached[0]:
+            groups, is_fresh = cached
+            if not is_fresh:
+                self._schedule_refresh(cache_key, lambda: self._fetch_group(group_key, int(raw_id)))
+            _, name, members = groups[0]
             return name, members
+        if cached is not None:
+            raise LookupError(group_key)
+        try:
+            return await self._fetch_group(group_key, int(raw_id))
+        except httpx.HTTPError, LookupError:
+            await self._set_cached(cache_key, [], fresh_seconds=_RAWG_FAILURE_SECONDS)
+            raise
+
+    async def _fetch_group(self, group_key: str, raw_id: int) -> tuple[str, list[_ExternalGame]]:
         response = await self._client.get(
             f"https://api.rawg.io/api/games/{raw_id}", params={"key": os.environ["RAWG_API_KEY"]}
         )
@@ -124,9 +255,14 @@ class RAWGAdapter:
         name = game.get("name")
         if not isinstance(name, str):
             raise LookupError(group_key)
-        seed = _ExternalGame(raw_id, name, _rawg_year(game.get("released")))
-        members = [seed, *await self._related_games(int(raw_id))]
-        await self._set_cached(cache_key, [(group_key, name, members)])
+        seed = _ExternalGame(str(raw_id), name, _rawg_year(game.get("released")))
+        members = [seed, *await self._related_games(raw_id)]
+        await self._set_cached(
+            f"rawg:group:{raw_id}",
+            [(group_key, name, members)],
+            fresh_seconds=_RAWG_GROUP_FRESH_SECONDS,
+            stale_seconds=_RAWG_GROUP_STALE_SECONDS,
+        )
         return name, members
 
     async def _related_games(self, game_id: int) -> list[_ExternalGame]:
@@ -150,16 +286,18 @@ class RAWGAdapter:
         return list(members.values())
 
     async def aclose(self) -> None:
+        if self._refresh_tasks:
+            await asyncio.gather(*self._refresh_tasks, return_exceptions=True)
         await self._client.aclose()
         if self._shared_cache is not None:
             await self._shared_cache.aclose()
 
-    async def _get_cached(self, key: str) -> list[tuple[str, str, list[_ExternalGame]]] | None:
+    async def _get_cached(self, key: str) -> tuple[list[tuple[str, str, list[_ExternalGame]]], bool] | None:
         if self._shared_cache is None:
             return None
         try:
             cached = await self._shared_cache.get(key)
-            if not isinstance(cached, list):
+            if cached is None or not isinstance(cached.value, list):
                 return None
             return [
                 (
@@ -167,17 +305,24 @@ class RAWGAdapter:
                     item["title"],
                     [_ExternalGame(**member) for member in item["members"]],
                 )
-                for item in cached
+                for item in cached.value
                 if isinstance(item, dict)
                 and isinstance(item.get("key"), str)
                 and isinstance(item.get("title"), str)
                 and isinstance(item.get("members"), list)
-            ]
+            ], cached.is_fresh
         except Exception:
             logger.info("RAWG shared cache read failed")
             return None
 
-    async def _set_cached(self, key: str, groups: list[tuple[str, str, list[_ExternalGame]]]) -> None:
+    async def _set_cached(
+        self,
+        key: str,
+        groups: list[tuple[str, str, list[_ExternalGame]]],
+        *,
+        fresh_seconds: int,
+        stale_seconds: int = 0,
+    ) -> None:
         if self._shared_cache is None:
             return
         try:
@@ -187,9 +332,31 @@ class RAWGAdapter:
                     {"key": group_key, "title": title, "members": [member.__dict__ for member in members]}
                     for group_key, title, members in groups
                 ],
+                fresh_seconds=fresh_seconds,
+                stale_seconds=stale_seconds,
             )
         except Exception:
             logger.info("RAWG shared cache write failed")
+
+    async def _try_lock(self, key: str) -> bool:
+        try:
+            return await self._shared_cache.try_acquire_refresh_lock(key) if self._shared_cache else True
+        except Exception:
+            logger.info("RAWG shared cache lock failed")
+            return False
+
+    def _schedule_refresh(self, key: str, refresh: Callable[[], Awaitable[Any]]) -> None:
+        async def run() -> None:
+            if not await self._try_lock(key):
+                return
+            try:
+                await refresh()
+            except httpx.HTTPError:
+                logger.info("RAWG stale cache refresh failed")
+
+        task = asyncio.create_task(run())
+        self._refresh_tasks.add(task)
+        task.add_done_callback(self._refresh_tasks.discard)
 
 
 class WikidataAdapter:
@@ -301,26 +468,39 @@ class GameGroupExplorer:
         return [self._to_result(candidate) for candidate in _merge_candidates(candidates)][:4]
 
     async def warm_rawg_popular(self, limit: int) -> CacheWarmResult:
-        """Seed RAWG group records for popular games without bypassing its cache."""
+        """Rotate through a dynamic popular set, spending at most ``limit`` cold seeds."""
         if not self._rawg.configured:
             return CacheWarmResult(requested_games=0, warmed_games=0, failed_games=0)
-        games = await self._igdb.popular_games(limit)
-        semaphore = asyncio.Semaphore(2)
-
-        async def warm(game: CatalogGame) -> bool:
-            async with semaphore:
-                try:
-                    await self._rawg.search(game.name)
-                except Exception:
-                    logger.info("RAWG group warm failed game_id=%s", game.igdb_id)
-                    return False
-                return True
-
-        warmed = await asyncio.gather(*(warm(game) for game in games))
+        games = await self._igdb.popular_games(min(limit * 4, 20))
+        if not games:
+            return CacheWarmResult(requested_games=0, warmed_games=0, failed_games=0)
+        cursor = await self._rawg.get_warm_cursor()
+        start = cursor % len(games)
+        rotating_seeds = [*games[start:], *games[:start]]
+        warmed_games = 0
+        failed_games = 0
+        cold_attempts = 0
+        inspected = 0
+        for game in rotating_seeds:
+            inspected += 1
+            if not await self._rawg.is_seed_cold(game.name):
+                continue
+            if cold_attempts >= limit:
+                break
+            cold_attempts += 1
+            try:
+                if await self._rawg.warm_seed_if_needed(game.name):
+                    warmed_games += 1
+                else:
+                    failed_games += 1
+            except Exception:
+                logger.info("RAWG group warm failed game_id=%s", game.igdb_id)
+                failed_games += 1
+        await self._rawg.set_warm_cursor(cursor + max(inspected, 1))
         return CacheWarmResult(
-            requested_games=len(games),
-            warmed_games=sum(warmed),
-            failed_games=len(games) - sum(warmed),
+            requested_games=inspected,
+            warmed_games=warmed_games,
+            failed_games=failed_games,
         )
 
     async def preview(self, request: GameGroupPreviewRequest) -> GameGroupPreview:
