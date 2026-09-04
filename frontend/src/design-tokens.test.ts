@@ -125,6 +125,15 @@ test("lets the toolbar reflow without viewport-specific breakpoints", async () =
   expect(stylesheet).not.toMatch(/@media \(max-width: (1535|959|599)px\)/);
 });
 
+test("keeps the open backlog panel above the search dock", async () => {
+  const stylesheet = await readStylesheet();
+
+  expect(stylesheet).toMatch(
+    /\.backlog-manager__panel\s*\{[\s\S]*?z-index:\s*3;/,
+  );
+  expect(stylesheet).toMatch(/\.planner-search-dock\s*\{[\s\S]*?z-index:\s*2;/);
+});
+
 test("uses the browser default type scale", async () => {
   const stylesheet = await readStylesheet();
 
