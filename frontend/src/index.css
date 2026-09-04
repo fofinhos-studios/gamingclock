@@ -447,7 +447,7 @@
   .planner-stepper__list {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    border-bottom: 1px solid var(--foreground-16);
+    gap: 0.45rem;
     min-width: 0;
   }
 
@@ -463,9 +463,9 @@
     align-items: center;
     width: 100%;
     min-height: 3.25rem;
-    border: 0;
-    border-bottom: 2px solid transparent;
-    background: transparent;
+    border: 1px solid var(--foreground-16);
+    border-bottom: 2px solid var(--foreground-32);
+    background: var(--foreground-035);
     padding: 0.5rem;
     color: var(--foreground);
     text-align: left;
@@ -474,17 +474,20 @@
   }
 
   .planner-stepper__tab:hover {
-    background: var(--foreground-04);
+    border-color: var(--foreground-32);
+    background: var(--foreground-08);
   }
 
   .planner-stepper__tab--active,
   .planner-stepper__tab--active:hover {
     border-bottom-color: var(--step-active);
-    background: var(--foreground-04);
+    background: var(--step-active-soft);
     color: var(--foreground);
+    box-shadow: inset 0 1px 0 var(--foreground-12);
   }
 
   .planner-stepper__tab--complete {
+    border-bottom-color: var(--step-complete);
     color: var(--step-complete);
   }
 
@@ -509,6 +512,8 @@
 
   .planner-stepper__tab--active .planner-stepper__tab-marker {
     border-color: var(--heat-marker);
+    background: var(--heat-marker);
+    color: var(--iron-core);
   }
 
   .planner-stepper__tab-content {
@@ -2947,19 +2952,35 @@
     grid-column: 1;
     grid-row: 2;
     align-self: start;
-    padding: 0 1.25rem 0 0;
-    border-right: 0;
-    border-bottom: 0;
+    padding: 0.7rem;
+    border: 1px solid var(--foreground-16);
+    background:
+      linear-gradient(180deg, var(--foreground-06), var(--foreground-0)),
+      var(--panel-chassis);
+    box-shadow:
+      inset 1px 1px 0 var(--metal-highlight),
+      inset -1px -1px 0 var(--metal-shadow);
   }
 
   .planner-stepper__list {
     grid-template-columns: minmax(0, 1fr);
-    gap: 0.45rem;
-    border-bottom: 0;
+    gap: 0.55rem;
   }
 
   .planner-stepper__tab {
-    min-height: 3.5rem;
+    min-height: 4.25rem;
+    grid-template-columns: 1.65rem minmax(0, 1fr);
+    border-left: 3px solid var(--foreground-16);
+    padding: 0.65rem;
+  }
+
+  .planner-stepper__tab--active,
+  .planner-stepper__tab--active:hover {
+    border-left-color: var(--step-active);
+  }
+
+  .planner-stepper__tab--complete {
+    border-left-color: var(--step-complete);
   }
 
   .planner-workspace__main {

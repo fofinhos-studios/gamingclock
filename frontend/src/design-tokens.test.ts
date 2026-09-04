@@ -141,14 +141,14 @@ test("uses the browser default type scale", async () => {
   expect(stylesheet).toMatch(/html\s*\{[\s\S]*?font-size:\s*100%;/);
 });
 
-test("does not leave a detached frame around the desktop stepper", async () => {
+test("uses a contained desktop stepper with clearly separated controls", async () => {
   const stylesheet = await readStylesheet();
 
   expect(stylesheet).toMatch(
-    /@media \(min-width: 1280px\)\s*\{[\s\S]*?\.planner-stepper\s*\{[\s\S]*?border-right:\s*0;/,
+    /@media \(min-width: 1280px\)\s*\{[\s\S]*?\.planner-stepper\s*\{[\s\S]*?border:\s*1px solid var\(--foreground-16\);[\s\S]*?background:\s*[\s\S]*?var\(--panel-chassis\);/,
   );
   expect(stylesheet).toMatch(
-    /@media \(min-width: 1280px\)\s*\{[\s\S]*?\.planner-stepper__list\s*\{[\s\S]*?border-bottom:\s*0;/,
+    /\.planner-stepper__tab\s*\{[\s\S]*?border:\s*1px solid var\(--foreground-16\);[\s\S]*?border-bottom:\s*2px solid var\(--foreground-32\);/,
   );
 });
 
