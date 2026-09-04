@@ -121,6 +121,12 @@ export function GameCartridge({
           <h3 class="game-cartridge__title planner-backlog-row__title">
             {game.name}
           </h3>
+          <PlatformIcons
+            class="game-cartridge__platforms"
+            platforms={game.platforms}
+            maxIcons={3}
+            showFallback={false}
+          />
         </div>
 
         <dl class="game-cartridge__label" aria-label={`${game.name} details`}>
@@ -130,15 +136,6 @@ export function GameCartridge({
               {variant !== "calendar" && <span>{primaryLabel}</span>}
             </dt>
             <dd>{primaryHours.toFixed(1)}H</dd>
-          </div>
-          <div class="game-cartridge__platforms">
-            <dt>
-              <GameControllerIcon aria-hidden="true" />
-              <span>PLATFORM</span>
-            </dt>
-            <dd>
-              <PlatformIcons platforms={game.platforms} maxIcons={3} />
-            </dd>
           </div>
           {startTime && (
             <div>

@@ -25,6 +25,7 @@ const PLATFORM_LOGO_FILES: Record<string, string> = {
 interface PlatformIconsProps {
   platforms: string[];
   maxIcons?: number;
+  showFallback?: boolean;
   class?: string;
 }
 
@@ -45,6 +46,7 @@ function logoFileFor(platform: string): string | undefined {
 export function PlatformIcons({
   platforms,
   maxIcons = 6,
+  showFallback = true,
   class: className = "",
 }: PlatformIconsProps) {
   const icons = platforms.reduce<Array<{ platform: string; file: string }>>(
@@ -92,7 +94,7 @@ export function PlatformIcons({
           +{hiddenIconCount}
         </span>
       )}
-      {unsupported.length > 0 && (
+      {showFallback && unsupported.length > 0 && (
         <span class="platform-icons__fallback">{unsupported.join(", ")}</span>
       )}
     </span>
