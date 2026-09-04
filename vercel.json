@@ -23,6 +23,15 @@
   ],
   "headers": [
     {
+      "source": "/api/game-groups/search",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, s-maxage=2592000, stale-while-revalidate=7776000"
+        }
+      ]
+    },
+    {
       "source": "/api/games/search",
       "headers": [
         {
