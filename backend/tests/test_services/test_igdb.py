@@ -19,6 +19,9 @@ async def test_igdb_search_uses_live_api_when_credentials_are_configured(monkeyp
         if request.url.host == "api.igdb.com":
             assert request.headers["Client-ID"] == "client-id"
             assert request.headers["Authorization"] == "Bearer test-token"
+            if request.url.path == "/v4/popularity_primitives":
+                assert "where game_id = (555) & popularity_type = 1;" in request.content.decode()
+                return httpx.Response(200, json=[])
             body = request.content.decode()
             assert 'search "Dragon Quest";' in body
             assert "where version_parent = null & game_type = (0,8,9,10,11);" in body
@@ -114,10 +117,86 @@ async def test_igdb_search_filters_noise_and_collapses_related_releases(monkeypa
 
 
 @pytest.mark.asyncio
+async def test_igdb_search_ranks_a_popular_prefix_match_above_an_obscure_exact_title(monkeypatch):
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "id.twitch.tv":
+            return _token_response()
+        body = request.content.decode()
+        if request.url.path == "/v4/games":
+            return httpx.Response(
+                200,
+                json=[
+                    {
+                        "id": 1,
+                        "name": "Sonic",
+                        "game_type": 0,
+                        "platforms": [{"name": "Handheld Electronic LCD"}],
+                    },
+                    {
+                        "id": 2,
+                        "name": "Sonic the Hedgehog",
+                        "game_type": 0,
+                        "total_rating_count": 5000,
+                        "platforms": [{"name": "Sega Genesis"}],
+                    },
+                    {
+                        "id": 3,
+                        "name": "Sonic the Hedgehog 2006",
+                        "game_type": 0,
+                        "total_rating_count": 40,
+                        "platforms": [{"name": "PlayStation 3"}],
+                    },
+                ],
+            )
+        assert request.url.path == "/v4/popularity_primitives"
+        assert "where game_id = (1,2,3) & popularity_type = 1;" in body
+        return httpx.Response(
+            200,
+            json=[
+                {"game_id": 1, "value": 0.0001},
+                {"game_id": 2, "value": 0.8},
+                {"game_id": 3, "value": 0.05},
+            ],
+        )
+
+    transport = httpx.MockTransport(handler)
+    monkeypatch.setenv("IGDB_CLIENT_ID", "client-id")
+    monkeypatch.setenv("IGDB_CLIENT_SECRET", "client-secret")
+    service = IGDBService(
+        http_client=httpx.AsyncClient(transport=transport),
+        token_client=httpx.AsyncClient(transport=transport),
+    )
+
+    results = await service.search("sonic")
+
+    assert results[0].name == "Sonic the Hedgehog"
+
+
+@pytest.mark.asyncio
+async def test_igdb_search_visit_popularity_is_cached():
+    calls = 0
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        assert request.url.path == "/v4/popularity_primitives"
+        return httpx.Response(200, json=[{"game_id": 7, "value": 0.5}])
+
+    service = IGDBService(http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)))
+
+    assert await service._search_visit_popularity({"Client-ID": "client-id"}, [7]) == {7: 0.5}
+    assert await service._search_visit_popularity({"Client-ID": "client-id"}, [7]) == {7: 0.5}
+    assert calls == 1
+
+
+@pytest.mark.asyncio
 async def test_igdb_search_hydrates_a_related_release_outside_the_search_page(monkeypatch):
     async def handler(request: httpx.Request) -> httpx.Response:
         if request.url.host == "id.twitch.tv":
             return _token_response()
+        if request.url.path == "/v4/popularity_primitives":
+            assert "where game_id = (1802) & popularity_type = 1;" in request.content.decode()
+            return httpx.Response(200, json=[])
         body = request.content.decode()
         if 'search "Chrono Trigger";' in body:
             return httpx.Response(

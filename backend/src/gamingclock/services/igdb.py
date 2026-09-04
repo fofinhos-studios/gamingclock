@@ -18,6 +18,8 @@ class IGDBService:
     """Use IGDB in configured environments and a small catalog for local work."""
 
     _SEARCH_FETCH_LIMIT: ClassVar[int] = 40
+    _SEARCH_VISIT_POPULARITY_TTL_SECONDS: ClassVar[int] = 60 * 60
+    _SEARCH_VISIT_POPULARITY_CACHE_LIMIT: ClassVar[int] = 512
     _RELATION_HYDRATION_LIMIT: ClassVar[int] = 120
     _POPULARITY_CANDIDATE_MULTIPLIER: ClassVar[int] = 2
     _VISITS_POPULARITY_TYPE: ClassVar[int] = 1
@@ -69,6 +71,7 @@ class IGDBService:
         self._token_client = token_client or httpx.AsyncClient()
         self._access_token: str | None = None
         self._expires_at = 0.0
+        self._search_visit_popularity_cache: dict[int, tuple[float, float]] = {}
 
     async def search(self, query: str, limit: int = 10) -> list[CatalogGame]:
         started_at = time.perf_counter()
@@ -100,8 +103,12 @@ class IGDBService:
         )
         response.raise_for_status()
         search_items = response.json()
-        items = await self._hydrate_related_search_items(headers, search_items)
-        results = self._clean_search_results(normalized, items, limit)
+        search_game_ids = [item["id"] for item in search_items if isinstance(item.get("id"), int)]
+        items, visit_popularity = await asyncio.gather(
+            self._hydrate_related_search_items(headers, search_items),
+            self._search_visit_popularity(headers, search_game_ids),
+        )
+        results = self._clean_search_results(normalized, items, limit, visit_popularity)
         logger.info(
             "IGDB search complete source=remote query_length=%d result_count=%d duration_ms=%.1f",
             len(normalized),
@@ -243,7 +250,9 @@ class IGDBService:
         return query.replace("\\", "\\\\").replace('"', '\\"')
 
     @classmethod
-    def _clean_search_results(cls, query: str, items: list[dict], limit: int) -> list[CatalogGame]:
+    def _clean_search_results(
+        cls, query: str, items: list[dict], limit: int, visit_popularity: dict[int, float]
+    ) -> list[CatalogGame]:
         """Return one default release per related IGDB family, with selectable variants."""
         candidates = [item for item in items if cls._is_search_candidate(item)]
         if not candidates or limit <= 0:
@@ -268,17 +277,26 @@ class IGDBService:
                 if related_id in candidates_by_id:
                     union(item["id"], related_id)
 
-        groups: dict[int, list[tuple[int, dict]]] = {}
-        for index, item in enumerate(candidates):
-            groups.setdefault(find(item["id"]), []).append((index, item))
+        groups: dict[int, list[dict]] = {}
+        for item in candidates:
+            groups.setdefault(find(item["id"]), []).append(item)
 
-        popularity_scale = max((log1p(item.get("total_rating_count") or 0) for item in candidates), default=1.0)
-        popularity_scale = max(popularity_scale, 1.0)
+        rating_count_scale = max((log1p(item.get("total_rating_count") or 0) for item in candidates), default=1.0)
+        rating_count_scale = max(rating_count_scale, 1.0)
+        visit_popularity_scale = max((log1p(value) for value in visit_popularity.values()), default=0.0)
+        visit_popularity_scale = max(visit_popularity_scale, 1e-9)
         selected_groups = [
-            cls._select_group_representative(query, group, len(candidates), popularity_scale)
+            cls._select_group_representative(query, group, rating_count_scale, visit_popularity, visit_popularity_scale)
             for group in groups.values()
         ]
-        selected_groups.sort(key=lambda selection: selection[0], reverse=True)
+        selected_groups.sort(
+            key=lambda selection: (
+                selection[0],
+                selection[1].get("total_rating_count") or 0,
+                selection[1]["id"],
+            ),
+            reverse=True,
+        )
 
         results = []
         for _, representative, grouped_items in selected_groups[:limit]:
@@ -289,6 +307,53 @@ class IGDBService:
             ]
             results.append(catalog_game)
         return results
+
+    async def _search_visit_popularity(self, headers: dict[str, str], game_ids: list[int]) -> dict[int, float]:
+        """Return cached IGDB visit scores without making search depend on them."""
+        now = time.monotonic()
+        scores: dict[int, float] = {}
+        missing_ids: list[int] = []
+        for game_id in sorted(set(game_ids)):
+            cached = self._search_visit_popularity_cache.get(game_id)
+            if cached and cached[0] > now:
+                scores[game_id] = cached[1]
+            else:
+                missing_ids.append(game_id)
+
+        if not missing_ids:
+            return scores
+
+        try:
+            response = await self._http_client.post(
+                "https://api.igdb.com/v4/popularity_primitives",
+                headers=headers,
+                content=(
+                    "fields game_id,value;"
+                    f"where game_id = ({','.join(map(str, missing_ids))})"
+                    f" & popularity_type = {self._VISITS_POPULARITY_TYPE};"
+                    f"limit {len(missing_ids)};"
+                ),
+            )
+            response.raise_for_status()
+        except (httpx.HTTPError, TypeError, ValueError):
+            logger.info("IGDB search popularity lookup failed", exc_info=True)
+            return scores
+
+        found_scores = {
+            item["game_id"]: float(item["value"])
+            for item in response.json()
+            if isinstance(item.get("game_id"), int)
+            and isinstance(item.get("value"), int | float)
+            and item["value"] >= 0
+        }
+        if len(self._search_visit_popularity_cache) + len(missing_ids) > self._SEARCH_VISIT_POPULARITY_CACHE_LIMIT:
+            self._search_visit_popularity_cache.clear()
+        expires_at = now + self._SEARCH_VISIT_POPULARITY_TTL_SECONDS
+        for game_id in missing_ids:
+            score = found_scores.get(game_id, 0.0)
+            self._search_visit_popularity_cache[game_id] = (expires_at, score)
+            scores[game_id] = score
+        return scores
 
     async def _hydrate_related_search_items(self, headers: dict[str, str], items: list[dict]) -> list[dict]:
         """Fetch a bounded relationship closure so a search page is not its own identity boundary."""
@@ -343,42 +408,55 @@ class IGDBService:
     def _select_group_representative(
         cls,
         query: str,
-        group: list[tuple[int, dict]],
-        candidate_count: int,
-        popularity_scale: float,
+        group: list[dict],
+        rating_count_scale: float,
+        visit_popularity: dict[int, float],
+        visit_popularity_scale: float,
     ) -> tuple[float, dict, list[dict]]:
-        main_games = [indexed_item for indexed_item in group if indexed_item[1].get("game_type", 0) == 0]
+        main_games = [item for item in group if item.get("game_type", 0) == 0]
         selected = (
             min(
                 main_games,
-                key=lambda indexed_item: (
-                    indexed_item[1].get("first_release_date") or float("inf"),
-                    indexed_item[1]["id"],
+                key=lambda item: (
+                    item.get("first_release_date") or float("inf"),
+                    item["id"],
                 ),
             )
             if main_games
             else max(
                 group,
-                key=lambda indexed_item: (
-                    cls._title_match_priority(query, indexed_item[1]["name"]),
-                    cls._search_score(query, indexed_item[0], indexed_item[1], candidate_count, popularity_scale),
+                key=lambda item: (
+                    cls._title_match_priority(query, item["name"]),
+                    cls._search_score(query, item, rating_count_scale, visit_popularity, visit_popularity_scale),
                 ),
             )
         )
-        score = cls._search_score(query, selected[0], selected[1], candidate_count, popularity_scale)
-        return score, selected[1], [item for _, item in group]
+        score = cls._search_score(query, selected, rating_count_scale, visit_popularity, visit_popularity_scale)
+        return score, selected, group
 
     @classmethod
-    def _search_score(cls, query: str, index: int, item: dict, candidate_count: int, popularity_scale: float) -> float:
+    def _search_score(
+        cls,
+        query: str,
+        item: dict,
+        rating_count_scale: float,
+        visit_popularity: dict[int, float],
+        visit_popularity_scale: float,
+    ) -> float:
         normalized_query = cls._normalize_title(query)
         normalized_name = cls._normalize_title(item["name"])
-        relevance = 1 - index / max(candidate_count - 1, 1)
-        popularity = log1p(item.get("total_rating_count") or 0) / popularity_scale
+        rating_count = log1p(item.get("total_rating_count") or 0) / rating_count_scale
+        visits = log1p(visit_popularity.get(item["id"], 0.0)) / visit_popularity_scale
         game_type = item.get("game_type")
         type_preference = cls._GAME_TYPE_PREFERENCE.get(game_type, 0.0)
-        exact_boost = 0.75 if normalized_name == normalized_query else 0.0
-        prefix_boost = 0.2 if normalized_name.startswith(normalized_query) else 0.0
-        return exact_boost + prefix_boost + 0.75 * relevance + 0.15 * popularity + 0.1 * type_preference
+        title_match = (
+            1.0
+            if normalized_name == normalized_query
+            else 0.8
+            if normalized_name.startswith(normalized_query)
+            else 0.45
+        )
+        return title_match + 0.35 * rating_count + 0.35 * visits + 0.1 * type_preference
 
     @classmethod
     def _title_match_priority(cls, query: str, name: str) -> int:
