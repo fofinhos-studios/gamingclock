@@ -601,11 +601,16 @@
   }
 
   .planner-toolbar__backlogs .backlog-manager__current {
-    min-height: 1.75rem;
+    min-height: 1.75rem !important;
     height: 1.75rem;
-    border: 0;
-    background: transparent;
-    padding: 0.25rem 0.45rem;
+    border: 0 !important;
+    background: transparent !important;
+    padding: 0.25rem 0.45rem !important;
+    box-shadow: none !important;
+  }
+
+  .planner-toolbar__backlogs .backlog-manager__meta {
+    display: none;
   }
 
   .planner-toolbar__controls :where(button, select):focus-visible {
