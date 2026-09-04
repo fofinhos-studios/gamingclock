@@ -118,7 +118,7 @@ test("lets the toolbar reflow without viewport-specific breakpoints", async () =
     /\.planner-toolbar__topline\s*\{[\s\S]*?flex-wrap:\s*wrap;/,
   );
   expect(stylesheet).toMatch(
-    /\.planner-toolbar__controls\s*\{[\s\S]*?flex:\s*1 1 50%;[\s\S]*?flex-wrap:\s*wrap;/,
+    /\.planner-toolbar__controls\s*\{[\s\S]*?flex:\s*0 1 auto;[\s\S]*?flex-wrap:\s*wrap;[\s\S]*?max-width:\s*100%;/,
   );
   expect(stylesheet).toMatch(
     /\.planner-identity\s*\{[\s\S]*?font-size:\s*clamp\(1rem,\s*4vw,\s*2\.2rem\);/,

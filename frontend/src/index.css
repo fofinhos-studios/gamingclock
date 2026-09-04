@@ -33,22 +33,7 @@
   --panel-chassis: var(--surface-92);
   --metal-highlight: var(--foreground-16);
   --metal-shadow: var(--foreground-08);
-  --canvas-texture:
-    radial-gradient(
-      ellipse 72% 54% at 8% 6%,
-      var(--foreground-04) 0%,
-      var(--foreground-0) 72%
-    ),
-    radial-gradient(
-      ellipse 66% 58% at 94% 24%,
-      var(--foreground-035) 0%,
-      var(--foreground-0) 74%
-    ),
-    radial-gradient(
-      ellipse 80% 62% at 36% 96%,
-      var(--foreground-04) 0%,
-      var(--foreground-0) 76%
-    );
+  --canvas-texture: none;
   --background: var(--iron-core);
   --surface: #211f1a;
   --foreground: var(--architectural-cream);
@@ -118,22 +103,7 @@
   --panel-chassis: var(--surface-92);
   --metal-highlight: var(--foreground-16);
   --metal-shadow: var(--foreground-08);
-  --canvas-texture:
-    radial-gradient(
-      ellipse 72% 54% at 8% 6%,
-      var(--foreground-04) 0%,
-      var(--foreground-0) 72%
-    ),
-    radial-gradient(
-      ellipse 66% 58% at 94% 24%,
-      var(--foreground-035) 0%,
-      var(--foreground-0) 74%
-    ),
-    radial-gradient(
-      ellipse 80% 62% at 36% 96%,
-      var(--foreground-04) 0%,
-      var(--foreground-0) 76%
-    );
+  --canvas-texture: none;
   --foreground-0: rgb(23 22 18 / 0);
   --foreground-035: rgb(23 22 18 / 0.035);
   --foreground-04: rgb(23 22 18 / 0.04);
@@ -335,20 +305,7 @@
       var(--brushed-metal);
     box-shadow:
       inset 1px 1px 0 var(--metal-highlight),
-      inset -1px -1px 0 var(--metal-shadow),
-      0 1.25rem 3rem var(--foreground-08);
-  }
-
-  .planner-app__workspace::before {
-    position: absolute;
-    z-index: -1;
-    inset: 0;
-    content: "";
-    opacity: 0.5;
-    background:
-      linear-gradient(90deg, var(--foreground-0), var(--foreground-04), var(--foreground-0)),
-      var(--brushed-metal);
-    pointer-events: none;
+      inset -1px -1px 0 var(--metal-shadow);
   }
 
   .planner-identity {
@@ -377,7 +334,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    min-height: 2rem;
+    min-height: 1.75rem;
     border: 0;
     background: transparent;
     padding: 0.25rem 0.35rem;
@@ -406,7 +363,8 @@
   }
 
   .language-chooser select {
-    min-height: 2rem;
+    inline-size: 8rem;
+    min-height: 1.75rem;
     min-width: 0;
     border: 0;
     background: transparent;
@@ -569,22 +527,21 @@
   .planner-toolbar__controls {
     display: flex;
     align-items: center;
-    flex: 1 1 50%;
+    flex: 0 1 auto;
     flex-wrap: wrap;
     justify-content: end;
-    gap: 0;
+    gap: 0.15rem;
     margin-left: auto;
+    max-width: 100%;
     min-width: 0;
-    border: 1px solid var(--foreground-16);
-    background: var(--foreground-04);
-    padding: 0.15rem;
+    padding: 0;
   }
 
   .toolbar-control {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    min-height: 2rem;
+    min-height: 1.75rem;
     min-width: 0;
     padding: 0 0.35rem;
   }
@@ -644,7 +601,8 @@
   }
 
   .planner-toolbar__backlogs .backlog-manager__current {
-    min-height: 2rem;
+    min-height: 1.75rem;
+    height: 1.75rem;
     border: 0;
     background: transparent;
     padding: 0.25rem 0.45rem;
@@ -946,8 +904,7 @@
       var(--brushed-metal);
     box-shadow:
       inset 1px 1px 0 var(--metal-highlight),
-      inset -1px -1px 0 var(--metal-shadow),
-      0 0.9rem 2.4rem var(--foreground-12);
+      inset -1px -1px 0 var(--metal-shadow);
     transition:
       border-color 180ms ease,
       box-shadow 220ms ease;
@@ -955,13 +912,11 @@
 
   .planner-search-dock__shell:focus-within {
     border-color: var(--brand-focus-edge);
+    outline: 2px solid var(--brand-focus-edge);
+    outline-offset: 2px;
     box-shadow:
       inset 1px 1px 0 var(--metal-highlight),
-      inset -1px -1px 0 var(--metal-shadow),
-      0 0 0 1px var(--brand-focus-near),
-      0 0 0.7rem 0.04rem var(--brand-focus-near),
-      0 0 1.8rem 0.14rem var(--brand-focus-far),
-      0 0.9rem 2.4rem var(--foreground-12);
+      inset -1px -1px 0 var(--metal-shadow);
   }
 
   .planner-search-dock__icon {

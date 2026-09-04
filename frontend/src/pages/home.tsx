@@ -746,7 +746,7 @@ export function HomePage() {
                 <SurfaceWordmark text="Gaming Clock" />
                 <div class="planner-toolbar__controls">
                   <div class="toolbar-control">
-                    <span class="toolbar-control__label">
+                    <span class="toolbar-control__label sr-only">
                       {t.app.theme.label}
                     </span>
                     <Button
@@ -775,7 +775,7 @@ export function HomePage() {
                     </Button>
                   </div>
                   <label class="toolbar-control language-chooser">
-                    <span class="toolbar-control__label">
+                    <span class="toolbar-control__label sr-only">
                       {t.language.label}
                     </span>
                     <select
