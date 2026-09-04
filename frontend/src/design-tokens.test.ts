@@ -110,18 +110,25 @@ test("keeps the planner in its single-column layout until there is room for its 
   );
 });
 
-test("stacks and wraps the toolbar controls before they overflow the desktop workspace", async () => {
+test("lets the toolbar reflow without viewport-specific breakpoints", async () => {
   const stylesheet = await readStylesheet();
 
   expect(stylesheet).toMatch(
-    /@media \(max-width: 1535px\)\s*\{[\s\S]*?\.planner-toolbar__topline\s*\{[\s\S]*?flex-direction:\s*column;/,
+    /\.planner-toolbar__topline\s*\{[\s\S]*?flex-wrap:\s*wrap;/,
   );
   expect(stylesheet).toMatch(
-    /@media \(max-width: 959px\)\s*\{[\s\S]*?\.planner-toolbar__controls\s*\{[\s\S]*?flex-wrap:\s*wrap;/,
+    /\.planner-toolbar__controls\s*\{[\s\S]*?flex:\s*1 1 50%;[\s\S]*?flex-wrap:\s*wrap;/,
   );
   expect(stylesheet).toMatch(
-    /@media \(max-width: 599px\)\s*\{[\s\S]*?\.planner-toolbar__backlogs,[\s\S]*?\.backlog-manager__current\s*\{[\s\S]*?max-width:\s*100%;/,
+    /\.planner-identity\s*\{[\s\S]*?font-size:\s*clamp\(1rem,\s*4vw,\s*2\.2rem\);/,
   );
+  expect(stylesheet).not.toMatch(/@media \(max-width: (1535|959|599)px\)/);
+});
+
+test("uses the browser default type scale", async () => {
+  const stylesheet = await readStylesheet();
+
+  expect(stylesheet).toMatch(/html\s*\{[\s\S]*?font-size:\s*100%;/);
 });
 
 test("does not leave a detached frame around the desktop stepper", async () => {

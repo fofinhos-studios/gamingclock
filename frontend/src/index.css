@@ -176,7 +176,7 @@
   html {
     background: var(--background);
     color: var(--foreground);
-    font-size: 125%;
+    font-size: 100%;
     font-family: var(--font-body);
     scroll-behavior: smooth;
     scrollbar-gutter: stable;
@@ -354,7 +354,9 @@
   .planner-identity {
     display: inline-block;
     font-family: var(--font-brand);
-    font-size: clamp(1.65rem, 3vw, 2.45rem);
+    flex: 0 1 auto;
+    max-inline-size: 100%;
+    font-size: clamp(1rem, 4vw, 2.2rem);
     font-weight: 800;
     letter-spacing: 0.025em;
     line-height: 1;
@@ -555,12 +557,19 @@
     gap: 0.9rem;
   }
 
+  .planner-toolbar__topline {
+    flex-wrap: wrap;
+  }
+
   .planner-toolbar__controls {
     display: flex;
     align-items: center;
+    flex: 1 1 50%;
+    flex-wrap: wrap;
     justify-content: end;
     gap: 0.55rem;
     margin-left: auto;
+    min-width: 0;
   }
 
   .toolbar-control {
@@ -2940,23 +2949,11 @@
   }
 }
 
-@media (max-width: 1535px) {
-  .planner-toolbar__topline {
-    flex-direction: column;
-    align-items: start;
-  }
-
-  .planner-toolbar__controls {
-    align-self: end;
-  }
-}
-
 @media (max-width: 1279px) {
   .planner-app {
     padding: 0.6rem;
   }
 
-  .planner-toolbar__topline,
   .planner-toolbar__content,
   .planner-pane__header,
   .timeline-entry__header {
@@ -2970,10 +2967,6 @@
 
   .planner-pane--availability {
     padding: clamp(0.9rem, 2vw, 1.25rem);
-  }
-
-  .planner-toolbar__controls {
-    align-self: end;
   }
 
   .planner-games-workspace,
@@ -2996,39 +2989,6 @@
 
   .planner-pane--availability .planner-day-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 959px) {
-  .planner-toolbar__controls {
-    width: 100%;
-    flex-wrap: wrap;
-    justify-content: start;
-    margin-left: 0;
-  }
-}
-
-@media (max-width: 599px) {
-  .planner-identity {
-    font-size: clamp(1rem, 6vw, 1.65rem);
-  }
-
-  .planner-toolbar__controls {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.5rem;
-  }
-
-  .toolbar-control {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .planner-toolbar__backlogs,
-  .backlog-manager__summary,
-  .backlog-manager__current {
-    width: 100%;
-    max-width: 100%;
   }
 }
 
