@@ -32,14 +32,15 @@ test("gives native select options an explicit themed surface", async () => {
   );
 });
 
-test("uses the locked industrial palette and type pairing", async () => {
+test("uses the high-contrast graphite palette and type pairing", async () => {
   const stylesheet = await readStylesheet();
 
-  expect(stylesheet).toMatch(/--iron-core:\s*#222a2a/i);
-  expect(stylesheet).toMatch(/--industrial-aqua:\s*#4fbbbc/i);
-  expect(stylesheet).toMatch(/--rust-signal:\s*#ec4624/i);
-  expect(stylesheet).toMatch(/--heat-marker:\s*#f39120/i);
-  expect(stylesheet).toMatch(/--architectural-cream:\s*#e2dac2/i);
+  expect(stylesheet).toMatch(/--iron-core:\s*#171612/i);
+  expect(stylesheet).toMatch(/--industrial-aqua:\s*#78cbc1/i);
+  expect(stylesheet).toMatch(/--rust-signal:\s*#f0704f/i);
+  expect(stylesheet).toMatch(/--heat-marker:\s*#e7a952/i);
+  expect(stylesheet).toMatch(/--architectural-cream:\s*#f3ede0/i);
+  expect(stylesheet).toMatch(/--muted-foreground:\s*#c9c2b5/i);
   expect(stylesheet).toMatch(/--font-display:\s*"DM Sans"/);
   expect(stylesheet).toMatch(/--font-body:\s*"Space Mono"/);
 });
