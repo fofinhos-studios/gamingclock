@@ -119,7 +119,7 @@ describe("GameSearch", () => {
       view.container
         .querySelector(".platform-icons__icon")
         ?.getAttribute("src"),
-    ).toContain("Platforms-Logos/main/Windows.png");
+    ).toContain("/platform-icons/Windows.png");
   });
 
   test("shows ordinary games without waiting for optional group discovery", async () => {

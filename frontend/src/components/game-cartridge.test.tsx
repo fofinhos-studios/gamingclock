@@ -79,7 +79,7 @@ describe("GameCartridge", () => {
       view.container
         .querySelector(".platform-icons__icon")
         ?.getAttribute("src"),
-    ).toContain("Platforms-Logos/main/Windows.png");
+    ).toContain("/platform-icons/Windows.png");
     expect(view.getByText("GENRE")).toBeTruthy();
     expect(view.getByText("Adventure")).toBeTruthy();
   });

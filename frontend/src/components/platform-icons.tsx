@@ -1,5 +1,4 @@
-const PLATFORM_LOGO_BASE_URL =
-  "https://raw.githubusercontent.com/Kosnix/Platforms-Logos/main";
+const PLATFORM_LOGO_BASE_URL = "/platform-icons";
 
 const PLATFORM_LOGO_FILES: Record<string, string> = {
   "game boy advance": "GBA.png",
