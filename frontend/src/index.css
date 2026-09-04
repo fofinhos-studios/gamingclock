@@ -908,7 +908,7 @@
   .planner-search-dock__shell:focus-within {
     border-color: var(--brand-focus-edge);
     outline: 2px solid var(--brand-focus-edge);
-    outline-offset: 2px;
+    outline-offset: -2px;
     box-shadow:
       inset 1px 1px 0 var(--metal-highlight),
       inset -1px -1px 0 var(--metal-shadow);

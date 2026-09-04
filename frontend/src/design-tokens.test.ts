@@ -212,3 +212,11 @@ test("uses the aqua accent instead of foreground-colored interaction outlines", 
     /\.planner-backlog-row:hover\s*\{[^}]*?border-color:\s*var\(--foreground-85\);/,
   );
 });
+
+test("keeps the search dock focus highlight within its visible shell", async () => {
+  const stylesheet = await readStylesheet();
+
+  expect(stylesheet).toMatch(
+    /\.planner-search-dock__shell:focus-within\s*\{[\s\S]*?outline-offset:\s*-2px;/,
+  );
+});
