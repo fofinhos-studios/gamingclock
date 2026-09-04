@@ -9,7 +9,7 @@ from typing import ClassVar
 
 import httpx
 
-from gamingclock.models.catalog import CatalogGame, release_year_from_epoch
+from gamingclock.models.catalog import CatalogGame, CatalogGameVariant, IGDBGameType, release_year_from_epoch
 
 logger = logging.getLogger(__name__)
 
@@ -18,12 +18,24 @@ class IGDBService:
     """Use IGDB in configured environments and a small catalog for local work."""
 
     _SEARCH_FETCH_LIMIT: ClassVar[int] = 40
+    _RELATION_HYDRATION_LIMIT: ClassVar[int] = 120
     _POPULARITY_CANDIDATE_MULTIPLIER: ClassVar[int] = 2
     _VISITS_POPULARITY_TYPE: ClassVar[int] = 1
     _TOTAL_REVIEWS_POPULARITY_TYPE: ClassVar[int] = 8
     _RECENT_RELEASE_SECONDS: ClassVar[int] = 365 * 24 * 60 * 60
-    _ALLOWED_GAME_TYPES: ClassVar[frozenset[int]] = frozenset({0, 8, 9, 10})
-    _GAME_TYPE_PREFERENCE: ClassVar[dict[int, float]] = {0: 1.0, 10: 0.95, 9: 0.9, 8: 0.85}
+    _ALLOWED_GAME_TYPES: ClassVar[frozenset[int]] = frozenset({0, 8, 9, 10, 11})
+    _GAME_TYPE_PREFERENCE: ClassVar[dict[int, float]] = {0: 1.0, 10: 0.95, 9: 0.9, 8: 0.85, 11: 0.8}
+    _GAME_TYPES: ClassVar[dict[int, IGDBGameType]] = {
+        0: IGDBGameType.MAIN_GAME,
+        8: IGDBGameType.REMAKE,
+        9: IGDBGameType.REMASTER,
+        10: IGDBGameType.EXPANDED_GAME,
+        11: IGDBGameType.PORT,
+    }
+    _GAME_FIELDS: ClassVar[str] = (
+        "id,name,summary,rating,total_rating_count,first_release_date,cover.url,genres.name,platforms.name,"
+        "game_type,version_parent,parent_game,version_title,ports,remakes,remasters,expanded_games"
+    )
 
     _local_catalog: ClassVar[list[CatalogGame]] = [
         CatalogGame(
@@ -74,20 +86,22 @@ class IGDBService:
             return results
 
         client_id, token = await self._get_auth_headers()
+        headers = {"Client-ID": client_id, "Authorization": f"Bearer {token}"}
         body = (
-            "fields id,name,summary,rating,total_rating_count,first_release_date,cover.url,genres.name,"
-            "platforms.name,game_type,version_parent,ports,remasters,expanded_games;"
+            f"fields {self._GAME_FIELDS};"
             f'search "{self._escape_search_query(normalized)}";'
-            "where version_parent = null & game_type = (0,8,9,10);"
+            "where version_parent = null & game_type = (0,8,9,10,11);"
             f"limit {max(self._SEARCH_FETCH_LIMIT, limit)};"
         )
         response = await self._http_client.post(
             "https://api.igdb.com/v4/games",
-            headers={"Client-ID": client_id, "Authorization": f"Bearer {token}"},
+            headers=headers,
             content=body,
         )
         response.raise_for_status()
-        results = self._clean_search_results(normalized, response.json(), limit)
+        search_items = response.json()
+        items = await self._hydrate_related_search_items(headers, search_items)
+        results = self._clean_search_results(normalized, items, limit)
         logger.info(
             "IGDB search complete source=remote query_length=%d result_count=%d duration_ms=%.1f",
             len(normalized),
@@ -110,7 +124,7 @@ class IGDBService:
 
         client_id, token = await self._get_auth_headers()
         body = (
-            "fields id,name,summary,rating,first_release_date,cover.url,genres.name,platforms.name;"
+            f"fields {self._GAME_FIELDS};"
             f"where id = {igdb_id};"
             "limit 1;"
         )
@@ -230,7 +244,7 @@ class IGDBService:
 
     @classmethod
     def _clean_search_results(cls, query: str, items: list[dict], limit: int) -> list[CatalogGame]:
-        """Collapse related releases without letting popularity replace title relevance."""
+        """Return one default release per related IGDB family, with selectable variants."""
         candidates = [item for item in items if cls._is_search_candidate(item)]
         if not candidates or limit <= 0:
             return []
@@ -269,9 +283,42 @@ class IGDBService:
         results = []
         for _, representative, grouped_items in selected_groups[:limit]:
             catalog_game = cls._to_catalog_game(representative)
-            catalog_game.platforms = cls._merged_platforms(grouped_items)
+            catalog_game.variants = [
+                cls._to_catalog_variant(item)
+                for item in cls._ordered_variants(grouped_items, representative["id"])
+            ]
             results.append(catalog_game)
         return results
+
+    async def _hydrate_related_search_items(self, headers: dict[str, str], items: list[dict]) -> list[dict]:
+        """Fetch a bounded relationship closure so a search page is not its own identity boundary."""
+        items_by_id = {item["id"]: item for item in items if isinstance(item.get("id"), int)}
+        pending = set().union(*(self._related_game_ids(item) for item in items_by_id.values())) - set(items_by_id)
+
+        while pending and len(items_by_id) < self._RELATION_HYDRATION_LIMIT:
+            remaining = self._RELATION_HYDRATION_LIMIT - len(items_by_id)
+            batch = sorted(pending)[:remaining]
+            pending.difference_update(batch)
+            response = await self._http_client.post(
+                "https://api.igdb.com/v4/games",
+                headers=headers,
+                content=(
+                    f"fields {self._GAME_FIELDS};"
+                    f"where id = ({','.join(map(str, batch))});"
+                    f"limit {len(batch)};"
+                ),
+            )
+            response.raise_for_status()
+            for item in response.json():
+                game_id = item.get("id")
+                if not isinstance(game_id, int) or game_id in items_by_id:
+                    continue
+                items_by_id[game_id] = item
+                pending.update(
+                    related_id for related_id in self._related_game_ids(item) if related_id not in items_by_id
+                )
+
+        return list(items_by_id.values())
 
     @classmethod
     def _is_search_candidate(cls, item: dict) -> bool:
@@ -285,7 +332,11 @@ class IGDBService:
 
     @staticmethod
     def _related_game_ids(item: dict) -> Iterable[int]:
-        for field in ("ports", "remasters", "expanded_games"):
+        for field in ("version_parent", "parent_game"):
+            related_id = item.get(field)
+            if isinstance(related_id, int):
+                yield related_id
+        for field in ("ports", "remakes", "remasters", "expanded_games"):
             yield from (game_id for game_id in item.get(field) or [] if isinstance(game_id, int))
 
     @classmethod
@@ -296,12 +347,23 @@ class IGDBService:
         candidate_count: int,
         popularity_scale: float,
     ) -> tuple[float, dict, list[dict]]:
-        selected = max(
-            group,
-            key=lambda indexed_item: (
-                cls._title_match_priority(query, indexed_item[1]["name"]),
-                cls._search_score(query, indexed_item[0], indexed_item[1], candidate_count, popularity_scale),
-            ),
+        main_games = [indexed_item for indexed_item in group if indexed_item[1].get("game_type", 0) == 0]
+        selected = (
+            min(
+                main_games,
+                key=lambda indexed_item: (
+                    indexed_item[1].get("first_release_date") or float("inf"),
+                    indexed_item[1]["id"],
+                ),
+            )
+            if main_games
+            else max(
+                group,
+                key=lambda indexed_item: (
+                    cls._title_match_priority(query, indexed_item[1]["name"]),
+                    cls._search_score(query, indexed_item[0], indexed_item[1], candidate_count, popularity_scale),
+                ),
+            )
         )
         score = cls._search_score(query, selected[0], selected[1], candidate_count, popularity_scale)
         return score, selected[1], [item for _, item in group]
@@ -332,12 +394,15 @@ class IGDBService:
     def _normalize_title(value: str) -> str:
         return re.sub(r"[^a-z0-9]+", " ", value.casefold()).strip()
 
-    @staticmethod
-    def _merged_platforms(items: list[dict]) -> list[str]:
-        return list(
-            dict.fromkeys(
-                platform["name"] for item in items for platform in item.get("platforms") or [] if platform.get("name")
-            )
+    @classmethod
+    def _ordered_variants(cls, items: list[dict], representative_id: int) -> list[dict]:
+        return sorted(
+            (item for item in items if item["id"] != representative_id),
+            key=lambda item: (
+                cls._GAME_TYPE_PREFERENCE.get(item.get("game_type"), 0.0) * -1,
+                item.get("first_release_date") or float("inf"),
+                item["id"],
+            ),
         )
 
     async def _get_auth_headers(self) -> tuple[str, str]:
@@ -379,4 +444,30 @@ class IGDBService:
             platforms=[platform["name"] for platform in item.get("platforms") or []],
             release_year=release_year_from_epoch(item.get("first_release_date")),
             rating=item.get("rating"),
+            game_type=IGDBService._GAME_TYPES.get(item.get("game_type")),
+            version_parent=item.get("version_parent"),
+            parent_game=item.get("parent_game"),
+            version_title=item.get("version_title"),
+            ports=[game_id for game_id in item.get("ports") or [] if isinstance(game_id, int)],
+            remakes=[game_id for game_id in item.get("remakes") or [] if isinstance(game_id, int)],
+            remasters=[game_id for game_id in item.get("remasters") or [] if isinstance(game_id, int)],
+            expanded_games=[game_id for game_id in item.get("expanded_games") or [] if isinstance(game_id, int)],
+        )
+
+    @staticmethod
+    def _to_catalog_variant(item: dict) -> CatalogGameVariant:
+        catalog_game = IGDBService._to_catalog_game(item)
+        return CatalogGameVariant(
+            igdb_id=catalog_game.igdb_id,
+            name=catalog_game.name,
+            cover_url=catalog_game.cover_url,
+            summary=catalog_game.summary,
+            genres=catalog_game.genres,
+            platforms=catalog_game.platforms,
+            release_year=catalog_game.release_year,
+            rating=catalog_game.rating,
+            game_type=catalog_game.game_type,
+            version_parent=catalog_game.version_parent,
+            parent_game=catalog_game.parent_game,
+            version_title=catalog_game.version_title,
         )

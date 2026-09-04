@@ -19,6 +19,7 @@ import {
 } from "../services/api";
 import type {
   CatalogGame,
+  CatalogGameVariant,
   GameArtwork,
   GameGroupPreview,
   GameGroupSearchResult,
@@ -482,26 +483,47 @@ export function GameSearch({
                   const artwork = artworkById[game.igdb_id];
 
                   return (
-                    <SearchResultCartridge
+                    <div
+                      class="planner-result-family"
                       key={`${game.igdb_id}:${artwork?.hero_url ?? ""}:${artwork?.logo_url ?? ""}`}
-                      buttonRef={(element) => {
-                        resultRefs.current[index + visibleGroupResults.length] =
-                          element;
-                      }}
-                      game={game}
-                      artwork={artwork}
-                      isArtworkLoading={pendingArtworkIds.has(game.igdb_id)}
-                      isHighlighted={isHighlighted}
-                      isAdding={addingId === game.igdb_id}
-                      isAdded={addFeedback.active === game.igdb_id}
-                      onMouseEnter={() =>
-                        setHighlightedIndex(index + groupResults.length)
-                      }
-                      onFocus={() =>
-                        setHighlightedIndex(index + groupResults.length)
-                      }
-                      onClick={() => handleAddGame(game)}
-                    />
+                    >
+                      <SearchResultCartridge
+                        buttonRef={(element) => {
+                          resultRefs.current[
+                            index + visibleGroupResults.length
+                          ] = element;
+                        }}
+                        game={game}
+                        artwork={artwork}
+                        isArtworkLoading={pendingArtworkIds.has(game.igdb_id)}
+                        isHighlighted={isHighlighted}
+                        isAdding={addingId === game.igdb_id}
+                        isAdded={addFeedback.active === game.igdb_id}
+                        onMouseEnter={() =>
+                          setHighlightedIndex(index + groupResults.length)
+                        }
+                        onFocus={() =>
+                          setHighlightedIndex(index + groupResults.length)
+                        }
+                        onClick={() => handleAddGame(game)}
+                      />
+                      {(game.variants?.length ?? 0) > 0 && (
+                        <div class="planner-result-variants">
+                          {game.variants?.map((variant) => {
+                            const variantGame = catalogGameFromVariant(variant);
+                            return (
+                              <SearchResultVariant
+                                key={variant.igdb_id}
+                                variant={variant}
+                                isAdding={addingId === variant.igdb_id}
+                                isAdded={addFeedback.active === variant.igdb_id}
+                                onClick={() => handleAddGame(variantGame)}
+                              />
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
             </div>
@@ -553,6 +575,17 @@ function groupArtworkGame(name: string): CatalogGame {
     platforms: [],
     release_year: null,
     rating: null,
+  };
+}
+
+function catalogGameFromVariant(variant: CatalogGameVariant): CatalogGame {
+  return {
+    ...variant,
+    ports: [],
+    remakes: [],
+    remasters: [],
+    expanded_games: [],
+    variants: [],
   };
 }
 
@@ -972,6 +1005,12 @@ function SearchResultCartridge({
           </div>
         </div>
 
+        {(game.variants?.length ?? 0) > 0 && (
+          <p class="planner-result__version-count">
+            {t.search.versions(game.variants?.length ?? 0)}
+          </p>
+        )}
+
         {isArtworkReady ? (
           <div class="planner-result__details">
             <p class="planner-result__detail">
@@ -1012,6 +1051,50 @@ function SearchResultCartridge({
           </p>
         )}
       </div>
+    </Button>
+  );
+}
+
+interface SearchResultVariantProps {
+  variant: CatalogGameVariant;
+  isAdding: boolean;
+  isAdded: boolean;
+  onClick: () => void;
+}
+
+function SearchResultVariant({
+  variant,
+  isAdding,
+  isAdded,
+  onClick,
+}: SearchResultVariantProps) {
+  const { t } = useLanguage();
+  const type = t.search.versionType(variant.game_type);
+  const title = variant.version_title || variant.name;
+
+  return (
+    <Button
+      unstyled
+      class={`planner-result-variant${
+        isAdding ? " planner-result-variant--loading" : ""
+      }${isAdded ? " planner-result-variant--success" : ""}`}
+      disabled={isAdding}
+      onClick={onClick}
+      aria-label={t.search.addVersion(variant.name, type)}
+    >
+      <span class="planner-result-variant__type">{type}</span>
+      <span class="planner-result-variant__title">{title}</span>
+      <span class="planner-result-variant__meta">
+        {variant.platforms.length > 0
+          ? variant.platforms.join(", ")
+          : t.search.platformsUnavailable}
+        {variant.release_year === null ? "" : ` · ${variant.release_year}`}
+      </span>
+      {(isAdding || isAdded) && (
+        <span class="planner-result-variant__feedback">
+          {isAdding ? t.search.adding : t.search.added}
+        </span>
+      )}
     </Button>
   );
 }

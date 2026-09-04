@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 popular_cache_warmer = PopularCacheWarmer(igdb_service.popular_games, hltb_service.warm)
 
 
-@router.get("/search", response_model=list[CatalogGame])
+@router.get("/search", response_model=list[CatalogGame], response_model_exclude_defaults=True)
 async def search_games(response: Response, query: str) -> list[CatalogGame]:
     response.headers["Cache-Control"] = "public, s-maxage=300, stale-while-revalidate=86400"
     catalog_games = [

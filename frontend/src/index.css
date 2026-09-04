@@ -1029,6 +1029,75 @@
     background: var(--surface-hover);
   }
 
+  .planner-result-family {
+    display: grid;
+    gap: 1px;
+  }
+
+  .planner-result-variants {
+    display: grid;
+    gap: 1px;
+    border: 1px solid var(--foreground-32);
+    border-top: 0;
+    background: var(--foreground-08);
+  }
+
+  .planner-result-variant {
+    display: grid;
+    grid-template-columns: minmax(7rem, auto) minmax(0, 1fr) auto;
+    gap: 0.35rem 0.65rem;
+    align-items: center;
+    width: 100%;
+    padding: 0.48rem 0.7rem 0.5rem 1rem;
+    border: 0;
+    background: var(--surface);
+    color: inherit;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .planner-result-variant:hover,
+  .planner-result-variant:focus-visible {
+    background: var(--surface-hover);
+    outline: 1px solid var(--brand-focus-edge);
+    outline-offset: -1px;
+  }
+
+  .planner-result-variant__type,
+  .planner-result-variant__meta,
+  .planner-result-variant__feedback {
+    color: var(--muted-foreground);
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .planner-result-variant__title {
+    overflow: hidden;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .planner-result-variant__meta {
+    grid-column: 2 / -1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .planner-result-variant__feedback {
+    color: inherit;
+    text-align: right;
+  }
+
+  .planner-result-variant--loading,
+  .planner-result-variant--success {
+    background: var(--foreground-08);
+  }
+
   .planner-result__hero,
   .planner-result__wash {
     position: absolute;
@@ -1178,6 +1247,7 @@
   }
 
   .planner-result__meta,
+  .planner-result__version-count,
   .planner-inline-stats,
   .planner-chip,
   .timeline-meta,
@@ -1189,6 +1259,7 @@
   }
 
   .planner-result__meta,
+  .planner-result__version-count,
   .planner-result__detail,
   .planner-result__summary,
   .planner-backlog-row__detail,

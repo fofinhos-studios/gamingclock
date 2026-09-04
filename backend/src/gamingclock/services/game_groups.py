@@ -32,7 +32,7 @@ from gamingclock.services.game_group_cache import CachedPayload, UpstashGameGrou
 from gamingclock.services.igdb import IGDBService
 
 logger = logging.getLogger(__name__)
-_ALLOWED_GAME_TYPES = frozenset({0, 8, 9, 10})
+_ALLOWED_GAME_TYPES = frozenset({0, 8, 9, 10, 11})
 _CACHE_SECONDS = 300
 _CACHE_MAX_ENTRIES = 100
 _OPTIONAL_SOURCE_TIMEOUT_SECONDS = 0.75
@@ -949,7 +949,7 @@ class GameGroupExplorer:
                 headers={"Client-ID": client_id, "Authorization": f"Bearer {token}"},
                 content=(
                     "fields id,name,summary,rating,first_release_date,cover.url,genres.name,platforms.name,"
-                    "game_type,version_parent,ports,remasters,expanded_games;"
+                    "game_type,version_parent,ports,remakes,remasters,expanded_games;"
                     f"where id = ({','.join(map(str, batch))}); limit {len(batch)};"
                 ),
             )
@@ -1049,7 +1049,7 @@ def _canonical_games(rows: list[dict[str, Any]]) -> tuple[list[CatalogGame], lis
             parent[right_root] = left_root
 
     for row in candidates:
-        for relation_field in ("ports", "remasters", "expanded_games"):
+        for relation_field in ("ports", "remakes", "remasters", "expanded_games"):
             for related in row.get(relation_field) or []:
                 if related in by_id:
                     union(row["id"], related)

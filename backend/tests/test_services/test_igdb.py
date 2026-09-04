@@ -21,7 +21,7 @@ async def test_igdb_search_uses_live_api_when_credentials_are_configured(monkeyp
             assert request.headers["Authorization"] == "Bearer test-token"
             body = request.content.decode()
             assert 'search "Dragon Quest";' in body
-            assert "where version_parent = null & game_type = (0,8,9,10);" in body
+            assert "where version_parent = null & game_type = (0,8,9,10,11);" in body
             assert "sort" not in body
             assert "limit 40;" in body
             return httpx.Response(
@@ -107,7 +107,61 @@ async def test_igdb_search_filters_noise_and_collapses_related_releases(monkeypa
     results = await service.search("Galactic Adventure")
 
     assert [result.name for result in results] == ["Galactic Adventure"]
-    assert results[0].platforms == ["Switch", "PC"]
+    assert results[0].platforms == ["PC"]
+    assert [(variant.igdb_id, variant.game_type, variant.platforms) for variant in results[0].variants] == [
+        (2, "expanded_game", ["Switch"])
+    ]
+
+
+@pytest.mark.asyncio
+async def test_igdb_search_hydrates_a_related_release_outside_the_search_page(monkeypatch):
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "id.twitch.tv":
+            return _token_response()
+        body = request.content.decode()
+        if 'search "Chrono Trigger";' in body:
+            return httpx.Response(
+                200,
+                json=[
+                    {
+                        "id": 1802,
+                        "name": "Chrono Trigger",
+                        "game_type": 0,
+                        "first_release_date": 794880000,
+                        "platforms": [{"name": "Super Nintendo"}],
+                        "expanded_games": [20398],
+                    }
+                ],
+            )
+        assert "where id = (20398);" in body
+        return httpx.Response(
+            200,
+            json=[
+                {
+                    "id": 20398,
+                    "name": "Chrono Trigger",
+                    "game_type": 10,
+                    "first_release_date": 1227139200,
+                    "platforms": [{"name": "Nintendo DS"}],
+                    "summary": "An expanded release.",
+                }
+            ],
+        )
+
+    transport = httpx.MockTransport(handler)
+    monkeypatch.setenv("IGDB_CLIENT_ID", "client-id")
+    monkeypatch.setenv("IGDB_CLIENT_SECRET", "client-secret")
+    service = IGDBService(
+        http_client=httpx.AsyncClient(transport=transport),
+        token_client=httpx.AsyncClient(transport=transport),
+    )
+
+    results = await service.search("Chrono Trigger")
+
+    assert [(game.igdb_id, game.game_type) for game in results] == [(1802, "main_game")]
+    assert [(variant.igdb_id, variant.game_type, variant.platforms) for variant in results[0].variants] == [
+        (20398, "expanded_game", ["Nintendo DS"])
+    ]
 
 
 @pytest.mark.asyncio

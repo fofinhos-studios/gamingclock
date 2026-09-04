@@ -155,6 +155,66 @@ describe("GameSearch", () => {
     groups.resolve([]);
   });
 
+  test("keeps expanded releases together while allowing the player to add one", async () => {
+    const user = userEvent.setup();
+    const onAddGame = vi.fn();
+    vi.mocked(searchGames).mockResolvedValue([
+      {
+        igdb_id: 1802,
+        name: "Chrono Trigger",
+        cover_url: "",
+        summary: "The original release.",
+        genres: ["RPG"],
+        platforms: ["Super Nintendo"],
+        release_year: 1995,
+        rating: 92,
+        game_type: "main_game",
+        variants: [
+          {
+            igdb_id: 20398,
+            name: "Chrono Trigger",
+            cover_url: "",
+            summary: "An expanded release.",
+            genres: ["RPG"],
+            platforms: ["Nintendo DS"],
+            release_year: 2008,
+            rating: null,
+            game_type: "expanded_game",
+            version_parent: null,
+            parent_game: null,
+            version_title: null,
+          },
+        ],
+      },
+    ]);
+
+    const view = render(
+      <LanguageProvider browserLanguages={["en"]}>
+        <GameSearch games={[]} onAddGame={onAddGame} />
+      </LanguageProvider>,
+    );
+
+    await user.type(
+      view.getByRole("textbox", { name: /search by title/i }),
+      "ch",
+    );
+
+    const versionButton = await view.findByRole("button", {
+      name: "Add Chrono Trigger (Expanded version) to backlog",
+    });
+    expect(view.getByText("Nintendo DS · 2008")).toBeTruthy();
+
+    await user.click(versionButton);
+
+    expect(onAddGame).toHaveBeenCalledWith(
+      expect.objectContaining({
+        igdb_id: 20398,
+        game_type: "expanded_game",
+        variants: [],
+      }),
+    );
+  });
+
   test("shows preview members after expanding a group card", async () => {
     const user = userEvent.setup();
     vi.mocked(searchGames).mockResolvedValue([]);

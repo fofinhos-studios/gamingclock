@@ -15,6 +15,16 @@ class HLTBCategory(StrEnum):
     COMPLETIONIST = "completionist"
 
 
+class IGDBGameType(StrEnum):
+    """The game kinds Gaming Clock can present as selectable versions."""
+
+    MAIN_GAME = "main_game"
+    REMAKE = "remake"
+    REMASTER = "remaster"
+    EXPANDED_GAME = "expanded_game"
+    PORT = "port"
+
+
 class GameArtwork(BaseModel):
     cover_url: str = ""
     logo_url: str = ""
@@ -27,6 +37,23 @@ class CacheWarmResult(BaseModel):
     failed_games: int
 
 
+class CatalogGameVariant(BaseModel):
+    """A related IGDB release a player may choose instead of the default game."""
+
+    igdb_id: int
+    name: str
+    cover_url: str
+    summary: str
+    genres: list[str]
+    platforms: list[str]
+    release_year: int | None = None
+    rating: float | None = None
+    game_type: IGDBGameType | None = None
+    version_parent: int | None = None
+    parent_game: int | None = None
+    version_title: str | None = None
+
+
 class CatalogGame(BaseModel):
     igdb_id: int
     name: str
@@ -36,6 +63,15 @@ class CatalogGame(BaseModel):
     platforms: list[str]
     release_year: int | None = None
     rating: float | None = None
+    game_type: IGDBGameType | None = None
+    version_parent: int | None = None
+    parent_game: int | None = None
+    version_title: str | None = None
+    ports: list[int] = Field(default_factory=list)
+    remakes: list[int] = Field(default_factory=list)
+    remasters: list[int] = Field(default_factory=list)
+    expanded_games: list[int] = Field(default_factory=list)
+    variants: list[CatalogGameVariant] = Field(default_factory=list)
 
 
 class ListGame(BaseModel):

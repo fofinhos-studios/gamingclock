@@ -1,5 +1,11 @@
 export type HLTBStatus = "loading" | "resolved" | "unresolved";
 export type HLTBCategory = "main" | "extras" | "completionist";
+export type IGDBGameType =
+  | "main_game"
+  | "remake"
+  | "remaster"
+  | "expanded_game"
+  | "port";
 export type GameGroupKind = "series" | "franchise";
 export type GameGroupSource = "igdb" | "rawg" | "wikidata";
 
@@ -73,6 +79,30 @@ export interface CatalogGame {
   platforms: string[];
   release_year: number | null;
   rating: number | null;
+  game_type?: IGDBGameType | null;
+  version_parent?: number | null;
+  parent_game?: number | null;
+  version_title?: string | null;
+  ports?: number[];
+  remakes?: number[];
+  remasters?: number[];
+  expanded_games?: number[];
+  variants?: CatalogGameVariant[];
+}
+
+export interface CatalogGameVariant {
+  igdb_id: number;
+  name: string;
+  cover_url: string;
+  summary: string;
+  genres: string[];
+  platforms: string[];
+  release_year: number | null;
+  rating: number | null;
+  game_type: IGDBGameType | null;
+  version_parent: number | null;
+  parent_game: number | null;
+  version_title: string | null;
 }
 
 export interface GameArtwork {

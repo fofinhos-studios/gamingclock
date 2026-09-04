@@ -88,6 +88,18 @@ export const strings = {
       failed: "Search failed",
       alreadyAdded: (name: string) => `${name} is already in your backlog.`,
       addGame: (name: string) => `Add ${name} to backlog`,
+      versions: (count: number) =>
+        `${count} selectable ${count === 1 ? "version" : "versions"}`,
+      versionType: (type: string | null | undefined) =>
+        ({
+          main_game: "Original release",
+          expanded_game: "Expanded version",
+          remake: "Remake",
+          remaster: "Remaster",
+          port: "Port",
+        })[type ?? ""] ?? "Version",
+      addVersion: (name: string, type: string) =>
+        `Add ${name} (${type}) to backlog`,
       groupsUnavailable: "Related game groups are unavailable.",
       loadingGroup: "Loading games…",
       groupPreviewFailed: "Could not load this game group.",
@@ -353,6 +365,18 @@ export const strings = {
       failed: "Falha na busca",
       alreadyAdded: (name: string) => `${name} já está na sua lista.`,
       addGame: (name: string) => `Adicionar ${name} à lista`,
+      versions: (count: number) =>
+        `${count} ${count === 1 ? "versão disponível" : "versões disponíveis"}`,
+      versionType: (type: string | null | undefined) =>
+        ({
+          main_game: "Lançamento original",
+          expanded_game: "Versão expandida",
+          remake: "Remake",
+          remaster: "Remasterização",
+          port: "Port",
+        })[type ?? ""] ?? "Versão",
+      addVersion: (name: string, type: string) =>
+        `Adicionar ${name} (${type}) à lista`,
       groupsUnavailable: "Grupos de jogos relacionados estão indisponíveis.",
       loadingGroup: "Carregando jogos…",
       groupPreviewFailed: "Não foi possível carregar este grupo de jogos.",
