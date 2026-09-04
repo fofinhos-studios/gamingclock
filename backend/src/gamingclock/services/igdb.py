@@ -18,7 +18,7 @@ class IGDBService:
     """Use IGDB in configured environments and a small catalog for local work."""
 
     _SEARCH_FETCH_LIMIT: ClassVar[int] = 40
-    _SEARCH_VISIT_POPULARITY_TTL_SECONDS: ClassVar[int] = 60 * 60
+    _SEARCH_VISIT_POPULARITY_TTL_SECONDS: ClassVar[int] = 30 * 24 * 60 * 60
     _SEARCH_VISIT_POPULARITY_CACHE_LIMIT: ClassVar[int] = 512
     _RELATION_HYDRATION_LIMIT: ClassVar[int] = 120
     _POPULARITY_CANDIDATE_MULTIPLIER: ClassVar[int] = 2
