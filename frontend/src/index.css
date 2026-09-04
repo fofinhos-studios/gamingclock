@@ -2425,16 +2425,18 @@
   }
 
   .game-cartridge__identity {
+    position: relative;
     display: flex;
     align-items: start;
     gap: 0.55rem;
     min-width: 0;
+    padding-bottom: 1.8rem;
   }
 
   .game-cartridge__platforms {
-    flex: 0 0 auto;
-    margin-left: auto;
-    padding-top: 0.12rem;
+    position: absolute;
+    bottom: 0;
+    left: 0;
   }
 
   .game-cartridge__logo {
@@ -2786,6 +2788,14 @@
 
   .game-cartridge--calendar .game-cartridge__title {
     font-size: 0.78rem;
+  }
+
+  .game-cartridge--calendar .game-cartridge__identity {
+    padding-bottom: 0;
+  }
+
+  .game-cartridge--calendar .game-cartridge__platforms {
+    display: none;
   }
 
   .game-cartridge--calendar .game-cartridge__label {
