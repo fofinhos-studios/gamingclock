@@ -324,10 +324,6 @@
     display: block;
     color: var(--foreground-85);
     white-space: nowrap;
-    text-shadow:
-      0 -1px 0 var(--metal-highlight),
-      0 1px 0 var(--metal-shadow),
-      0 0.14rem 0.32rem var(--foreground-08);
   }
 
   .theme-toggle {
@@ -405,7 +401,7 @@
   .planner-stepper__list {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.45rem;
+    border-bottom: 1px solid var(--foreground-16);
     min-width: 0;
   }
 
@@ -421,9 +417,9 @@
     align-items: center;
     width: 100%;
     min-height: 3.25rem;
-    border: 1px solid var(--foreground-16);
-    border-bottom: 2px solid var(--foreground-32);
-    background: var(--foreground-035);
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
     padding: 0.5rem;
     color: var(--foreground);
     text-align: left;
@@ -432,16 +428,14 @@
   }
 
   .planner-stepper__tab:hover {
-    border-color: var(--foreground-32);
-    background: var(--foreground-08);
+    background: var(--foreground-04);
   }
 
   .planner-stepper__tab--active,
   .planner-stepper__tab--active:hover {
     border-bottom-color: var(--step-active);
-    background: var(--step-active-soft);
+    background: var(--foreground-04);
     color: var(--foreground);
-    box-shadow: inset 0 1px 0 var(--foreground-12);
   }
 
   .planner-stepper__tab--complete {
@@ -470,8 +464,6 @@
 
   .planner-stepper__tab--active .planner-stepper__tab-marker {
     border-color: var(--heat-marker);
-    background: var(--heat-marker);
-    color: var(--iron-core);
   }
 
   .planner-stepper__tab-content {
@@ -659,8 +651,7 @@
     padding: 0.75rem;
     box-shadow:
       inset 1px 1px 0 var(--metal-highlight),
-      inset -1px -1px 0 var(--metal-shadow),
-      0 0.3rem 0.8rem var(--foreground-08);
+      inset -1px -1px 0 var(--metal-shadow);
   }
 
   .backlog-manager__panel-heading h2 {
@@ -804,8 +795,7 @@
     background: var(--surface);
     box-shadow:
       inset 1px 1px 0 var(--metal-highlight),
-      inset -1px -1px 0 var(--metal-shadow),
-      0 0.7rem 1.4rem var(--foreground-06);
+      inset -1px -1px 0 var(--metal-shadow);
   }
 
   .planner-pane--backlog {
@@ -978,8 +968,7 @@
     background: var(--surface-92);
     box-shadow:
       inset 1px 1px 0 var(--metal-highlight),
-      inset -1px -1px 0 var(--metal-shadow),
-      0 1.25rem 2.5rem var(--foreground-16);
+      inset -1px -1px 0 var(--metal-shadow);
     padding: 0.7rem;
   }
 
@@ -1009,8 +998,7 @@
     background: var(--surface);
     box-shadow:
       inset 1px 1px 0 var(--metal-highlight),
-      inset -1px -1px 0 var(--metal-shadow),
-      4px 4px 0 var(--foreground-08);
+      inset -1px -1px 0 var(--metal-shadow);
     appearance: none;
     color: inherit;
     text-align: left;
@@ -1028,8 +1016,7 @@
     border-color: var(--brand-focus-edge);
     box-shadow:
       inset 1px 1px 0 var(--metal-highlight),
-      inset -1px -1px 0 var(--metal-shadow),
-      0 0.45rem 1rem var(--foreground-12);
+      inset -1px -1px 0 var(--metal-shadow);
   }
 
   .planner-result--active,
@@ -1132,7 +1119,6 @@
     max-height: 3.15rem;
     object-fit: contain;
     object-position: left top;
-    filter: drop-shadow(0 1px 0 var(--surface));
     transition: opacity 180ms ease;
   }
 
@@ -1570,7 +1556,7 @@
       linear-gradient(135deg, var(--industrial-aqua), var(--step-complete));
     box-shadow:
       inset 1px 1px 0 var(--surface-32),
-      0 0.2rem 0.45rem var(--foreground-16);
+      inset -1px -1px 0 var(--surface-08);
     color: var(--surface);
     cursor: grab;
     text-align: left;
@@ -1966,7 +1952,6 @@
     width: min(18rem, calc(100vw - 3rem));
     padding: 0.5rem 0.6rem;
     background: var(--panel-chassis);
-    box-shadow: 0 0.45rem 1rem var(--foreground-12);
     color: var(--foreground);
     content: attr(data-tooltip);
     font-family: var(--font-mono);
@@ -2159,8 +2144,7 @@
     background: var(--surface);
     box-shadow:
       inset 1px 1px 0 var(--metal-highlight),
-      inset -1px -1px 0 var(--metal-shadow),
-      4px 4px 0 var(--foreground-08);
+      inset -1px -1px 0 var(--metal-shadow);
     transition:
       border-color 180ms ease,
       box-shadow 180ms ease;
@@ -2170,16 +2154,14 @@
     border-color: var(--brand-focus-edge);
     box-shadow:
       inset 1px 1px 0 var(--metal-highlight),
-      inset -1px -1px 0 var(--metal-shadow),
-      0 0.45rem 1rem var(--foreground-12);
+      inset -1px -1px 0 var(--metal-shadow);
   }
 
   .game-cartridge--loading:hover {
     border-color: var(--foreground-32);
     box-shadow:
       inset 1px 1px 0 var(--metal-highlight),
-      inset -1px -1px 0 var(--metal-shadow),
-      4px 4px 0 var(--foreground-08);
+      inset -1px -1px 0 var(--metal-shadow);
   }
 
   .game-cartridge--loading .game-cartridge__hero,
@@ -2325,7 +2307,6 @@
     max-height: 3.15rem;
     object-fit: contain;
     object-position: left top;
-    filter: drop-shadow(0 1px 0 var(--surface));
   }
 
   .game-cartridge__title {
@@ -2406,8 +2387,7 @@
       var(--surface-68);
     box-shadow:
       inset 1px 1px 0 var(--metal-highlight),
-      inset -1px -1px 0 var(--metal-shadow),
-      0 0.45rem 0.9rem var(--foreground-08);
+      inset -1px -1px 0 var(--metal-shadow);
     cursor: grab;
     transition:
       border-color 150ms ease,
@@ -2613,8 +2593,7 @@
   .game-cartridge--calendar:hover {
     box-shadow:
       inset 1px 1px 0 var(--metal-highlight),
-      inset -1px -1px 0 var(--metal-shadow),
-      0 0.3rem 0.75rem var(--foreground-08);
+      inset -1px -1px 0 var(--metal-shadow);
   }
 
   .game-cartridge--calendar .game-cartridge__cover-frame {
@@ -2746,15 +2725,13 @@
       box-shadow 180ms ease;
     box-shadow:
       inset 1px 1px 0 var(--foreground-12),
-      inset -1px -1px 0 var(--foreground-04),
-      0 0.18rem 0.45rem var(--foreground-08);
+      inset -1px -1px 0 var(--foreground-04);
   }
 
   .ui-button:hover {
     box-shadow:
       inset 1px 1px 0 var(--foreground-16),
-      inset -1px -1px 0 var(--foreground-04),
-      0 0.35rem 1rem var(--foreground-08);
+      inset -1px -1px 0 var(--foreground-04);
   }
 
   .ui-button--unstyled {
@@ -2783,8 +2760,7 @@
     border-color: var(--foreground-92);
     color: var(--surface);
     box-shadow:
-      inset 0 0 0 1px var(--surface-08),
-      0 0.45rem 1rem var(--foreground-1);
+      inset 0 0 0 1px var(--surface-08);
     animation: planner-success-settle 1400ms ease;
   }
 
@@ -2912,26 +2888,26 @@
     grid-column: 1;
     grid-row: 2;
     align-self: start;
-    padding: 0.7rem;
-    border: 1px solid var(--foreground-16);
-    background:
-      linear-gradient(180deg, var(--foreground-06), var(--foreground-0)),
-      var(--panel-chassis);
-    box-shadow:
-      inset 1px 1px 0 var(--metal-highlight),
-      inset -1px -1px 0 var(--metal-shadow);
+    padding: 0 1.25rem 0 0;
+    border: 0;
+    border-right: 1px solid var(--foreground-16);
   }
 
   .planner-stepper__list {
     grid-template-columns: minmax(0, 1fr);
-    gap: 0.55rem;
+    border-bottom: 0;
+  }
+
+  .planner-stepper__item + .planner-stepper__item {
+    border-top: 1px solid var(--foreground-12);
   }
 
   .planner-stepper__tab {
-    min-height: 4.25rem;
+    min-height: 3.5rem;
     grid-template-columns: 1.65rem minmax(0, 1fr);
-    border-left: 3px solid var(--foreground-16);
-    padding: 0.65rem;
+    border-bottom: 0;
+    border-left: 2px solid transparent;
+    padding: 0.6rem 0.5rem;
   }
 
   .planner-stepper__tab--active,

@@ -141,14 +141,14 @@ test("uses the browser default type scale", async () => {
   expect(stylesheet).toMatch(/html\s*\{[\s\S]*?font-size:\s*100%;/);
 });
 
-test("uses a contained desktop stepper with clearly separated controls", async () => {
+test("uses a subtle desktop stepper divider with distinct controls", async () => {
   const stylesheet = await readStylesheet();
 
   expect(stylesheet).toMatch(
-    /@media \(min-width: 1280px\)\s*\{[\s\S]*?\.planner-stepper\s*\{[\s\S]*?border:\s*1px solid var\(--foreground-16\);[\s\S]*?background:\s*[\s\S]*?var\(--panel-chassis\);/,
+    /@media \(min-width: 1280px\)\s*\{[\s\S]*?\.planner-stepper\s*\{[\s\S]*?border-right:\s*1px solid var\(--foreground-16\);/,
   );
   expect(stylesheet).toMatch(
-    /\.planner-stepper__tab\s*\{[\s\S]*?border:\s*1px solid var\(--foreground-16\);[\s\S]*?border-bottom:\s*2px solid var\(--foreground-32\);/,
+    /\.planner-stepper__tab\s*\{[\s\S]*?border:\s*0;[\s\S]*?border-bottom:\s*2px solid transparent;/,
   );
 });
 
@@ -188,11 +188,11 @@ test("keeps touch controls large and disables motion when requested", async () =
   );
 });
 
-test("keeps buttons stationary and beveled through hover and press", async () => {
+test("keeps buttons stationary and beveled without a shadow bloom", async () => {
   const stylesheet = await readStylesheet();
 
   expect(stylesheet).toMatch(
-    /\.ui-button:hover\s*\{[\s\S]*?box-shadow:\s*inset 1px 1px 0 var\(--foreground-16\),[\s\S]*?inset -1px -1px 0 var\(--foreground-04\),[\s\S]*?0 0\.35rem 1rem var\(--foreground-08\);/,
+    /\.ui-button:hover\s*\{[\s\S]*?box-shadow:\s*inset 1px 1px 0 var\(--foreground-16\),[\s\S]*?inset -1px -1px 0 var\(--foreground-04\);/,
   );
   expect(stylesheet).toMatch(
     /\.ui-button:active\s*\{[\s\S]*?box-shadow:\s*inset 1px 1px 0 var\(--foreground-04\),[\s\S]*?inset -1px -1px 0 var\(--foreground-12\),/,
