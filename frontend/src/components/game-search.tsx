@@ -159,12 +159,6 @@ export function GameSearch({
   }, []);
 
   useEffect(() => {
-    if (!GAME_GROUPS_ENABLED) {
-      setGroupResults([]);
-      setExpandedGroupKey(null);
-      setGroupError("");
-      return undefined;
-    }
     const trimmedQuery = query.trim();
     const requestId = ++searchRequestId.current;
     const controller = new AbortController();
@@ -224,6 +218,12 @@ export function GameSearch({
   }, [query, t.search.failed]);
 
   useEffect(() => {
+    if (!GAME_GROUPS_ENABLED) {
+      setGroupResults([]);
+      setExpandedGroupKey(null);
+      setGroupError("");
+      return undefined;
+    }
     const trimmedQuery = query.trim();
     const requestId = ++groupSearchRequestId.current;
     const controller = new AbortController();
@@ -445,7 +445,7 @@ export function GameSearch({
                   {error}
                 </p>
               )}
-              {groupError && !error && (
+              {GAME_GROUPS_ENABLED && groupError && !error && (
                 <p class="planner-search-results__message">{groupError}</p>
               )}
               {!loading &&
