@@ -13,6 +13,7 @@ from gamingclock.services.game_group_cache import CachedPayload
 from gamingclock.services.game_groups import (
     GameGroupExplorer,
     RAWGAdapter,
+    WikidataAdapter,
     _Candidate,
     _canonical_games,
     _ExternalGame,
@@ -36,7 +37,7 @@ def _candidate(
     )
 
 
-def test_keeps_source_native_groups_separate_during_discovery():
+def test_prefers_igdb_over_a_same_name_source_native_card():
     merged = _merge_candidates(
         [
             _candidate("rawg:related:1", "Final Fantasy", GameGroupKind.SERIES, GameGroupSource.RAWG, {1, 2, 3}),
@@ -44,10 +45,7 @@ def test_keeps_source_native_groups_separate_during_discovery():
         ]
     )
 
-    assert [candidate.group_key for candidate in merged] == [
-        "rawg:related:1",
-        "igdb:collection:39",
-    ]
+    assert [candidate.group_key for candidate in merged] == ["igdb:collection:39"]
 
 
 def test_never_merges_a_series_with_a_franchise_or_one_shared_member():
@@ -59,7 +57,7 @@ def test_never_merges_a_series_with_a_franchise_or_one_shared_member():
         ]
     )
 
-    assert len(merged) == 3
+    assert len(merged) == 2
 
 
 def test_preview_collapses_connected_port_and_remaster_variants():
@@ -298,3 +296,69 @@ async def test_discovery_returns_when_the_first_provider_has_usable_cards(monkey
     assert asyncio.get_running_loop().time() - started < 0.1
     assert groups == [candidate]
     await explorer.aclose()
+
+
+@pytest.mark.asyncio
+async def test_discovery_collects_a_better_card_during_the_quality_grace_window(monkeypatch):
+    explorer = GameGroupExplorer()
+    wikidata = _Candidate(
+        group_key="wikidata:series:Q1",
+        title="Final Fantasy",
+        kind=GameGroupKind.SERIES,
+        source_keys={GameGroupSource.WIKIDATA: "wikidata:series:Q1"},
+    )
+    igdb = _Candidate(
+        group_key="igdb:collection:39",
+        title="Final Fantasy",
+        kind=GameGroupKind.SERIES,
+        source_keys={GameGroupSource.IGDB: "igdb:collection:39"},
+    )
+
+    async def empty_source(query: str):
+        await asyncio.sleep(0.2)
+        return []
+
+    async def fast_wikidata(query: str):
+        await asyncio.sleep(0.01)
+        return [wikidata]
+
+    async def near_igdb(query: str):
+        await asyncio.sleep(0.02)
+        return [igdb]
+
+    monkeypatch.setattr(explorer, "_igdb_candidates", near_igdb)
+    monkeypatch.setattr(explorer, "_rawg_candidates", empty_source)
+    monkeypatch.setattr(explorer, "_wikidata_candidates", fast_wikidata)
+
+    assert await explorer._discover("Final Fantasy") == [igdb]
+    await explorer.aclose()
+
+
+@pytest.mark.asyncio
+async def test_wikidata_search_uses_the_shared_provider_payload_cache():
+    class Cache:
+        async def get(self, key: str):
+            return CachedPayload(
+                value=[{"key": "wikidata:series:Q1", "title": "Final Fantasy", "members": []}],
+                is_fresh=True,
+            )
+
+        async def set(self, key: str, value: object, *, fresh_seconds: int, stale_seconds: int = 0):
+            raise AssertionError("a fresh result must not be rewritten")
+
+        async def try_acquire_refresh_lock(self, key: str, *, seconds: int = 30):
+            return False
+
+        async def aclose(self):
+            return None
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError("a fresh cache hit must not call Wikidata")
+
+    adapter = WikidataAdapter(
+        client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+        shared_cache=Cache(),
+    )
+
+    assert await adapter.search("Final Fantasy") == [("wikidata:series:Q1", "Final Fantasy", [])]
+    await adapter.aclose()

@@ -42,6 +42,12 @@ _RAWG_SEARCH_STALE_SECONDS = 60 * 60 * 24 * 15
 _RAWG_GROUP_FRESH_SECONDS = 60 * 60 * 24 * 60
 _RAWG_GROUP_STALE_SECONDS = 60 * 60 * 24 * 30
 _RAWG_FAILURE_SECONDS = 60 * 60
+_WIKIDATA_SEARCH_FRESH_SECONDS = 60 * 60 * 24 * 45
+_WIKIDATA_SEARCH_STALE_SECONDS = 60 * 60 * 24 * 15
+_WIKIDATA_GROUP_FRESH_SECONDS = 60 * 60 * 24 * 60
+_WIKIDATA_GROUP_STALE_SECONDS = 60 * 60 * 24 * 30
+_WIKIDATA_FAILURE_SECONDS = 60 * 60
+_DISCOVERY_QUALITY_GRACE_SECONDS = 0.05
 
 
 @dataclass
@@ -360,10 +366,30 @@ class RAWGAdapter:
 
 
 class WikidataAdapter:
-    def __init__(self, client: httpx.AsyncClient | None = None):
+    def __init__(
+        self,
+        client: httpx.AsyncClient | None = None,
+        shared_cache: _GameGroupCache | None = None,
+    ):
         self._client = client or httpx.AsyncClient(timeout=12, headers={"User-Agent": "GamingClock/0.1"})
+        self._shared_cache = shared_cache if shared_cache is not None else UpstashGameGroupCache.from_environment()
+        self._refresh_tasks: set[asyncio.Task[None]] = set()
 
     async def search(self, query: str) -> list[tuple[str, str, list[_ExternalGame]]]:
+        cache_key = f"wikidata:search:{_normalize(query)}"
+        cached = await self._get_cached(cache_key)
+        if cached is not None:
+            groups, is_fresh = cached
+            if not is_fresh:
+                self._schedule_refresh(cache_key, lambda: self._fetch_search(query))
+            return groups
+        try:
+            return await self._fetch_search(query)
+        except httpx.HTTPError:
+            await self._set_cached(cache_key, [], fresh_seconds=_WIKIDATA_FAILURE_SECONDS)
+            raise
+
+    async def _fetch_search(self, query: str) -> list[tuple[str, str, list[_ExternalGame]]]:
         response = await self._client.get(
             "https://www.wikidata.org/w/api.php",
             params={"action": "wbsearchentities", "search": query, "language": "en", "format": "json", "limit": 5},
@@ -381,15 +407,44 @@ class WikidataAdapter:
             if not isinstance(qid, str) or not isinstance(label, str):
                 continue
             candidates.append((f"wikidata:series:{qid}", label, []))
+        await self._set_cached(
+            f"wikidata:search:{_normalize(query)}",
+            candidates,
+            fresh_seconds=_WIKIDATA_SEARCH_FRESH_SECONDS if candidates else _WIKIDATA_FAILURE_SECONDS,
+            stale_seconds=_WIKIDATA_SEARCH_STALE_SECONDS if candidates else 0,
+        )
         return candidates
 
     async def by_key(self, group_key: str) -> tuple[str, list[_ExternalGame]]:
         _, _, qid = group_key.partition("wikidata:series:")
         if not re.fullmatch(r"Q\d+", qid):
             raise LookupError(group_key)
+        cache_key = f"wikidata:group:{qid}"
+        cached = await self._get_cached(cache_key)
+        if cached is not None and cached[0]:
+            groups, is_fresh = cached
+            if not is_fresh:
+                self._schedule_refresh(cache_key, lambda: self._fetch_group(group_key, qid))
+            _, title, members = groups[0]
+            return title, members
+        if cached is not None:
+            raise LookupError(group_key)
+        try:
+            return await self._fetch_group(group_key, qid)
+        except httpx.HTTPError, LookupError:
+            await self._set_cached(cache_key, [], fresh_seconds=_WIKIDATA_FAILURE_SECONDS)
+            raise
+
+    async def _fetch_group(self, group_key: str, qid: str) -> tuple[str, list[_ExternalGame]]:
         members = await self._members(qid)
         if not members:
             raise LookupError(group_key)
+        await self._set_cached(
+            f"wikidata:group:{qid}",
+            [(group_key, qid, members)],
+            fresh_seconds=_WIKIDATA_GROUP_FRESH_SECONDS,
+            stale_seconds=_WIKIDATA_GROUP_STALE_SECONDS,
+        )
         return qid, members
 
     async def _members(self, qid: str) -> list[_ExternalGame]:
@@ -417,7 +472,77 @@ class WikidataAdapter:
         return members
 
     async def aclose(self) -> None:
+        if self._refresh_tasks:
+            await asyncio.gather(*self._refresh_tasks, return_exceptions=True)
         await self._client.aclose()
+        if self._shared_cache is not None:
+            await self._shared_cache.aclose()
+
+    async def _get_cached(self, key: str) -> tuple[list[tuple[str, str, list[_ExternalGame]]], bool] | None:
+        if self._shared_cache is None:
+            return None
+        try:
+            cached = await self._shared_cache.get(key)
+            if cached is None or not isinstance(cached.value, list):
+                return None
+            return [
+                (
+                    item["key"],
+                    item["title"],
+                    [_ExternalGame(**member) for member in item["members"]],
+                )
+                for item in cached.value
+                if isinstance(item, dict)
+                and isinstance(item.get("key"), str)
+                and isinstance(item.get("title"), str)
+                and isinstance(item.get("members"), list)
+            ], cached.is_fresh
+        except Exception:
+            logger.info("Wikidata shared cache read failed")
+            return None
+
+    async def _set_cached(
+        self,
+        key: str,
+        groups: list[tuple[str, str, list[_ExternalGame]]],
+        *,
+        fresh_seconds: int,
+        stale_seconds: int = 0,
+    ) -> None:
+        if self._shared_cache is None:
+            return
+        try:
+            await self._shared_cache.set(
+                key,
+                [
+                    {"key": group_key, "title": title, "members": [member.__dict__ for member in members]}
+                    for group_key, title, members in groups
+                ],
+                fresh_seconds=fresh_seconds,
+                stale_seconds=stale_seconds,
+            )
+        except Exception:
+            logger.info("Wikidata shared cache write failed")
+
+    async def _try_lock(self, key: str) -> bool:
+        try:
+            return await self._shared_cache.try_acquire_refresh_lock(key) if self._shared_cache else True
+        except Exception:
+            logger.info("Wikidata shared cache lock failed")
+            return False
+
+    def _schedule_refresh(self, key: str, refresh: Callable[[], Awaitable[Any]]) -> None:
+        async def run() -> None:
+            if not await self._try_lock(key):
+                return
+            try:
+                await refresh()
+            except httpx.HTTPError, LookupError:
+                logger.info("Wikidata stale cache refresh failed")
+
+        task = asyncio.create_task(run())
+        self._refresh_tasks.add(task)
+        task.add_done_callback(self._refresh_tasks.discard)
 
 
 class GameGroupExplorer:
@@ -614,19 +739,26 @@ class GameGroupExplorer:
         candidates: list[_Candidate] = []
         unavailable_sources: set[GameGroupSource] = set()
         pending = set(tasks)
+
+        def collect(completed: set[asyncio.Task[list[_Candidate]]]) -> None:
+            for task in completed:
+                source = tasks[task]
+                try:
+                    result = task.result()
+                except Exception as error:
+                    logger.info("game group source failed source=%s error=%s", source, type(error).__name__)
+                    unavailable_sources.add(source)
+                    continue
+                if result:
+                    candidates.extend(result)
+
         try:
             while pending and not candidates:
                 completed, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
-                for task in completed:
-                    source = tasks[task]
-                    try:
-                        result = task.result()
-                    except Exception as error:
-                        logger.info("game group source failed source=%s error=%s", source, type(error).__name__)
-                        unavailable_sources.add(source)
-                        continue
-                    if result:
-                        candidates.extend(result)
+                collect(completed)
+            if candidates and pending:
+                completed, pending = await asyncio.wait(pending, timeout=_DISCOVERY_QUALITY_GRACE_SECONDS)
+                collect(completed)
         finally:
             for task in pending:
                 task.cancel()
@@ -862,14 +994,28 @@ class GameGroupExplorer:
 
 def _merge_candidates(candidates: list[_Candidate]) -> list[_Candidate]:
     unique = {candidate.group_key: candidate for candidate in candidates}
+    preferred: dict[tuple[GameGroupKind, str], _Candidate] = {}
+    for candidate in unique.values():
+        key = (candidate.kind, _normalize(candidate.title))
+        current = preferred.get(key)
+        if current is None or _candidate_rank(candidate) < _candidate_rank(current):
+            preferred[key] = candidate
     return sorted(
-        unique.values(),
+        preferred.values(),
         key=lambda candidate: (
-            candidate.kind is GameGroupKind.FRANCHISE,
-            -max(len(candidate.members), len(candidate.member_ids)),
+            _candidate_rank(candidate),
             candidate.title,
         ),
     )
+
+
+def _candidate_rank(candidate: _Candidate) -> int:
+    source = _primary_source(candidate)
+    if source is GameGroupSource.IGDB:
+        return 0 if candidate.kind is GameGroupKind.SERIES else 1
+    if source is GameGroupSource.RAWG:
+        return 2
+    return 3
 
 
 def _should_merge(left: _Candidate, right: _Candidate) -> bool:
