@@ -3,6 +3,7 @@ import type {
   GameArtwork,
   GameGroupPreview,
   GameGroupSearchResult,
+  GameGroupSelectionResolution,
   ListGame,
   PlanningMode,
   PlaySession,
@@ -197,6 +198,22 @@ export async function previewGameGroup(
     );
   }
   return response.json();
+}
+
+export async function resolveGameGroupSelection(
+  groupKey: string,
+  sourceMemberIds: string[],
+): Promise<GameGroupSelectionResolution[]> {
+  const response = await request(`${API_BASE}/game-groups/resolve-selection`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      group_key: groupKey,
+      source_member_ids: sourceMemberIds,
+    }),
+  });
+  const data = await response.json();
+  return data.resolutions;
 }
 
 export async function resolveGame(

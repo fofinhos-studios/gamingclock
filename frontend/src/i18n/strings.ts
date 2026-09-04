@@ -95,9 +95,12 @@ export const strings = {
       expandGroup: (name: string) => `Expand ${name}`,
       collapseGroup: (name: string) => `Collapse ${name}`,
       groupGames: (count: number) => `${count} games`,
+      groupMembersUnknown: "Review titles",
       alreadyInBacklog: "Already in backlog",
       sourceEvidenceUnavailable: "Some source evidence is unavailable.",
       rawgEvidence: "Data includes evidence from",
+      unresolvedSelections: (count: number) =>
+        `${count} selected ${count === 1 ? "title could" : "titles could"} not be matched with IGDB and were not added.`,
       addSelectedGames: (count: number) => `Add ${count} selected games`,
       addingSelectedGames: (count: number) => `Adding ${count} games…`,
     },
@@ -353,10 +356,13 @@ export const strings = {
       expandGroup: (name: string) => `Expandir ${name}`,
       collapseGroup: (name: string) => `Recolher ${name}`,
       groupGames: (count: number) => `${count} jogos`,
+      groupMembersUnknown: "Revisar títulos",
       alreadyInBacklog: "Já está na lista",
       sourceEvidenceUnavailable:
         "Algumas evidências de fontes estão indisponíveis.",
       rawgEvidence: "Os dados incluem evidências do",
+      unresolvedSelections: (count: number) =>
+        `${count} ${count === 1 ? "título selecionado não pôde" : "títulos selecionados não puderam"} ser encontrado no IGDB e não foi adicionado.`,
       addSelectedGames: (count: number) =>
         `Adicionar ${count} jogos selecionados`,
       addingSelectedGames: (count: number) => `Adicionando ${count} jogos…`,

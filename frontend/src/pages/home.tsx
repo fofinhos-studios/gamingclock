@@ -32,6 +32,7 @@ import {
 import {
   type CatalogGame,
   type GameGroupPreview,
+  type GameGroupSelectionResolution,
   type GameList,
   type HLTBCategory,
   type ListGame,
@@ -355,13 +356,16 @@ export function HomePage() {
 
   const addGameGroup = async (
     preview: GameGroupPreview,
-    selectedIgdbIds: number[],
+    resolutions: GameGroupSelectionResolution[],
   ) => {
     const targetBacklogId = activeBacklogId;
-    const selected = new Set(selectedIgdbIds);
-    const selectedItems = preview.items.filter((item) =>
-      selected.has(item.game.igdb_id),
+    const selectedItems = resolutions.filter(
+      (
+        resolution,
+      ): resolution is GameGroupSelectionResolution & { game: CatalogGame } =>
+        resolution.game !== null,
     );
+    const selected = new Set(selectedItems.map((item) => item.game.igdb_id));
     const existingIds = new Set(games.map((game) => game.igdb_id));
     const newItems = selectedItems.filter(
       (item) => !existingIds.has(item.game.igdb_id),

@@ -19,12 +19,22 @@ export interface GameGroupSearchResult {
 }
 
 export interface GameGroupPreviewItem {
-  game: CatalogGame;
+  source_id: string;
+  name: string;
+  release_year: number | null;
+  igdb_id: number | null;
   order: number;
   initially_selected: boolean;
   already_in_backlog: boolean;
   evidence: Array<{ source: GameGroupSource; relation: string; label: string }>;
   edition: { state: string; label: string };
+}
+
+export interface GameGroupSelectionResolution {
+  source_id: string;
+  name: string;
+  game: CatalogGame | null;
+  reason: string | null;
 }
 
 export interface GameGroupPreview {

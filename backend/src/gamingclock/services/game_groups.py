@@ -1,4 +1,4 @@
-"""Merge provider game-group evidence into canonical IGDB-backed previews."""
+"""Discover provider-native game groups and resolve checked members into IGDB."""
 
 import asyncio
 import logging
@@ -10,7 +10,7 @@ from typing import Any
 
 import httpx
 
-from gamingclock.models.catalog import CatalogGame
+from gamingclock.models.catalog import CacheWarmResult, CatalogGame
 from gamingclock.models.game_groups import (
     GameGroupEdition,
     GameGroupEvidence,
@@ -22,15 +22,19 @@ from gamingclock.models.game_groups import (
     GameGroupPreviewItem,
     GameGroupPreviewRequest,
     GameGroupSearchResult,
+    GameGroupSelectionResolution,
     GameGroupSource,
+    ResolveGameGroupSelectionRequest,
+    ResolveGameGroupSelectionResponse,
 )
+from gamingclock.services.game_group_cache import UpstashGameGroupCache
 from gamingclock.services.igdb import IGDBService
 
 logger = logging.getLogger(__name__)
 _ALLOWED_GAME_TYPES = frozenset({0, 8, 9, 10})
 _CACHE_SECONDS = 300
 _CACHE_MAX_ENTRIES = 100
-_OPTIONAL_SOURCE_TIMEOUT_SECONDS = 3.0
+_OPTIONAL_SOURCE_TIMEOUT_SECONDS = 0.75
 _RAWG_ATTRIBUTION_URL = "https://rawg.io/"
 
 
@@ -49,19 +53,26 @@ class _Candidate:
     kind: GameGroupKind
     source_keys: dict[GameGroupSource, str] = field(default_factory=dict)
     member_ids: set[int] = field(default_factory=set)
+    members: list[_ExternalGame] = field(default_factory=list)
     possible_matches: list[GameGroupPossibleMatch] = field(default_factory=list)
     unavailable_sources: set[GameGroupSource] = field(default_factory=set)
 
     def merge(self, other: _Candidate) -> None:
         self.source_keys.update(other.source_keys)
         self.member_ids.update(other.member_ids)
+        self.members.extend(other.members)
         self.possible_matches.extend(other.possible_matches)
         self.unavailable_sources.update(other.unavailable_sources)
 
 
 class RAWGAdapter:
-    def __init__(self, client: httpx.AsyncClient | None = None):
+    def __init__(
+        self,
+        client: httpx.AsyncClient | None = None,
+        shared_cache: UpstashGameGroupCache | None = None,
+    ):
         self._client = client or httpx.AsyncClient(timeout=10)
+        self._shared_cache = shared_cache if shared_cache is not None else UpstashGameGroupCache.from_environment()
 
     @property
     def configured(self) -> bool:
@@ -70,6 +81,10 @@ class RAWGAdapter:
     async def search(self, query: str) -> list[tuple[str, str, list[_ExternalGame]]]:
         if not self.configured:
             return []
+        cache_key = f"rawg:search:{_normalize(query)}"
+        cached = await self._get_cached(cache_key)
+        if cached is not None:
+            return cached
         response = await self._client.get(
             "https://api.rawg.io/api/games",
             params={"key": os.environ["RAWG_API_KEY"], "search": query, "page_size": 5},
@@ -80,24 +95,27 @@ class RAWGAdapter:
             for game in response.json().get("results", [])
             if isinstance(game.get("id"), int) and isinstance(game.get("name"), str)
         ]
-        related_results = await asyncio.gather(
-            *(self._related_games(game["id"]) for game in source_games),
-            return_exceptions=True,
-        )
         candidates: list[tuple[str, str, list[_ExternalGame]]] = []
-        for game, related in zip(source_games, related_results, strict=True):
+        for game in source_games:
             game_id = game.get("id")
             name = game.get("name")
-            if not isinstance(game_id, int) or not isinstance(name, str) or not isinstance(related, list):
+            if not isinstance(game_id, int) or not isinstance(name, str):
                 continue
-            members = [_ExternalGame(str(game_id), name, _rawg_year(game.get("released"))), *related]
-            candidates.append((f"rawg:related:{game_id}", name, members))
+            # A search card is just an invitation to explore. Related members
+            # cost up to ten RAWG calls and are fetched only after expansion.
+            candidates.append((f"rawg:related:{game_id}", name, []))
+        await self._set_cached(cache_key, candidates)
         return candidates
 
     async def by_key(self, group_key: str) -> tuple[str, list[_ExternalGame]]:
         _, _, raw_id = group_key.partition("rawg:related:")
         if not raw_id.isdigit() or not self.configured:
             raise LookupError(group_key)
+        cache_key = f"rawg:group:{raw_id}"
+        cached = await self._get_cached(cache_key)
+        if cached is not None and cached:
+            _, name, members = cached[0]
+            return name, members
         response = await self._client.get(
             f"https://api.rawg.io/api/games/{raw_id}", params={"key": os.environ["RAWG_API_KEY"]}
         )
@@ -107,15 +125,22 @@ class RAWGAdapter:
         if not isinstance(name, str):
             raise LookupError(group_key)
         seed = _ExternalGame(raw_id, name, _rawg_year(game.get("released")))
-        return name, [seed, *await self._related_games(int(raw_id))]
+        members = [seed, *await self._related_games(int(raw_id))]
+        await self._set_cached(cache_key, [(group_key, name, members)])
+        return name, members
 
     async def _related_games(self, game_id: int) -> list[_ExternalGame]:
         members: dict[str, _ExternalGame] = {}
-        for suffix in ("game-series", "parent-games"):
-            response = await self._client.get(
-                f"https://api.rawg.io/api/games/{game_id}/{suffix}",
-                params={"key": os.environ["RAWG_API_KEY"], "page_size": 40},
+        responses = await asyncio.gather(
+            *(
+                self._client.get(
+                    f"https://api.rawg.io/api/games/{game_id}/{suffix}",
+                    params={"key": os.environ["RAWG_API_KEY"], "page_size": 40},
+                )
+                for suffix in ("game-series", "parent-games")
             )
+        )
+        for response in responses:
             response.raise_for_status()
             for game in response.json().get("results", []):
                 raw_id = game.get("id")
@@ -126,6 +151,45 @@ class RAWGAdapter:
 
     async def aclose(self) -> None:
         await self._client.aclose()
+        if self._shared_cache is not None:
+            await self._shared_cache.aclose()
+
+    async def _get_cached(self, key: str) -> list[tuple[str, str, list[_ExternalGame]]] | None:
+        if self._shared_cache is None:
+            return None
+        try:
+            cached = await self._shared_cache.get(key)
+            if not isinstance(cached, list):
+                return None
+            return [
+                (
+                    item["key"],
+                    item["title"],
+                    [_ExternalGame(**member) for member in item["members"]],
+                )
+                for item in cached
+                if isinstance(item, dict)
+                and isinstance(item.get("key"), str)
+                and isinstance(item.get("title"), str)
+                and isinstance(item.get("members"), list)
+            ]
+        except Exception:
+            logger.info("RAWG shared cache read failed")
+            return None
+
+    async def _set_cached(self, key: str, groups: list[tuple[str, str, list[_ExternalGame]]]) -> None:
+        if self._shared_cache is None:
+            return
+        try:
+            await self._shared_cache.set(
+                key,
+                [
+                    {"key": group_key, "title": title, "members": [member.__dict__ for member in members]}
+                    for group_key, title, members in groups
+                ],
+            )
+        except Exception:
+            logger.info("RAWG shared cache write failed")
 
 
 class WikidataAdapter:
@@ -143,18 +207,13 @@ class WikidataAdapter:
             for result in response.json().get("search", [])
             if isinstance(result.get("id"), str) and isinstance(result.get("label"), str)
         ]
-        member_results = await asyncio.gather(
-            *(self._members(result["id"]) for result in source_groups),
-            return_exceptions=True,
-        )
         candidates: list[tuple[str, str, list[_ExternalGame]]] = []
-        for result, members in zip(source_groups, member_results, strict=True):
+        for result in source_groups:
             qid = result.get("id")
             label = result.get("label")
-            if not isinstance(qid, str) or not isinstance(label, str) or not isinstance(members, list):
+            if not isinstance(qid, str) or not isinstance(label, str):
                 continue
-            if members:
-                candidates.append((f"wikidata:series:{qid}", label, members))
+            candidates.append((f"wikidata:series:{qid}", label, []))
         return candidates
 
     async def by_key(self, group_key: str) -> tuple[str, list[_ExternalGame]]:
@@ -195,7 +254,7 @@ class WikidataAdapter:
 
 
 class GameGroupExplorer:
-    """The sole seam that turns source memberships into IGDB-backed game groups."""
+    """Discover provider-native groups; resolve into IGDB only after selection."""
 
     def __init__(
         self,
@@ -221,9 +280,48 @@ class GameGroupExplorer:
         return [item.model_copy(deep=True) for item in results]
 
     async def for_game(self, igdb_id: int) -> list[GameGroupSearchResult]:
-        game = await self._igdb.get_by_id(igdb_id)
-        candidates = await self._discover(game.name)
-        return [self._to_result(candidate) for candidate in candidates if igdb_id in candidate.member_ids][:4]
+        await self._igdb.get_by_id(igdb_id)
+        groups = await asyncio.gather(
+            self._igdb_groups_for_game("collections", igdb_id),
+            self._igdb_groups_for_game("franchises", igdb_id),
+        )
+        candidates: list[_Candidate] = []
+        for endpoint, source_groups in zip(("collections", "franchises"), groups, strict=True):
+            kind = GameGroupKind.SERIES if endpoint == "collections" else GameGroupKind.FRANCHISE
+            singular = endpoint.removesuffix("s")
+            candidates.extend(
+                _Candidate(
+                    group_key=f"igdb:{singular}:{identifier}",
+                    title=name,
+                    kind=kind,
+                    source_keys={GameGroupSource.IGDB: f"igdb:{singular}:{identifier}"},
+                )
+                for identifier, name in source_groups
+            )
+        return [self._to_result(candidate) for candidate in _merge_candidates(candidates)][:4]
+
+    async def warm_rawg_popular(self, limit: int) -> CacheWarmResult:
+        """Seed RAWG group records for popular games without bypassing its cache."""
+        if not self._rawg.configured:
+            return CacheWarmResult(requested_games=0, warmed_games=0, failed_games=0)
+        games = await self._igdb.popular_games(limit)
+        semaphore = asyncio.Semaphore(2)
+
+        async def warm(game: CatalogGame) -> bool:
+            async with semaphore:
+                try:
+                    await self._rawg.search(game.name)
+                except Exception:
+                    logger.info("RAWG group warm failed game_id=%s", game.igdb_id)
+                    return False
+                return True
+
+        warmed = await asyncio.gather(*(warm(game) for game in games))
+        return CacheWarmResult(
+            requested_games=len(games),
+            warmed_games=sum(warmed),
+            failed_games=len(games) - sum(warmed),
+        )
 
     async def preview(self, request: GameGroupPreviewRequest) -> GameGroupPreview:
         existing_key = ",".join(str(identifier) for identifier in sorted(set(request.existing_igdb_ids)))
@@ -235,22 +333,25 @@ class GameGroupExplorer:
             raise ValueError("edition_policy must be canonical_releases")
         candidate = await self._candidate_for_key(request.group_key)
         result = self._to_result(candidate)
-        raw_games = await self._igdb_games(candidate.member_ids)
-        selected, excluded = _canonical_games(raw_games)
         existing = set(request.existing_igdb_ids)
+        excluded = []
+        primary_source = _primary_source(candidate)
         items = [
             GameGroupPreviewItem(
-                game=game,
+                source_id=member.source_id,
+                name=member.name,
+                release_year=member.release_year,
+                igdb_id=int(member.source_id) if primary_source is GameGroupSource.IGDB else None,
                 order=index,
                 initially_selected=True,
-                already_in_backlog=game.igdb_id in existing,
+                already_in_backlog=member.source_id.isdigit() and int(member.source_id) in existing,
                 evidence=[
                     GameGroupPreviewEvidence(source=source, relation="membership", label=_source_label(source))
                     for source in candidate.source_keys
                 ],
-                edition=GameGroupEdition(state="canonical", label="Canonical release"),
+                edition=GameGroupEdition(state="source", label="Resolved when added"),
             )
-            for index, game in enumerate(selected, start=1)
+            for index, member in enumerate(candidate.members, start=1)
         ]
         preview_result = GameGroupPreview(
             group=result,
@@ -265,10 +366,60 @@ class GameGroupExplorer:
         self._trim_cache(self._preview_cache)
         return preview_result.model_copy(deep=True)
 
+    async def resolve_selection(self, request: ResolveGameGroupSelectionRequest) -> ResolveGameGroupSelectionResponse:
+        """Reconcile the checked members only, preserving every unresolved selection."""
+        candidate = await self._candidate_for_key(request.group_key)
+        requested = set(request.source_member_ids)
+        if GameGroupSource.IGDB in candidate.source_keys:
+            members = [
+                _ExternalGame(str(identifier), str(identifier))
+                for identifier in candidate.member_ids
+                if str(identifier) in requested
+            ]
+        else:
+            members = [member for member in candidate.members if member.source_id in requested]
+        found = {member.source_id for member in members}
+        resolutions: list[GameGroupSelectionResolution | None] = [None] * len(request.source_member_ids)
+
+        async def resolve(member: _ExternalGame) -> GameGroupSelectionResolution:
+            try:
+                if GameGroupSource.IGDB in candidate.source_keys and member.source_id.isdigit():
+                    game = await self._igdb.get_by_id(int(member.source_id))
+                else:
+                    game = await self._reconcile(member)
+            except Exception:
+                logger.info("game group selection reconciliation failed source_id=%s", member.source_id)
+                game = None
+            return GameGroupSelectionResolution(
+                source_id=member.source_id,
+                name=member.name,
+                game=game,
+                reason=None if game else "No confident IGDB match",
+            )
+
+        semaphore = asyncio.Semaphore(4)
+
+        async def bounded(member: _ExternalGame) -> GameGroupSelectionResolution:
+            async with semaphore:
+                return await resolve(member)
+
+        resolved = {entry.source_id: entry for entry in await asyncio.gather(*(bounded(member) for member in members))}
+        for index, source_id in enumerate(request.source_member_ids):
+            resolutions[index] = resolved.get(source_id) or GameGroupSelectionResolution(
+                source_id=source_id,
+                name=source_id,
+                reason="This title is no longer in the source group"
+                if source_id not in found
+                else "No confident IGDB match",
+            )
+        return ResolveGameGroupSelectionResponse(resolutions=[item for item in resolutions if item])
+
     async def _discover(self, query: str) -> list[_Candidate]:
         if not query.strip():
             return []
-        igdb_task = self._igdb_candidates(query)
+        # Group discovery is supplemental to ordinary game search. No provider is
+        # allowed to hold its result open after the initial latency budget.
+        igdb_task = asyncio.wait_for(self._igdb_candidates(query), timeout=_OPTIONAL_SOURCE_TIMEOUT_SECONDS)
         rawg_task = asyncio.wait_for(self._rawg_candidates(query), timeout=_OPTIONAL_SOURCE_TIMEOUT_SECONDS)
         wikidata_task = asyncio.wait_for(self._wikidata_candidates(query), timeout=_OPTIONAL_SOURCE_TIMEOUT_SECONDS)
         started_at = time.perf_counter()
@@ -284,6 +435,8 @@ class GameGroupExplorer:
                 candidates.extend(result)
         for candidate in candidates:
             candidate.unavailable_sources.update(unavailable_sources)
+        # Source cards are deliberately independent. We never make discovery wait
+        # for IGDB reconciliation or infer that differently scoped groups match.
         merged = _merge_candidates(candidates)
         logger.info(
             "game group discovery complete query_length=%d groups=%d duration_ms=%.1f",
@@ -295,30 +448,26 @@ class GameGroupExplorer:
 
     async def _candidate_for_key(self, group_key: str) -> _Candidate:
         if group_key.startswith("igdb:"):
-            kind, _, raw_id = group_key.split(":", 2)
+            kind, endpoint, raw_id = group_key.split(":", 2)
             if kind != "igdb" or not raw_id.isdigit():
                 raise LookupError(group_key)
-            endpoint, identifier = group_key.split(":", 2)[1:]
             if endpoint not in {"collection", "franchise"}:
                 raise LookupError(group_key)
-            title, members = await self._igdb_group(endpoint, int(identifier))
-            discovered = await self._discover(title)
-            return next(
-                (item for item in discovered if item.group_key == group_key),
-                _Candidate(
-                    group_key=group_key,
-                    title=title,
-                    kind=GameGroupKind.SERIES if endpoint == "collection" else GameGroupKind.FRANCHISE,
-                    source_keys={GameGroupSource.IGDB: group_key},
-                    member_ids=set(members),
-                ),
+            title, members = await self._igdb_group(endpoint, int(raw_id))
+            return _Candidate(
+                group_key=group_key,
+                title=title,
+                kind=GameGroupKind.SERIES if endpoint == "collection" else GameGroupKind.FRANCHISE,
+                source_keys={GameGroupSource.IGDB: group_key},
+                member_ids={int(member.source_id) for member in members},
+                members=members,
             )
         if group_key.startswith("rawg:related:"):
             title, members = await self._rawg.by_key(group_key)
-            return await self._external_candidate(group_key, title, members, GameGroupSource.RAWG)
+            return self._external_candidate(group_key, title, members, GameGroupSource.RAWG)
         if group_key.startswith("wikidata:series:"):
             title, members = await self._wikidata.by_key(group_key)
-            return await self._external_candidate(group_key, title, members, GameGroupSource.WIKIDATA)
+            return self._external_candidate(group_key, title, members, GameGroupSource.WIKIDATA)
         raise LookupError(group_key)
 
     async def _igdb_candidates(self, query: str) -> list[_Candidate]:
@@ -328,59 +477,40 @@ class GameGroupExplorer:
             kind = GameGroupKind.SERIES if endpoint == "collections" else GameGroupKind.FRANCHISE
             singular = endpoint.removesuffix("s")
             for item in items:
-                identifier, name, member_ids = item
-                if member_ids:
-                    candidates.append(
-                        _Candidate(
-                            group_key=f"igdb:{singular}:{identifier}",
-                            title=name,
-                            kind=kind,
-                            source_keys={GameGroupSource.IGDB: f"igdb:{singular}:{identifier}"},
-                            member_ids=set(member_ids),
-                        )
+                identifier, name, members = item
+                candidates.append(
+                    _Candidate(
+                        group_key=f"igdb:{singular}:{identifier}",
+                        title=name,
+                        kind=kind,
+                        source_keys={GameGroupSource.IGDB: f"igdb:{singular}:{identifier}"},
+                        member_ids={int(member.source_id) for member in members},
+                        members=members,
                     )
+                )
         return candidates
 
     async def _rawg_candidates(self, query: str) -> list[_Candidate]:
         return [
-            await self._external_candidate(key, title, members, GameGroupSource.RAWG)
+            self._external_candidate(key, title, members, GameGroupSource.RAWG)
             for key, title, members in await self._rawg.search(query)
         ]
 
     async def _wikidata_candidates(self, query: str) -> list[_Candidate]:
         return [
-            await self._external_candidate(key, title, members, GameGroupSource.WIKIDATA)
+            self._external_candidate(key, title, members, GameGroupSource.WIKIDATA)
             for key, title, members in await self._wikidata.search(query)
         ]
 
-    async def _external_candidate(
+    def _external_candidate(
         self, group_key: str, title: str, members: list[_ExternalGame], source: GameGroupSource
     ) -> _Candidate:
-        matches = await asyncio.gather(*(self._reconcile(member) for member in members))
-        member_ids: set[int] = set()
-        possible: list[GameGroupPossibleMatch] = []
-        for member, match in zip(members, matches, strict=True):
-            if match is not None:
-                member_ids.add(match.igdb_id)
-            else:
-                possible.append(
-                    GameGroupPossibleMatch(
-                        source=source,
-                        source_id=member.source_id,
-                        name=member.name,
-                        release_year=member.release_year,
-                        reason="No confident IGDB match",
-                    )
-                )
-        if len(member_ids) < 2:
-            member_ids.clear()
         return _Candidate(
             group_key=group_key,
             title=title,
             kind=GameGroupKind.SERIES,
             source_keys={source: group_key},
-            member_ids=member_ids,
-            possible_matches=possible,
+            members=members,
         )
 
     async def _reconcile(self, member: _ExternalGame) -> CatalogGame | None:
@@ -398,41 +528,57 @@ class GameGroupExplorer:
             ]
         return exact[0] if len(exact) == 1 else None
 
-    async def _igdb_groups(self, endpoint: str, query: str) -> list[tuple[int, str, list[int]]]:
+    async def _igdb_groups(self, endpoint: str, query: str) -> list[tuple[int, str, list[_ExternalGame]]]:
         if not self._igdb._is_configured():
             return []
         client_id, token = await self._igdb._get_auth_headers()
         response = await self._igdb._http_client.post(
             f"https://api.igdb.com/v4/{endpoint}",
             headers={"Client-ID": client_id, "Authorization": f"Bearer {token}"},
-            content=f'fields id,name,games; search "{self._igdb._escape_search_query(query)}"; limit 20;',
+            content=f'fields id,name; search "{self._igdb._escape_search_query(query)}"; limit 20;',
         )
         response.raise_for_status()
         return [
-            (item["id"], item["name"], [member for member in item.get("games") or [] if isinstance(member, int)])
+            (item["id"], item["name"], _igdb_group_members(item.get("games")))
             for item in response.json()
             if isinstance(item.get("id"), int) and isinstance(item.get("name"), str)
         ]
 
-    async def _igdb_group(self, endpoint: str, identifier: int) -> tuple[str, list[int]]:
+    async def _igdb_groups_for_game(self, endpoint: str, igdb_id: int) -> list[tuple[int, str]]:
+        if not self._igdb._is_configured():
+            return []
+        client_id, token = await self._igdb._get_auth_headers()
+        response = await self._igdb._http_client.post(
+            f"https://api.igdb.com/v4/{endpoint}",
+            headers={"Client-ID": client_id, "Authorization": f"Bearer {token}"},
+            content=f"fields id,name; where games = ({igdb_id}); limit 20;",
+        )
+        response.raise_for_status()
+        return [
+            (item["id"], item["name"])
+            for item in response.json()
+            if isinstance(item.get("id"), int) and isinstance(item.get("name"), str)
+        ]
+
+    async def _igdb_group(self, endpoint: str, identifier: int) -> tuple[str, list[_ExternalGame]]:
         plural = f"{endpoint}s"
         groups = await self._igdb_groups_by_id(plural, identifier)
         if not groups:
             raise LookupError(f"igdb:{endpoint}:{identifier}")
         return groups[0][1], groups[0][2]
 
-    async def _igdb_groups_by_id(self, endpoint: str, identifier: int) -> list[tuple[int, str, list[int]]]:
+    async def _igdb_groups_by_id(self, endpoint: str, identifier: int) -> list[tuple[int, str, list[_ExternalGame]]]:
         if not self._igdb._is_configured():
             raise LookupError(identifier)
         client_id, token = await self._igdb._get_auth_headers()
         response = await self._igdb._http_client.post(
             f"https://api.igdb.com/v4/{endpoint}",
             headers={"Client-ID": client_id, "Authorization": f"Bearer {token}"},
-            content=f"fields id,name,games; where id = {identifier}; limit 1;",
+            content=(f"fields id,name,games.id,games.name,games.first_release_date; where id = {identifier}; limit 1;"),
         )
         response.raise_for_status()
         return [
-            (item["id"], item["name"], [member for member in item.get("games") or [] if isinstance(member, int)])
+            (item["id"], item["name"], _igdb_group_members(item.get("games")))
             for item in response.json()
             if isinstance(item.get("id"), int) and isinstance(item.get("name"), str)
         ]
@@ -493,7 +639,7 @@ class GameGroupExplorer:
             display_name=f"{candidate.title} — {scope_name}",
             scope_name=scope_name,
             card_kind=candidate.kind,
-            candidate_count=len(candidate.member_ids),
+            candidate_count=len(candidate.members) or len(candidate.member_ids),
             sources=[GameGroupEvidence(source=source, label=_source_label(source)) for source in candidate.source_keys],
             warning=(
                 "Includes spin-offs, DLC, editions, and remasters. Review required."
@@ -516,22 +662,15 @@ class GameGroupExplorer:
 
 
 def _merge_candidates(candidates: list[_Candidate]) -> list[_Candidate]:
-    eligible = [candidate for candidate in candidates if candidate.member_ids]
-    merged: list[_Candidate] = []
-    for candidate in eligible:
-        target = next((current for current in merged if _should_merge(current, candidate)), None)
-        if target:
-            target.merge(candidate)
-            if _primary_source(candidate) is GameGroupSource.IGDB:
-                target.group_key, target.title, target.kind = candidate.group_key, candidate.title, candidate.kind
-        else:
-            merged.append(candidate)
-    for candidate in merged:
-        candidate.group_key = candidate.source_keys[_primary_source(candidate)]
-    merged.sort(
-        key=lambda candidate: (candidate.kind is GameGroupKind.FRANCHISE, -len(candidate.member_ids), candidate.title)
+    unique = {candidate.group_key: candidate for candidate in candidates}
+    return sorted(
+        unique.values(),
+        key=lambda candidate: (
+            candidate.kind is GameGroupKind.FRANCHISE,
+            -max(len(candidate.members), len(candidate.member_ids)),
+            candidate.title,
+        ),
     )
-    return merged
 
 
 def _should_merge(left: _Candidate, right: _Candidate) -> bool:
@@ -593,6 +732,18 @@ def _canonical_games(rows: list[dict[str, Any]]) -> tuple[list[CatalogGame], lis
 
 def _normalize(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", value.casefold()).strip()
+
+
+def _igdb_group_members(value: Any) -> list[_ExternalGame]:
+    return [
+        _ExternalGame(str(member["id"]), member["name"], _igdb_year(member.get("first_release_date")))
+        for member in value or []
+        if isinstance(member, dict) and isinstance(member.get("id"), int) and isinstance(member.get("name"), str)
+    ]
+
+
+def _igdb_year(value: Any) -> int | None:
+    return time.gmtime(value).tm_year if isinstance(value, int) and value > 0 else None
 
 
 def _rawg_year(value: Any) -> int | None:

@@ -26,7 +26,7 @@ def test_search_game_groups_returns_automatically_named_cards(client):
 
     assert response.status_code == 200
     assert response.json()[0]["display_name"] == "Final Fantasy — series"
-    assert response.headers["cache-control"] == "public, s-maxage=300, stale-while-revalidate=86400"
+    assert response.headers["cache-control"] == "public, s-maxage=2592000, stale-while-revalidate=7776000"
 
 
 def test_game_group_preview_rejects_an_unknown_group(client):

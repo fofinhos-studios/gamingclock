@@ -49,7 +49,12 @@ class GameGroupEdition(BaseModel):
 
 
 class GameGroupPreviewItem(BaseModel):
-    game: CatalogGame
+    """A provider-native member. It has not yet been accepted by IGDB."""
+
+    source_id: str
+    name: str
+    release_year: int | None = None
+    igdb_id: int | None = None
     order: int
     initially_selected: bool
     already_in_backlog: bool
@@ -79,6 +84,24 @@ class GameGroupPreview(BaseModel):
     unavailable_sources: list[GameGroupSource] = Field(default_factory=list)
     rawg_attribution_required: bool = False
     rawg_attribution_url: str | None = None
+
+
+class ResolveGameGroupSelectionRequest(BaseModel):
+    """Only checked source members are reconciled with the canonical catalog."""
+
+    group_key: str = Field(min_length=1, max_length=200)
+    source_member_ids: list[str] = Field(min_length=1, max_length=50)
+
+
+class GameGroupSelectionResolution(BaseModel):
+    source_id: str
+    name: str
+    game: CatalogGame | None = None
+    reason: str | None = None
+
+
+class ResolveGameGroupSelectionResponse(BaseModel):
+    resolutions: list[GameGroupSelectionResolution]
 
 
 class ResolveGamesRequest(BaseModel):

@@ -12,6 +12,7 @@ import { useLanguage } from "../i18n/i18n";
 import {
   getGameArtwork,
   previewGameGroup,
+  resolveGameGroupSelection,
   searchGameGroups,
   searchGames,
 } from "../services/api";
@@ -20,6 +21,7 @@ import type {
   GameArtwork,
   GameGroupPreview,
   GameGroupSearchResult,
+  GameGroupSelectionResolution,
   ListGame,
 } from "../types";
 import { Button, Field, Input } from "./ui";
@@ -30,7 +32,7 @@ interface Props {
   onAddGame: (game: CatalogGame) => void;
   onAddGameGroup?: (
     preview: GameGroupPreview,
-    selectedIgdbIds: number[],
+    resolutions: GameGroupSelectionResolution[],
   ) => Promise<void>;
 }
 
@@ -122,6 +124,7 @@ export function GameSearch({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const resultRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const searchRequestId = useRef(0);
+  const groupSearchRequestId = useRef(0);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CatalogGame[]>([]);
   const [groupResults, setGroupResults] = useState<GameGroupSearchResult[]>([]);
@@ -159,9 +162,6 @@ export function GameSearch({
     const controller = new AbortController();
     if (trimmedQuery.length < 2) {
       setResults([]);
-      setGroupResults([]);
-      setExpandedGroupKey(null);
-      setGroupError("");
       setArtworkById({});
       setPendingArtworkIds(new Set());
       setLoading(false);
@@ -176,25 +176,6 @@ export function GameSearch({
       setIsDropdownOpen(true);
       setError("");
       setInfoMessage("");
-      setGroupError("");
-      void searchGameGroups(trimmedQuery, controller.signal)
-        .then((nextGroups) => {
-          if (requestId !== searchRequestId.current) {
-            return;
-          }
-          setGroupResults(nextGroups);
-          if (nextGroups.length > 0) {
-            setHighlightedIndex(0);
-          }
-        })
-        .catch(() => {
-          if (
-            !controller.signal.aborted &&
-            requestId === searchRequestId.current
-          ) {
-            setGroupError(t.search.groupsUnavailable);
-          }
-        });
       try {
         const nextResults = await searchGames(trimmedQuery, controller.signal);
         if (requestId !== searchRequestId.current) {
@@ -232,7 +213,40 @@ export function GameSearch({
       window.clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [query, t.search.failed, t.search.groupsUnavailable]);
+  }, [query, t.search.failed]);
+
+  useEffect(() => {
+    const trimmedQuery = query.trim();
+    const requestId = ++groupSearchRequestId.current;
+    const controller = new AbortController();
+    if (trimmedQuery.length < 2) {
+      setGroupResults([]);
+      setExpandedGroupKey(null);
+      setGroupError("");
+      return undefined;
+    }
+    const timeoutId = window.setTimeout(() => {
+      setGroupError("");
+      void searchGameGroups(trimmedQuery, controller.signal)
+        .then((nextGroups) => {
+          if (requestId === groupSearchRequestId.current) {
+            setGroupResults(nextGroups);
+          }
+        })
+        .catch(() => {
+          if (
+            !controller.signal.aborted &&
+            requestId === groupSearchRequestId.current
+          ) {
+            setGroupError(t.search.groupsUnavailable);
+          }
+        });
+    }, 700);
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [query, t.search.groupsUnavailable]);
 
   useEffect(() => {
     let isCurrent = true;
@@ -509,7 +523,7 @@ interface GameGroupCardProps {
   isHighlighted: boolean;
   onAdd: (
     preview: GameGroupPreview,
-    selectedIgdbIds: number[],
+    resolutions: GameGroupSelectionResolution[],
   ) => Promise<void>;
 }
 
@@ -524,7 +538,10 @@ function GameGroupCard({
   const { t } = useLanguage();
   const [preview, setPreview] = useState<GameGroupPreview | null>(null);
   const [attempted, setAttempted] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [unresolved, setUnresolved] = useState<GameGroupSelectionResolution[]>(
+    [],
+  );
   const [loading, setLoading] = useState(false);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState("");
@@ -548,7 +565,7 @@ function GameGroupCard({
           new Set(
             nextPreview.items
               .filter((item) => item.initially_selected)
-              .map((item) => item.game.igdb_id),
+              .map((item) => item.source_id),
           ),
         );
       })
@@ -577,13 +594,13 @@ function GameGroupCard({
     t.search.groupPreviewFailed,
   ]);
 
-  const toggleGame = (igdbId: number) => {
+  const toggleGame = (sourceId: string) => {
     setSelectedIds((current) => {
       const next = new Set(current);
-      if (next.has(igdbId)) {
-        next.delete(igdbId);
+      if (next.has(sourceId)) {
+        next.delete(sourceId);
       } else {
-        next.add(igdbId);
+        next.add(sourceId);
       }
       return next;
     });
@@ -595,9 +612,21 @@ function GameGroupCard({
     }
     setAdding(true);
     setError("");
+    setUnresolved([]);
     try {
-      await onAdd(preview, [...selectedIds]);
-      onToggle();
+      const resolutions = await resolveGameGroupSelection(
+        preview.group.group_key,
+        [...selectedIds],
+      );
+      const unresolvedSelections = resolutions.filter((item) => !item.game);
+      const resolvedSelections = resolutions.filter((item) => item.game);
+      setUnresolved(unresolvedSelections);
+      if (resolvedSelections.length > 0) {
+        await onAdd(preview, resolvedSelections);
+        setSelectedIds(
+          new Set(unresolvedSelections.map((item) => item.source_id)),
+        );
+      }
     } catch (addError) {
       setError(
         addError instanceof Error ? addError.message : t.search.addGroupFailed,
@@ -627,7 +656,11 @@ function GameGroupCard({
           <span class="planner-group-result__kind">
             {group.card_kind.toUpperCase()}
           </span>
-          <span>{t.search.groupGames(group.candidate_count)}</span>
+          <span>
+            {group.candidate_count > 0
+              ? t.search.groupGames(group.candidate_count)
+              : t.search.groupMembersUnknown}
+          </span>
           {expanded ? (
             <CaretUpIcon aria-hidden="true" />
           ) : (
@@ -670,19 +703,17 @@ function GameGroupCard({
               <div class="planner-group-result__items">
                 {preview.items.map((item) => (
                   <label
-                    key={item.game.igdb_id}
+                    key={item.source_id}
                     class="planner-group-result__item"
                   >
                     <input
                       type="checkbox"
-                      checked={selectedIds.has(item.game.igdb_id)}
+                      checked={selectedIds.has(item.source_id)}
                       disabled={adding}
-                      onChange={() => toggleGame(item.game.igdb_id)}
+                      onChange={() => toggleGame(item.source_id)}
                     />
-                    <span>{item.game.name}</span>
-                    <small>
-                      {item.game.release_year ?? t.search.unknownYear}
-                    </small>
+                    <span>{item.name}</span>
+                    <small>{item.release_year ?? t.search.unknownYear}</small>
                     <small>
                       {item.already_in_backlog
                         ? t.search.alreadyInBacklog
@@ -691,6 +722,16 @@ function GameGroupCard({
                   </label>
                 ))}
               </div>
+              {unresolved.length > 0 && (
+                <div class="planner-group-result__warning" role="alert">
+                  <p>{t.search.unresolvedSelections(unresolved.length)}</p>
+                  <ul>
+                    {unresolved.map((item) => (
+                      <li key={item.source_id}>{item.name}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               {preview.unavailable_sources.length > 0 && (
                 <p class="planner-group-result__warning">
                   {t.search.sourceEvidenceUnavailable}
