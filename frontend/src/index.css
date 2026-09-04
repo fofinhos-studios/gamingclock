@@ -325,6 +325,7 @@
     position: relative;
     isolation: isolate;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: clamp(0.8rem, 2vw, 1.5rem);
     padding: clamp(0.8rem, 2vw, 1.5rem);
     min-width: 0;
@@ -404,6 +405,7 @@
 
   .language-chooser select {
     min-height: 2.75rem;
+    min-width: 0;
     border: 1px solid var(--foreground-22);
     background: var(--foreground-04);
     padding: 0.35rem 0.45rem;
@@ -566,6 +568,7 @@
     align-items: center;
     gap: 0.35rem;
     min-height: 2.75rem;
+    min-width: 0;
   }
 
   .toolbar-control__label {
@@ -635,6 +638,8 @@
   }
 
   .backlog-manager__current-name {
+    flex: 1 1 auto;
+    min-width: 0;
     overflow: hidden;
     color: var(--foreground);
     font-family: var(--font-body);
@@ -2935,6 +2940,17 @@
   }
 }
 
+@media (max-width: 1535px) {
+  .planner-toolbar__topline {
+    flex-direction: column;
+    align-items: start;
+  }
+
+  .planner-toolbar__controls {
+    align-self: end;
+  }
+}
+
 @media (max-width: 1279px) {
   .planner-app {
     padding: 0.6rem;
@@ -2980,6 +2996,39 @@
 
   .planner-pane--availability .planner-day-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 959px) {
+  .planner-toolbar__controls {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: start;
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 599px) {
+  .planner-identity {
+    font-size: clamp(1rem, 6vw, 1.65rem);
+  }
+
+  .planner-toolbar__controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+
+  .toolbar-control {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .planner-toolbar__backlogs,
+  .backlog-manager__summary,
+  .backlog-manager__current {
+    width: 100%;
+    max-width: 100%;
   }
 }
 

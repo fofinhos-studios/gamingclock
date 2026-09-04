@@ -110,6 +110,20 @@ test("keeps the planner in its single-column layout until there is room for its 
   );
 });
 
+test("stacks and wraps the toolbar controls before they overflow the desktop workspace", async () => {
+  const stylesheet = await readStylesheet();
+
+  expect(stylesheet).toMatch(
+    /@media \(max-width: 1535px\)\s*\{[\s\S]*?\.planner-toolbar__topline\s*\{[\s\S]*?flex-direction:\s*column;/,
+  );
+  expect(stylesheet).toMatch(
+    /@media \(max-width: 959px\)\s*\{[\s\S]*?\.planner-toolbar__controls\s*\{[\s\S]*?flex-wrap:\s*wrap;/,
+  );
+  expect(stylesheet).toMatch(
+    /@media \(max-width: 599px\)\s*\{[\s\S]*?\.planner-toolbar__backlogs,[\s\S]*?\.backlog-manager__current\s*\{[\s\S]*?max-width:\s*100%;/,
+  );
+});
+
 test("does not leave a detached frame around the desktop stepper", async () => {
   const stylesheet = await readStylesheet();
 
