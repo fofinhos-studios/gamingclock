@@ -29,6 +29,15 @@ def test_search_game_groups_returns_automatically_named_cards(client):
     assert response.headers["cache-control"] == "public, s-maxage=2592000, stale-while-revalidate=7776000"
 
 
+def test_game_group_routes_do_not_call_providers_when_disabled(client, monkeypatch):
+    monkeypatch.setenv("ENABLE_GAME_GROUPS", "false")
+    with patch("gamingclock.routers.game_groups.game_group_explorer") as explorer:
+        response = client.get("/game-groups/search", params={"query": "Final Fantasy"})
+
+    assert response.status_code == 404
+    explorer.search.assert_not_called()
+
+
 def test_game_group_preview_rejects_an_unknown_group(client):
     with patch("gamingclock.routers.game_groups.game_group_explorer") as explorer:
         explorer.preview = AsyncMock(side_effect=LookupError("unknown"))

@@ -19,14 +19,21 @@ DEFAULT_WARM_GROUP_LIMIT = 5
 MAX_WARM_GROUP_LIMIT = 10
 
 
+def _require_game_groups_enabled() -> None:
+    if os.getenv("ENABLE_GAME_GROUPS", "true").lower() != "true":
+        raise HTTPException(status_code=404, detail="Game groups are unavailable")
+
+
 @router.get("/search", response_model=list[GameGroupSearchResult])
 async def search_game_groups(response: Response, query: str) -> list[GameGroupSearchResult]:
+    _require_game_groups_enabled()
     response.headers["Cache-Control"] = "public, s-maxage=2592000, stale-while-revalidate=7776000"
     return await game_group_explorer.search(query)
 
 
 @router.get("/for-game/{igdb_id}", response_model=list[GameGroupSearchResult])
 async def groups_for_game(igdb_id: int) -> list[GameGroupSearchResult]:
+    _require_game_groups_enabled()
     try:
         return await game_group_explorer.for_game(igdb_id)
     except LookupError as error:
@@ -35,6 +42,7 @@ async def groups_for_game(igdb_id: int) -> list[GameGroupSearchResult]:
 
 @router.post("/preview", response_model=GameGroupPreview)
 async def preview_game_group(request: GameGroupPreviewRequest) -> GameGroupPreview:
+    _require_game_groups_enabled()
     try:
         return await game_group_explorer.preview(request)
     except ValueError as error:
@@ -49,6 +57,7 @@ async def preview_game_group(request: GameGroupPreviewRequest) -> GameGroupPrevi
 async def resolve_game_group_selection(
     request: ResolveGameGroupSelectionRequest,
 ) -> ResolveGameGroupSelectionResponse:
+    _require_game_groups_enabled()
     try:
         return await game_group_explorer.resolve_selection(request)
     except LookupError as error:
@@ -57,6 +66,7 @@ async def resolve_game_group_selection(
 
 @router.get("/internal/warm-popular", response_model=CacheWarmResult)
 async def warm_popular_game_groups(request: Request) -> CacheWarmResult:
+    _require_game_groups_enabled()
     _validate_cron_request(request)
     return await game_group_explorer.warm_rawg_popular(_warm_group_limit())
 

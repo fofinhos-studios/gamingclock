@@ -15,10 +15,6 @@
     {
       "path": "/api/games/internal/warm-popular",
       "schedule": "0 4 * * *"
-    },
-    {
-      "path": "/api/game-groups/internal/warm-popular",
-      "schedule": "15 4 * * *"
     }
   ],
   "headers": [
