@@ -115,6 +115,11 @@ describe("GameSearch", () => {
         view.container.querySelector(".planner-result__artwork-loading"),
       ).toBeNull(),
     );
+    expect(
+      view.container
+        .querySelector(".platform-icons__icon")
+        ?.getAttribute("src"),
+    ).toContain("Platforms-Logos/main/Windows.png");
   });
 
   test("shows ordinary games without waiting for optional group discovery", async () => {

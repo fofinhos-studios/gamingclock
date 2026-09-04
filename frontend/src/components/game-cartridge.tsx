@@ -6,6 +6,7 @@ import {
 } from "@phosphor-icons/react";
 import { useState } from "preact/hooks";
 import { type ListGame, getSelectedGameHours } from "../types";
+import { PlatformIcons } from "./platform-icons";
 
 interface Props {
   game: ListGame;
@@ -129,6 +130,15 @@ export function GameCartridge({
               {variant !== "calendar" && <span>{primaryLabel}</span>}
             </dt>
             <dd>{primaryHours.toFixed(1)}H</dd>
+          </div>
+          <div class="game-cartridge__platforms">
+            <dt>
+              <GameControllerIcon aria-hidden="true" />
+              <span>PLATFORM</span>
+            </dt>
+            <dd>
+              <PlatformIcons platforms={game.platforms} maxIcons={3} />
+            </dd>
           </div>
           {startTime && (
             <div>

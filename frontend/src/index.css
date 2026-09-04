@@ -1241,6 +1241,34 @@
     line-height: 1.35;
   }
 
+  .platform-icons {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-width: 0;
+    vertical-align: middle;
+  }
+
+  .platform-icons__icon {
+    width: 1.25rem;
+    height: 0.9rem;
+    object-fit: contain;
+  }
+
+  .platform-icons__more {
+    color: var(--muted-foreground);
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 700;
+  }
+
+  .platform-icons__fallback {
+    overflow: hidden;
+    color: var(--muted-foreground);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .planner-backlog-row__detail,
   .timeline-detail {
     font-size: 0.8rem;
@@ -2375,6 +2403,24 @@
     text-transform: uppercase;
   }
 
+  .game-cartridge__platforms dd {
+    overflow: visible;
+    white-space: normal;
+  }
+
+  .game-cartridge__platforms .platform-icons {
+    gap: 0.14rem;
+  }
+
+  .game-cartridge__platforms .platform-icons__icon {
+    width: 0.78rem;
+    height: 0.62rem;
+  }
+
+  .game-cartridge__platforms .platform-icons__more {
+    font-size: 0.5rem;
+  }
+
   .planner-backlog-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -2635,10 +2681,10 @@
   }
 
   .game-cartridge--calendar .game-cartridge__label {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .game-cartridge--calendar .game-cartridge__label div:nth-child(n + 2) {
+  .game-cartridge--calendar .game-cartridge__label div:nth-child(n + 3) {
     display: none;
   }
 

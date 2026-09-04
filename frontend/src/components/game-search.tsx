@@ -25,6 +25,7 @@ import type {
   GameGroupSelectionResolution,
   ListGame,
 } from "../types";
+import { PlatformIcons } from "./platform-icons";
 import { Button, Field, Input } from "./ui";
 import "./game-groups.css";
 
@@ -974,9 +975,11 @@ function SearchResultCartridge({
         {isArtworkReady ? (
           <div class="planner-result__details">
             <p class="planner-result__detail">
-              {game.platforms.length > 0
-                ? game.platforms.join(", ")
-                : t.search.platformsUnavailable}
+              {game.platforms.length > 0 ? (
+                <PlatformIcons platforms={game.platforms} />
+              ) : (
+                t.search.platformsUnavailable
+              )}
             </p>
             <p class="planner-result__detail">
               {game.genres.length > 0

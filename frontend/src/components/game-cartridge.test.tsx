@@ -75,6 +75,11 @@ describe("GameCartridge", () => {
     ).toBe(game.hero_url);
     expect(view.getByText("PLAY TIME")).toBeTruthy();
     expect(view.getByText("27.5H")).toBeTruthy();
+    expect(
+      view.container
+        .querySelector(".platform-icons__icon")
+        ?.getAttribute("src"),
+    ).toContain("Platforms-Logos/main/Windows.png");
     expect(view.getByText("GENRE")).toBeTruthy();
     expect(view.getByText("Adventure")).toBeTruthy();
   });
