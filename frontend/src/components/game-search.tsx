@@ -7,6 +7,7 @@ import {
 } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "preact/hooks";
 
+import { GAME_GROUPS_ENABLED } from "../config/features";
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
 import { useLanguage } from "../i18n/i18n";
 import {
@@ -143,6 +144,7 @@ export function GameSearch({
   const [error, setError] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
   const addFeedback = useTransientFeedback<number>(1700);
+  const visibleGroupResults = GAME_GROUPS_ENABLED ? groupResults : [];
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
@@ -157,6 +159,12 @@ export function GameSearch({
   }, []);
 
   useEffect(() => {
+    if (!GAME_GROUPS_ENABLED) {
+      setGroupResults([]);
+      setExpandedGroupKey(null);
+      setGroupError("");
+      return undefined;
+    }
     const trimmedQuery = query.trim();
     const requestId = ++searchRequestId.current;
     const controller = new AbortController();
@@ -310,7 +318,7 @@ export function GameSearch({
     if (
       !isDropdownOpen ||
       loading ||
-      (results.length === 0 && groupResults.length === 0)
+      (results.length === 0 && visibleGroupResults.length === 0)
     ) {
       if (event.key === "Escape") {
         setIsDropdownOpen(false);
@@ -321,7 +329,7 @@ export function GameSearch({
 
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      const rowCount = groupResults.length + results.length;
+      const rowCount = visibleGroupResults.length + results.length;
       setHighlightedIndex((current) =>
         current < rowCount - 1 ? current + 1 : 0,
       );
@@ -330,7 +338,7 @@ export function GameSearch({
 
     if (event.key === "ArrowUp") {
       event.preventDefault();
-      const rowCount = groupResults.length + results.length;
+      const rowCount = visibleGroupResults.length + results.length;
       setHighlightedIndex((current) =>
         current > 0 ? current - 1 : rowCount - 1,
       );
@@ -339,14 +347,14 @@ export function GameSearch({
 
     if (event.key === "Enter" && highlightedIndex >= 0) {
       event.preventDefault();
-      if (highlightedIndex < groupResults.length) {
+      if (highlightedIndex < visibleGroupResults.length) {
         setExpandedGroupKey((current) =>
-          current === groupResults[highlightedIndex].group_key
+          current === visibleGroupResults[highlightedIndex].group_key
             ? null
-            : groupResults[highlightedIndex].group_key,
+            : visibleGroupResults[highlightedIndex].group_key,
         );
       } else if (addingId === null) {
-        handleAddGame(results[highlightedIndex - groupResults.length]);
+        handleAddGame(results[highlightedIndex - visibleGroupResults.length]);
       }
       return;
     }
@@ -417,11 +425,11 @@ export function GameSearch({
             error ||
             (!loading &&
               query.trim().length >= 2 &&
-              (results.length > 0 || groupResults.length > 0)) ||
+              (results.length > 0 || visibleGroupResults.length > 0)) ||
             (!loading &&
               query.trim().length >= 2 &&
               results.length === 0 &&
-              groupResults.length === 0)) && (
+              visibleGroupResults.length === 0)) && (
             <div class="planner-search-results">
               {loading && (
                 <p class="planner-search-results__message planner-search-results__message--loading">
@@ -443,14 +451,14 @@ export function GameSearch({
               {!loading &&
                 !error &&
                 results.length === 0 &&
-                groupResults.length === 0 && (
+                visibleGroupResults.length === 0 && (
                   <p class="planner-search-results__message">
                     {t.search.noMatches}
                   </p>
                 )}
               {!loading &&
                 !error &&
-                groupResults.map((group, index) => (
+                visibleGroupResults.map((group, index) => (
                   <GameGroupCard
                     key={group.group_key}
                     group={group}
@@ -469,14 +477,14 @@ export function GameSearch({
                 !error &&
                 results.map((game, index) => {
                   const isHighlighted =
-                    index + groupResults.length === highlightedIndex;
+                    index + visibleGroupResults.length === highlightedIndex;
                   const artwork = artworkById[game.igdb_id];
 
                   return (
                     <SearchResultCartridge
                       key={`${game.igdb_id}:${artwork?.hero_url ?? ""}:${artwork?.logo_url ?? ""}`}
                       buttonRef={(element) => {
-                        resultRefs.current[index + groupResults.length] =
+                        resultRefs.current[index + visibleGroupResults.length] =
                           element;
                       }}
                       game={game}

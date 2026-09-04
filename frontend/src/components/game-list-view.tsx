@@ -11,6 +11,7 @@ import {
   TrophyIcon,
 } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "preact/hooks";
+import { GAME_GROUPS_ENABLED } from "../config/features";
 import { useLanguage } from "../i18n/i18n";
 import type { GameGroupImport, HLTBCategory, ListGame } from "../types";
 import { GameCartridge } from "./game-cartridge";
@@ -227,7 +228,8 @@ export function GameListView({
               onDragEnd={resetDragState}
             >
               <GameCartridge game={game} />
-              {game.group_import_ids?.[0] &&
+              {GAME_GROUPS_ENABLED &&
+                game.group_import_ids?.[0] &&
                 groupImports.find(
                   (groupImport) =>
                     groupImport.id === game.group_import_ids?.[0],
@@ -393,7 +395,7 @@ export function GameListView({
           ))}
         </div>
       )}
-      {groupImports.length > 0 && (
+      {GAME_GROUPS_ENABLED && groupImports.length > 0 && (
         <section class="planner-group-tray" aria-label={t.list.groupTray}>
           <h3 class="planner-panel__title">{t.list.groupTray}</h3>
           {groupImports.map((groupImport) => {
