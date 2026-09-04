@@ -108,6 +108,39 @@ describe("GameSearch", () => {
     );
   });
 
+  test("shows ordinary games without waiting for optional group discovery", async () => {
+    const user = userEvent.setup();
+    const groups =
+      Promise.withResolvers<Awaited<ReturnType<typeof searchGameGroups>>>();
+    vi.mocked(searchGameGroups).mockReturnValue(groups.promise);
+    vi.mocked(searchGames).mockResolvedValue([
+      {
+        igdb_id: 11,
+        name: "Kingdom Hearts",
+        cover_url: "",
+        summary: "",
+        genres: [],
+        platforms: [],
+        release_year: 2002,
+        rating: null,
+      },
+    ]);
+
+    const view = render(
+      <LanguageProvider browserLanguages={["en"]}>
+        <GameSearch games={[]} onAddGame={vi.fn()} />
+      </LanguageProvider>,
+    );
+
+    await user.type(
+      view.getByRole("textbox", { name: /search by title/i }),
+      "ki",
+    );
+
+    expect(await view.findByText("Kingdom Hearts")).toBeTruthy();
+    groups.resolve([]);
+  });
+
   test("keeps the newest search results when an earlier request finishes late", async () => {
     const user = userEvent.setup();
     const firstSearch =

@@ -176,26 +176,30 @@ export function GameSearch({
       setIsDropdownOpen(true);
       setError("");
       setInfoMessage("");
+      setGroupError("");
+      void searchGameGroups(trimmedQuery, controller.signal)
+        .then((nextGroups) => {
+          if (requestId !== searchRequestId.current) {
+            return;
+          }
+          setGroupResults(nextGroups);
+          if (nextGroups.length > 0) {
+            setHighlightedIndex(0);
+          }
+        })
+        .catch(() => {
+          if (
+            !controller.signal.aborted &&
+            requestId === searchRequestId.current
+          ) {
+            setGroupError(t.search.groupsUnavailable);
+          }
+        });
       try {
-        const [gameResponse, groupResponse] = await Promise.allSettled([
-          searchGames(trimmedQuery, controller.signal),
-          searchGameGroups(trimmedQuery, controller.signal),
-        ]);
+        const nextResults = await searchGames(trimmedQuery, controller.signal);
         if (requestId !== searchRequestId.current) {
           return;
         }
-        if (gameResponse.status === "rejected") {
-          throw gameResponse.reason;
-        }
-        const nextResults = gameResponse.value;
-        setGroupResults(
-          groupResponse.status === "fulfilled" ? groupResponse.value : [],
-        );
-        setGroupError(
-          groupResponse.status === "rejected"
-            ? "Related game groups are unavailable."
-            : "",
-        );
         const visibleResults = nextResults.slice(0, 8);
         setResults(visibleResults);
         setArtworkById({});
@@ -203,10 +207,8 @@ export function GameSearch({
           new Set(visibleResults.map((game) => game.igdb_id)),
         );
         setIsDropdownOpen(true);
-        setHighlightedIndex(
-          nextResults.length > 0 || groupResponse.status === "fulfilled"
-            ? 0
-            : -1,
+        setHighlightedIndex((current) =>
+          current >= 0 || nextResults.length === 0 ? current : 0,
         );
       } catch (searchError) {
         if (
@@ -230,7 +232,7 @@ export function GameSearch({
       window.clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [query, t.search.failed]);
+  }, [query, t.search.failed, t.search.groupsUnavailable]);
 
   useEffect(() => {
     let isCurrent = true;

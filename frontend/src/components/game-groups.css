@@ -1,19 +1,28 @@
-.planner-group-result {
+.planner-result.planner-group-result {
+  display: block;
+  min-height: 0;
   overflow: hidden;
+  cursor: default;
 }
 .planner-group-result__header {
   display: flex;
   width: 100%;
   align-items: center;
   justify-content: space-between;
-  gap: .75rem;
+  gap: 1rem;
   padding: .8rem 1rem;
   text-align: left;
+  background: linear-gradient(110deg, var(--foreground-08), transparent 52%),
+    var(--surface);
 }
 .planner-group-result__title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: .95rem;
   font-weight: 700;
 }
 .planner-group-result__meta {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   gap: .45rem;

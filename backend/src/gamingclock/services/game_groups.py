@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 _ALLOWED_GAME_TYPES = frozenset({0, 8, 9, 10})
 _CACHE_SECONDS = 300
 _CACHE_MAX_ENTRIES = 100
+_OPTIONAL_SOURCE_TIMEOUT_SECONDS = 3.0
 _RAWG_ATTRIBUTION_URL = "https://rawg.io/"
 
 
@@ -74,13 +75,21 @@ class RAWGAdapter:
             params={"key": os.environ["RAWG_API_KEY"], "search": query, "page_size": 5},
         )
         response.raise_for_status()
+        source_games = [
+            game
+            for game in response.json().get("results", [])
+            if isinstance(game.get("id"), int) and isinstance(game.get("name"), str)
+        ]
+        related_results = await asyncio.gather(
+            *(self._related_games(game["id"]) for game in source_games),
+            return_exceptions=True,
+        )
         candidates: list[tuple[str, str, list[_ExternalGame]]] = []
-        for game in response.json().get("results", []):
+        for game, related in zip(source_games, related_results, strict=True):
             game_id = game.get("id")
             name = game.get("name")
-            if not isinstance(game_id, int) or not isinstance(name, str):
+            if not isinstance(game_id, int) or not isinstance(name, str) or not isinstance(related, list):
                 continue
-            related = await self._related_games(game_id)
             members = [_ExternalGame(str(game_id), name, _rawg_year(game.get("released"))), *related]
             candidates.append((f"rawg:related:{game_id}", name, members))
         return candidates
@@ -129,13 +138,21 @@ class WikidataAdapter:
             params={"action": "wbsearchentities", "search": query, "language": "en", "format": "json", "limit": 5},
         )
         response.raise_for_status()
+        source_groups = [
+            result
+            for result in response.json().get("search", [])
+            if isinstance(result.get("id"), str) and isinstance(result.get("label"), str)
+        ]
+        member_results = await asyncio.gather(
+            *(self._members(result["id"]) for result in source_groups),
+            return_exceptions=True,
+        )
         candidates: list[tuple[str, str, list[_ExternalGame]]] = []
-        for result in response.json().get("search", []):
+        for result, members in zip(source_groups, member_results, strict=True):
             qid = result.get("id")
             label = result.get("label")
-            if not isinstance(qid, str) or not isinstance(label, str):
+            if not isinstance(qid, str) or not isinstance(label, str) or not isinstance(members, list):
                 continue
-            members = await self._members(qid)
             if members:
                 candidates.append((f"wikidata:series:{qid}", label, members))
         return candidates
@@ -252,8 +269,8 @@ class GameGroupExplorer:
         if not query.strip():
             return []
         igdb_task = self._igdb_candidates(query)
-        rawg_task = self._rawg_candidates(query)
-        wikidata_task = self._wikidata_candidates(query)
+        rawg_task = asyncio.wait_for(self._rawg_candidates(query), timeout=_OPTIONAL_SOURCE_TIMEOUT_SECONDS)
+        wikidata_task = asyncio.wait_for(self._wikidata_candidates(query), timeout=_OPTIONAL_SOURCE_TIMEOUT_SECONDS)
         started_at = time.perf_counter()
         results = await asyncio.gather(igdb_task, rawg_task, wikidata_task, return_exceptions=True)
         candidates: list[_Candidate] = []
