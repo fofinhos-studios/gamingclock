@@ -96,6 +96,10 @@ export const strings = {
       collapseGroup: (name: string) => `Collapse ${name}`,
       groupGames: (count: number) => `${count} games`,
       groupMembersUnknown: "Review titles",
+      groupDescription: (kind: "series" | "franchise") =>
+        kind === "series"
+          ? "Related releases in this series. Review titles before adding them."
+          : "Related games across this franchise. Review titles before adding them.",
       alreadyInBacklog: "Already in backlog",
       sourceEvidenceUnavailable: "Some source evidence is unavailable.",
       rawgEvidence: "Data includes evidence from",
@@ -357,6 +361,10 @@ export const strings = {
       collapseGroup: (name: string) => `Recolher ${name}`,
       groupGames: (count: number) => `${count} jogos`,
       groupMembersUnknown: "Revisar títulos",
+      groupDescription: (kind: "series" | "franchise") =>
+        kind === "series"
+          ? "Lançamentos relacionados desta série. Revise os títulos antes de adicioná-los."
+          : "Jogos relacionados desta franquia. Revise os títulos antes de adicioná-los.",
       alreadyInBacklog: "Já está na lista",
       sourceEvidenceUnavailable:
         "Algumas evidências de fontes estão indisponíveis.",

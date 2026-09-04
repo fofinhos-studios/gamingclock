@@ -4,14 +4,23 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
 import { LanguageProvider } from "../i18n/i18n";
-import { getGameArtwork, searchGameGroups, searchGames } from "../services/api";
+import {
+  getGameArtwork,
+  previewGameGroup,
+  searchGameGroups,
+  searchGames,
+} from "../services/api";
 import { GameSearch } from "./game-search";
 
 vi.mock("../services/api", () => ({
   searchGames: vi.fn(),
   searchGameGroups: vi.fn().mockResolvedValue([]),
   previewGameGroup: vi.fn(),
-  getGameArtwork: vi.fn(),
+  getGameArtwork: vi.fn().mockResolvedValue({
+    cover_url: "",
+    logo_url: "",
+    hero_url: "",
+  }),
 }));
 
 afterEach(() => {
@@ -139,6 +148,79 @@ describe("GameSearch", () => {
 
     expect(await view.findByText("Kingdom Hearts")).toBeTruthy();
     groups.resolve([]);
+  });
+
+  test("shows preview members after expanding a group card", async () => {
+    const user = userEvent.setup();
+    vi.mocked(searchGames).mockResolvedValue([]);
+    vi.mocked(searchGameGroups).mockResolvedValue([
+      {
+        group_key: "igdb:collection:123",
+        display_name: "Final Fantasy — series",
+        scope_name: "series",
+        card_kind: "series",
+        candidate_count: 2,
+        sources: [{ source: "igdb", label: "IGDB collection" }],
+        warning: null,
+      },
+    ]);
+    vi.mocked(previewGameGroup).mockResolvedValue({
+      group: {
+        group_key: "igdb:collection:123",
+        display_name: "Final Fantasy — series",
+        scope_name: "series",
+        card_kind: "series",
+        candidate_count: 2,
+        sources: [{ source: "igdb", label: "IGDB collection" }],
+        warning: null,
+      },
+      items: [
+        {
+          source_id: "igdb:1",
+          name: "Final Fantasy",
+          release_year: 1987,
+          igdb_id: 1,
+          order: 1,
+          initially_selected: true,
+          already_in_backlog: false,
+          evidence: [],
+          edition: { state: "canonical", label: "Canonical release" },
+        },
+      ],
+      excluded_items: [],
+      possible_matches: [],
+      unavailable_sources: [],
+      rawg_attribution_required: false,
+      rawg_attribution_url: null,
+    });
+    vi.mocked(getGameArtwork).mockResolvedValue({
+      cover_url: "https://images.example/final-fantasy-cover.png",
+      logo_url: "https://images.example/final-fantasy-logo.png",
+      hero_url: "https://images.example/final-fantasy-hero.png",
+    });
+
+    const view = render(
+      <LanguageProvider browserLanguages={["en"]}>
+        <GameSearch games={[]} onAddGame={vi.fn()} />
+      </LanguageProvider>,
+    );
+
+    await user.type(
+      view.getByRole("textbox", { name: /search by title/i }),
+      "final",
+    );
+    const expandButton = await view.findByRole("button", {
+      name: "Expand Final Fantasy — series",
+    });
+    await user.click(expandButton);
+
+    expect(await view.findByRole("checkbox")).toBeTruthy();
+    expect(view.getByText("Canonical release")).toBeTruthy();
+    expect(await view.findByAltText("Final Fantasy logo")).toBeTruthy();
+    expect(getGameArtwork).toHaveBeenCalledWith(
+      expect.objectContaining({ igdb_id: 0, name: "Final Fantasy" }),
+      expect.any(AbortSignal),
+    );
   });
 
   test("keeps the newest search results when an earlier request finishes late", async () => {

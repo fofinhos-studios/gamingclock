@@ -527,6 +527,26 @@ interface GameGroupCardProps {
   ) => Promise<void>;
 }
 
+function groupArtworkSearchName(group: GameGroupSearchResult): string {
+  const suffix = ` — ${group.scope_name}`;
+  return group.display_name.endsWith(suffix)
+    ? group.display_name.slice(0, -suffix.length)
+    : group.display_name;
+}
+
+function groupArtworkGame(name: string): CatalogGame {
+  return {
+    igdb_id: 0,
+    name,
+    cover_url: "",
+    summary: "",
+    genres: [],
+    platforms: [],
+    release_year: null,
+    rating: null,
+  };
+}
+
 function GameGroupCard({
   group,
   games,
@@ -537,7 +557,6 @@ function GameGroupCard({
 }: GameGroupCardProps) {
   const { t } = useLanguage();
   const [preview, setPreview] = useState<GameGroupPreview | null>(null);
-  const [attempted, setAttempted] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [unresolved, setUnresolved] = useState<GameGroupSelectionResolution[]>(
     [],
@@ -545,21 +564,43 @@ function GameGroupCard({
   const [loading, setLoading] = useState(false);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState("");
+  const [previewRetry, setPreviewRetry] = useState(0);
+  const [artwork, setArtwork] = useState<GameArtwork>();
+  const backlogGameIds = games.map((game) => game.igdb_id).join(",");
+  const artworkSearchName = groupArtworkSearchName(group);
+  const previewRef = useRef<GameGroupPreview | null>(null);
+  const previewRequestKey = `${group.group_key}:${previewRetry}`;
+  const previewRequestKeyRef = useRef(previewRequestKey);
+  previewRequestKeyRef.current = previewRequestKey;
 
   useEffect(() => {
-    if (!expanded || preview || loading || attempted) {
+    const controller = new AbortController();
+    void getGameArtwork(groupArtworkGame(artworkSearchName), controller.signal)
+      .then((nextArtwork) => setArtwork(nextArtwork))
+      .catch(() => setArtwork(undefined));
+    return () => controller.abort();
+  }, [artworkSearchName]);
+
+  useEffect(() => {
+    if (!expanded || previewRef.current) {
       return;
     }
     const controller = new AbortController();
-    setAttempted(true);
     setLoading(true);
     setError("");
     void previewGameGroup(
       group.group_key,
-      games.map((game) => game.igdb_id),
+      backlogGameIds ? backlogGameIds.split(",").map(Number) : [],
       controller.signal,
     )
       .then((nextPreview) => {
+        if (
+          controller.signal.aborted ||
+          previewRequestKeyRef.current !== previewRequestKey
+        ) {
+          return;
+        }
+        previewRef.current = nextPreview;
         setPreview(nextPreview);
         setSelectedIds(
           new Set(
@@ -570,7 +611,10 @@ function GameGroupCard({
         );
       })
       .catch((previewError: unknown) => {
-        if (!controller.signal.aborted) {
+        if (
+          !controller.signal.aborted &&
+          previewRequestKeyRef.current === previewRequestKey
+        ) {
           setError(
             previewError instanceof Error
               ? previewError.message
@@ -579,18 +623,19 @@ function GameGroupCard({
         }
       })
       .finally(() => {
-        if (!controller.signal.aborted) {
+        if (
+          !controller.signal.aborted &&
+          previewRequestKeyRef.current === previewRequestKey
+        ) {
           setLoading(false);
         }
       });
     return () => controller.abort();
   }, [
-    attempted,
+    backlogGameIds,
     expanded,
-    games,
     group.group_key,
-    loading,
-    preview,
+    previewRequestKey,
     t.search.groupPreviewFailed,
   ]);
 
@@ -640,6 +685,17 @@ function GameGroupCard({
     <article
       class={`planner-result planner-group-result${isHighlighted ? " planner-result--active" : ""}`}
     >
+      {artwork?.hero_url && (
+        <img
+          aria-hidden="true"
+          class="planner-result__hero"
+          src={artwork.hero_url}
+          alt=""
+          loading="lazy"
+          decoding="async"
+        />
+      )}
+      <div class="planner-result__wash" aria-hidden="true" />
       <Button
         unstyled
         class="planner-group-result__header"
@@ -651,28 +707,68 @@ function GameGroupCard({
             : t.search.expandGroup(group.display_name)
         }
       >
-        <span class="planner-group-result__title">{group.display_name}</span>
-        <span class="planner-group-result__meta">
-          <span class="planner-group-result__kind">
-            {group.card_kind.toUpperCase()}
-          </span>
-          <span>
-            {group.candidate_count > 0
-              ? t.search.groupGames(group.candidate_count)
-              : t.search.groupMembersUnknown}
-          </span>
-          {expanded ? (
-            <CaretUpIcon aria-hidden="true" />
+        <div class="planner-result__cover-frame">
+          {artwork?.cover_url ? (
+            <img
+              src={previewCoverUrl(artwork.cover_url)}
+              alt={`${groupArtworkSearchName(group)} artwork`}
+              loading="lazy"
+              decoding="async"
+              width={56}
+              height={80}
+              class="planner-result__cover"
+            />
           ) : (
-            <CaretDownIcon aria-hidden="true" />
+            <div class="planner-result__cover planner-result__cover--empty">
+              {group.card_kind.toUpperCase()}
+            </div>
           )}
-        </span>
+        </div>
+        <div class="planner-result__body">
+          <div class="planner-result__row">
+            <div class="planner-result__identity">
+              {artwork?.logo_url && (
+                <img
+                  class="planner-result__logo"
+                  src={artwork.logo_url}
+                  alt={`${artworkSearchName} logo`}
+                  loading="lazy"
+                  decoding="async"
+                />
+              )}
+              <h3 class="planner-result__title planner-group-result__title">
+                {group.display_name}
+              </h3>
+            </div>
+            <span class="planner-group-result__meta">
+              <span class="planner-group-result__kind">
+                {group.card_kind.toUpperCase()}
+              </span>
+              {expanded ? (
+                <CaretUpIcon aria-hidden="true" />
+              ) : (
+                <CaretDownIcon aria-hidden="true" />
+              )}
+            </span>
+          </div>
+          <div class="planner-result__details">
+            <p class="planner-result__detail">
+              {group.candidate_count > 0
+                ? t.search.groupGames(group.candidate_count)
+                : t.search.groupMembersUnknown}
+            </p>
+            <p class="planner-result__summary">
+              {group.warning ?? t.search.groupDescription(group.card_kind)}
+            </p>
+          </div>
+        </div>
       </Button>
-      {group.sources.some((source) => source.source === "rawg") && (
-        <p class="planner-group-result__attribution">
-          {t.search.rawgEvidence} <a href="https://rawg.io/">RAWG</a>.
-        </p>
-      )}
+      {group.sources.some((source) => source.source === "rawg") &&
+        !expanded && (
+          <p class="planner-group-result__attribution">
+            {t.search.rawgEvidence} <a href="https://rawg.io/">RAWG</a>.
+          </p>
+        )}
       {expanded && (
         <div class="planner-group-result__preview">
           {group.warning && (
@@ -690,8 +786,10 @@ function GameGroupCard({
                 size="sm"
                 variant="outline"
                 onClick={() => {
-                  setAttempted(false);
+                  previewRef.current = null;
+                  setPreview(null);
                   setError("");
+                  setPreviewRetry((current) => current + 1);
                 }}
               >
                 {t.list.retry}
