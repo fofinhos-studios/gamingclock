@@ -269,3 +269,32 @@ async def test_popular_warmer_caps_cold_rawg_attempts(monkeypatch):
 
     assert attempts == ["Game 1", "Game 2"]
     assert result.failed_games == 2
+
+
+@pytest.mark.asyncio
+async def test_discovery_returns_when_the_first_provider_has_usable_cards(monkeypatch):
+    explorer = GameGroupExplorer()
+    candidate = _Candidate(
+        group_key="wikidata:series:Q1",
+        title="Final Fantasy",
+        kind=GameGroupKind.SERIES,
+        source_keys={GameGroupSource.WIKIDATA: "wikidata:series:Q1"},
+    )
+
+    async def slow_source(query: str):
+        await asyncio.sleep(0.2)
+        return []
+
+    async def fast_source(query: str):
+        await asyncio.sleep(0.01)
+        return [candidate]
+
+    monkeypatch.setattr(explorer, "_igdb_candidates", slow_source)
+    monkeypatch.setattr(explorer, "_rawg_candidates", slow_source)
+    monkeypatch.setattr(explorer, "_wikidata_candidates", fast_source)
+    started = asyncio.get_running_loop().time()
+    groups = await explorer._discover("Final Fantasy")
+
+    assert asyncio.get_running_loop().time() - started < 0.1
+    assert groups == [candidate]
+    await explorer.aclose()

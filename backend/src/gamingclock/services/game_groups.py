@@ -599,20 +599,39 @@ class GameGroupExplorer:
             return []
         # Group discovery is supplemental to ordinary game search. No provider is
         # allowed to hold its result open after the initial latency budget.
-        igdb_task = asyncio.wait_for(self._igdb_candidates(query), timeout=_OPTIONAL_SOURCE_TIMEOUT_SECONDS)
-        rawg_task = asyncio.wait_for(self._rawg_candidates(query), timeout=_OPTIONAL_SOURCE_TIMEOUT_SECONDS)
-        wikidata_task = asyncio.wait_for(self._wikidata_candidates(query), timeout=_OPTIONAL_SOURCE_TIMEOUT_SECONDS)
+        tasks = {
+            asyncio.create_task(
+                asyncio.wait_for(self._igdb_candidates(query), timeout=_OPTIONAL_SOURCE_TIMEOUT_SECONDS)
+            ): GameGroupSource.IGDB,
+            asyncio.create_task(
+                asyncio.wait_for(self._rawg_candidates(query), timeout=_OPTIONAL_SOURCE_TIMEOUT_SECONDS)
+            ): GameGroupSource.RAWG,
+            asyncio.create_task(
+                asyncio.wait_for(self._wikidata_candidates(query), timeout=_OPTIONAL_SOURCE_TIMEOUT_SECONDS)
+            ): GameGroupSource.WIKIDATA,
+        }
         started_at = time.perf_counter()
-        results = await asyncio.gather(igdb_task, rawg_task, wikidata_task, return_exceptions=True)
         candidates: list[_Candidate] = []
         unavailable_sources: set[GameGroupSource] = set()
-        for source, result in zip(GameGroupSource, results, strict=True):
-            if isinstance(result, Exception):
-                logger.info("game group source failed source=%s error=%s", source, type(result).__name__)
-                unavailable_sources.add(source)
-                continue
-            if isinstance(result, list):
-                candidates.extend(result)
+        pending = set(tasks)
+        try:
+            while pending and not candidates:
+                completed, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+                for task in completed:
+                    source = tasks[task]
+                    try:
+                        result = task.result()
+                    except Exception as error:
+                        logger.info("game group source failed source=%s error=%s", source, type(error).__name__)
+                        unavailable_sources.add(source)
+                        continue
+                    if result:
+                        candidates.extend(result)
+        finally:
+            for task in pending:
+                task.cancel()
+            if pending:
+                await asyncio.gather(*pending, return_exceptions=True)
         for candidate in candidates:
             candidate.unavailable_sources.update(unavailable_sources)
         # Source cards are deliberately independent. We never make discovery wait
