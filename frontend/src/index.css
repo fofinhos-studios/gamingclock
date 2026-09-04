@@ -2520,12 +2520,17 @@
   }
 
   .game-cartridge__platforms .platform-icons__icon {
-    width: 2.25rem;
-    height: 1.35rem;
+    width: auto;
+    height: 1.5rem;
   }
 
   .game-cartridge__platforms .platform-icons__more {
     font-size: 0.62rem;
+  }
+
+  .planner-result__platforms .platform-icons__icon {
+    width: auto;
+    height: 1.2rem;
   }
 
   .planner-backlog-row {

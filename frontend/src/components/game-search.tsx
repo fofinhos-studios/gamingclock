@@ -1017,7 +1017,11 @@ function SearchResultCartridge({
           <div class="planner-result__details">
             <p class="planner-result__detail">
               {game.platforms.length > 0 ? (
-                <PlatformIcons platforms={game.platforms} />
+                <PlatformIcons
+                  class="planner-result__platforms"
+                  platforms={game.platforms}
+                  maxIcons={3}
+                />
               ) : (
                 t.search.platformsUnavailable
               )}
