@@ -80,6 +80,11 @@ describe("GameCartridge", () => {
         .querySelector(".platform-icons__icon")
         ?.getAttribute("src"),
     ).toContain("/platform-icons/Windows.png");
+    expect(
+      view.container
+        .querySelector(".game-cartridge__identity")
+        ?.nextElementSibling?.classList.contains("game-cartridge__platforms"),
+    ).toBe(true);
     expect(view.getByText("GENRE")).toBeTruthy();
     expect(view.getByText("Adventure")).toBeTruthy();
   });
