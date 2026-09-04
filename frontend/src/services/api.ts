@@ -1,6 +1,8 @@
 import type {
   CatalogGame,
   GameArtwork,
+  GameGroupPreview,
+  GameGroupSearchResult,
   ListGame,
   PlanningMode,
   PlaySession,
@@ -17,14 +19,21 @@ const MAX_CACHED_RESOLVED_GAMES = 48;
 const searchCache = new Map<string, CatalogGame[]>();
 const artworkCache = new Map<string, GameArtwork>();
 const resolvedGameCache = new Map<number, ListGame>();
+const groupSearchCache = new Map<string, GameGroupSearchResult[]>();
 
 export function clearGameRequestCache(): void {
   searchCache.clear();
   artworkCache.clear();
   resolvedGameCache.clear();
+  groupSearchCache.clear();
 }
 
-export type ApiOperation = "search" | "resolve" | "schedule" | "ical";
+export type ApiOperation =
+  | "search"
+  | "groups"
+  | "resolve"
+  | "schedule"
+  | "ical";
 export type ApiErrorKind = "network" | "backend";
 
 interface ApiErrorOptions {
@@ -130,6 +139,66 @@ export async function searchGames(
   );
 }
 
+export async function searchGameGroups(
+  query: string,
+  signal?: AbortSignal,
+): Promise<GameGroupSearchResult[]> {
+  const cacheKey = query.trim().toLocaleLowerCase();
+  const cachedResults = groupSearchCache.get(cacheKey);
+  if (cachedResults) {
+    return cachedResults;
+  }
+  const response = await request(
+    `${API_BASE}/game-groups/search?${new URLSearchParams({ query }).toString()}`,
+    { signal },
+    "Related game groups are unavailable.",
+    "groups",
+  );
+  if (!response.ok) {
+    throw await parseError(
+      response,
+      "Related game groups are unavailable.",
+      "groups",
+    );
+  }
+  return remember(
+    groupSearchCache,
+    cacheKey,
+    await response.json(),
+    MAX_CACHED_SEARCHES,
+  );
+}
+
+export async function previewGameGroup(
+  groupKey: string,
+  existingIgdbIds: number[],
+  signal?: AbortSignal,
+): Promise<GameGroupPreview> {
+  const response = await request(
+    `${API_BASE}/game-groups/preview`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        group_key: groupKey,
+        existing_igdb_ids: existingIgdbIds,
+        edition_policy: "canonical_releases",
+      }),
+      signal,
+    },
+    "Could not load this game group.",
+    "groups",
+  );
+  if (!response.ok) {
+    throw await parseError(
+      response,
+      "Could not load this game group.",
+      "groups",
+    );
+  }
+  return response.json();
+}
+
 export async function resolveGame(
   game: CatalogGame,
   signal?: AbortSignal,
@@ -165,6 +234,30 @@ export async function resolveGame(
         MAX_CACHED_RESOLVED_GAMES,
       )
     : resolvedGame;
+}
+
+export async function resolveGames(games: CatalogGame[]): Promise<ListGame[]> {
+  if (games.length === 0) {
+    return [];
+  }
+  const response = await request(
+    `${API_BASE}/games/resolve-batch`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ games }),
+    },
+    "Could not find playtime estimates",
+    "resolve",
+  );
+  if (!response.ok) {
+    throw await parseError(
+      response,
+      "Could not find playtime estimates",
+      "resolve",
+    );
+  }
+  return ((await response.json()) as { games: ListGame[] }).games;
 }
 
 export async function getGameArtwork(

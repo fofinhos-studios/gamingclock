@@ -261,7 +261,7 @@ describe("HomePage", () => {
           view.getByRole("button", { name: /add hollow knight to backlog/i }),
         ).toBeTruthy(),
       );
-      expect(requests).toHaveLength(1);
+      expect(requests).toContain("/api/games/search?query=ho");
 
       await user.click(
         view.getByRole("button", { name: /add hollow knight to backlog/i }),

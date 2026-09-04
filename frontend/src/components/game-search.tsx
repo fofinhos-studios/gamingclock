@@ -1,4 +1,6 @@
 import {
+  CaretDownIcon,
+  CaretUpIcon,
   CheckIcon,
   CircleNotchIcon,
   MagnifyingGlassIcon,
@@ -7,13 +9,29 @@ import { useEffect, useRef, useState } from "preact/hooks";
 
 import { useTransientFeedback } from "../hooks/use-transient-feedback";
 import { useLanguage } from "../i18n/i18n";
-import { getGameArtwork, searchGames } from "../services/api";
-import type { CatalogGame, GameArtwork, ListGame } from "../types";
+import {
+  getGameArtwork,
+  previewGameGroup,
+  searchGameGroups,
+  searchGames,
+} from "../services/api";
+import type {
+  CatalogGame,
+  GameArtwork,
+  GameGroupPreview,
+  GameGroupSearchResult,
+  ListGame,
+} from "../types";
 import { Button, Field, Input } from "./ui";
+import "./game-groups.css";
 
 interface Props {
   games: ListGame[];
   onAddGame: (game: CatalogGame) => void;
+  onAddGameGroup?: (
+    preview: GameGroupPreview,
+    selectedIgdbIds: number[],
+  ) => Promise<void>;
 }
 
 const searchExamples = [
@@ -94,7 +112,11 @@ function previewCoverUrl(coverUrl: string) {
   return coverUrl.replace("/t_thumb/", "/t_cover_small/");
 }
 
-export function GameSearch({ games, onAddGame }: Props) {
+export function GameSearch({
+  games,
+  onAddGame,
+  onAddGameGroup = async () => undefined,
+}: Props) {
   const { t } = useLanguage();
   const [searchExamples] = useState(getSearchExamples);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -102,6 +124,9 @@ export function GameSearch({ games, onAddGame }: Props) {
   const searchRequestId = useRef(0);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CatalogGame[]>([]);
+  const [groupResults, setGroupResults] = useState<GameGroupSearchResult[]>([]);
+  const [expandedGroupKey, setExpandedGroupKey] = useState<string | null>(null);
+  const [groupError, setGroupError] = useState("");
   const [artworkById, setArtworkById] = useState<Record<number, GameArtwork>>(
     {},
   );
@@ -134,6 +159,9 @@ export function GameSearch({ games, onAddGame }: Props) {
     const controller = new AbortController();
     if (trimmedQuery.length < 2) {
       setResults([]);
+      setGroupResults([]);
+      setExpandedGroupKey(null);
+      setGroupError("");
       setArtworkById({});
       setPendingArtworkIds(new Set());
       setLoading(false);
@@ -149,10 +177,25 @@ export function GameSearch({ games, onAddGame }: Props) {
       setError("");
       setInfoMessage("");
       try {
-        const nextResults = await searchGames(trimmedQuery, controller.signal);
+        const [gameResponse, groupResponse] = await Promise.allSettled([
+          searchGames(trimmedQuery, controller.signal),
+          searchGameGroups(trimmedQuery, controller.signal),
+        ]);
         if (requestId !== searchRequestId.current) {
           return;
         }
+        if (gameResponse.status === "rejected") {
+          throw gameResponse.reason;
+        }
+        const nextResults = gameResponse.value;
+        setGroupResults(
+          groupResponse.status === "fulfilled" ? groupResponse.value : [],
+        );
+        setGroupError(
+          groupResponse.status === "rejected"
+            ? "Related game groups are unavailable."
+            : "",
+        );
         const visibleResults = nextResults.slice(0, 8);
         setResults(visibleResults);
         setArtworkById({});
@@ -160,7 +203,11 @@ export function GameSearch({ games, onAddGame }: Props) {
           new Set(visibleResults.map((game) => game.igdb_id)),
         );
         setIsDropdownOpen(true);
-        setHighlightedIndex(nextResults.length > 0 ? 0 : -1);
+        setHighlightedIndex(
+          nextResults.length > 0 || groupResponse.status === "fulfilled"
+            ? 0
+            : -1,
+        );
       } catch (searchError) {
         if (
           controller.signal.aborted ||
@@ -244,7 +291,11 @@ export function GameSearch({ games, onAddGame }: Props) {
   };
 
   const handleSearchKeyDown = (event: KeyboardEvent) => {
-    if (!isDropdownOpen || loading || results.length === 0) {
+    if (
+      !isDropdownOpen ||
+      loading ||
+      (results.length === 0 && groupResults.length === 0)
+    ) {
       if (event.key === "Escape") {
         setIsDropdownOpen(false);
         setHighlightedIndex(-1);
@@ -254,32 +305,44 @@ export function GameSearch({ games, onAddGame }: Props) {
 
     if (event.key === "ArrowDown") {
       event.preventDefault();
+      const rowCount = groupResults.length + results.length;
       setHighlightedIndex((current) =>
-        current < results.length - 1 ? current + 1 : 0,
+        current < rowCount - 1 ? current + 1 : 0,
       );
       return;
     }
 
     if (event.key === "ArrowUp") {
       event.preventDefault();
+      const rowCount = groupResults.length + results.length;
       setHighlightedIndex((current) =>
-        current > 0 ? current - 1 : results.length - 1,
+        current > 0 ? current - 1 : rowCount - 1,
       );
       return;
     }
 
     if (event.key === "Enter" && highlightedIndex >= 0) {
       event.preventDefault();
-      if (addingId === null) {
-        handleAddGame(results[highlightedIndex]);
+      if (highlightedIndex < groupResults.length) {
+        setExpandedGroupKey((current) =>
+          current === groupResults[highlightedIndex].group_key
+            ? null
+            : groupResults[highlightedIndex].group_key,
+        );
+      } else if (addingId === null) {
+        handleAddGame(results[highlightedIndex - groupResults.length]);
       }
       return;
     }
 
     if (event.key === "Escape") {
       event.preventDefault();
-      setIsDropdownOpen(false);
-      setHighlightedIndex(-1);
+      if (expandedGroupKey) {
+        setExpandedGroupKey(null);
+      } else {
+        setIsDropdownOpen(false);
+        setHighlightedIndex(-1);
+      }
     }
   };
 
@@ -336,8 +399,13 @@ export function GameSearch({ games, onAddGame }: Props) {
         {isDropdownOpen &&
           (loading ||
             error ||
-            (!loading && query.trim().length >= 2 && results.length > 0) ||
-            (!loading && query.trim().length >= 2 && results.length === 0)) && (
+            (!loading &&
+              query.trim().length >= 2 &&
+              (results.length > 0 || groupResults.length > 0)) ||
+            (!loading &&
+              query.trim().length >= 2 &&
+              results.length === 0 &&
+              groupResults.length === 0)) && (
             <div class="planner-search-results">
               {loading && (
                 <p class="planner-search-results__message planner-search-results__message--loading">
@@ -353,22 +421,47 @@ export function GameSearch({ games, onAddGame }: Props) {
                   {error}
                 </p>
               )}
-              {!loading && !error && results.length === 0 && (
-                <p class="planner-search-results__message">
-                  {t.search.noMatches}
-                </p>
+              {groupError && !error && (
+                <p class="planner-search-results__message">{groupError}</p>
               )}
               {!loading &&
                 !error &&
+                results.length === 0 &&
+                groupResults.length === 0 && (
+                  <p class="planner-search-results__message">
+                    {t.search.noMatches}
+                  </p>
+                )}
+              {!loading &&
+                !error &&
+                groupResults.map((group, index) => (
+                  <GameGroupCard
+                    key={group.group_key}
+                    group={group}
+                    games={games}
+                    expanded={expandedGroupKey === group.group_key}
+                    isHighlighted={index === highlightedIndex}
+                    onToggle={() =>
+                      setExpandedGroupKey((current) =>
+                        current === group.group_key ? null : group.group_key,
+                      )
+                    }
+                    onAdd={onAddGameGroup}
+                  />
+                ))}
+              {!loading &&
+                !error &&
                 results.map((game, index) => {
-                  const isHighlighted = index === highlightedIndex;
+                  const isHighlighted =
+                    index + groupResults.length === highlightedIndex;
                   const artwork = artworkById[game.igdb_id];
 
                   return (
                     <SearchResultCartridge
                       key={`${game.igdb_id}:${artwork?.hero_url ?? ""}:${artwork?.logo_url ?? ""}`}
                       buttonRef={(element) => {
-                        resultRefs.current[index] = element;
+                        resultRefs.current[index + groupResults.length] =
+                          element;
                       }}
                       game={game}
                       artwork={artwork}
@@ -376,8 +469,12 @@ export function GameSearch({ games, onAddGame }: Props) {
                       isHighlighted={isHighlighted}
                       isAdding={addingId === game.igdb_id}
                       isAdded={addFeedback.active === game.igdb_id}
-                      onMouseEnter={() => setHighlightedIndex(index)}
-                      onFocus={() => setHighlightedIndex(index)}
+                      onMouseEnter={() =>
+                        setHighlightedIndex(index + groupResults.length)
+                      }
+                      onFocus={() =>
+                        setHighlightedIndex(index + groupResults.length)
+                      }
                       onClick={() => handleAddGame(game)}
                     />
                   );
@@ -400,6 +497,224 @@ interface SearchResultCartridgeProps {
   onMouseEnter: () => void;
   onFocus: () => void;
   onClick: () => void;
+}
+
+interface GameGroupCardProps {
+  group: GameGroupSearchResult;
+  games: ListGame[];
+  expanded: boolean;
+  onToggle: () => void;
+  isHighlighted: boolean;
+  onAdd: (
+    preview: GameGroupPreview,
+    selectedIgdbIds: number[],
+  ) => Promise<void>;
+}
+
+function GameGroupCard({
+  group,
+  games,
+  expanded,
+  onToggle,
+  isHighlighted,
+  onAdd,
+}: GameGroupCardProps) {
+  const { t } = useLanguage();
+  const [preview, setPreview] = useState<GameGroupPreview | null>(null);
+  const [attempted, setAttempted] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [loading, setLoading] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!expanded || preview || loading || attempted) {
+      return;
+    }
+    const controller = new AbortController();
+    setAttempted(true);
+    setLoading(true);
+    setError("");
+    void previewGameGroup(
+      group.group_key,
+      games.map((game) => game.igdb_id),
+      controller.signal,
+    )
+      .then((nextPreview) => {
+        setPreview(nextPreview);
+        setSelectedIds(
+          new Set(
+            nextPreview.items
+              .filter((item) => item.initially_selected)
+              .map((item) => item.game.igdb_id),
+          ),
+        );
+      })
+      .catch((previewError: unknown) => {
+        if (!controller.signal.aborted) {
+          setError(
+            previewError instanceof Error
+              ? previewError.message
+              : t.search.groupPreviewFailed,
+          );
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      });
+    return () => controller.abort();
+  }, [
+    attempted,
+    expanded,
+    games,
+    group.group_key,
+    loading,
+    preview,
+    t.search.groupPreviewFailed,
+  ]);
+
+  const toggleGame = (igdbId: number) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(igdbId)) {
+        next.delete(igdbId);
+      } else {
+        next.add(igdbId);
+      }
+      return next;
+    });
+  };
+
+  const addSelected = async () => {
+    if (!preview || selectedIds.size === 0) {
+      return;
+    }
+    setAdding(true);
+    setError("");
+    try {
+      await onAdd(preview, [...selectedIds]);
+      onToggle();
+    } catch (addError) {
+      setError(
+        addError instanceof Error ? addError.message : t.search.addGroupFailed,
+      );
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  return (
+    <article
+      class={`planner-result planner-group-result${isHighlighted ? " planner-result--active" : ""}`}
+    >
+      <Button
+        unstyled
+        class="planner-group-result__header"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        aria-label={
+          expanded
+            ? t.search.collapseGroup(group.display_name)
+            : t.search.expandGroup(group.display_name)
+        }
+      >
+        <span class="planner-group-result__title">{group.display_name}</span>
+        <span class="planner-group-result__meta">
+          <span class="planner-group-result__kind">
+            {group.card_kind.toUpperCase()}
+          </span>
+          <span>{t.search.groupGames(group.candidate_count)}</span>
+          {expanded ? (
+            <CaretUpIcon aria-hidden="true" />
+          ) : (
+            <CaretDownIcon aria-hidden="true" />
+          )}
+        </span>
+      </Button>
+      {group.sources.some((source) => source.source === "rawg") && (
+        <p class="planner-group-result__attribution">
+          {t.search.rawgEvidence} <a href="https://rawg.io/">RAWG</a>.
+        </p>
+      )}
+      {expanded && (
+        <div class="planner-group-result__preview">
+          {group.warning && (
+            <p class="planner-group-result__warning">{group.warning}</p>
+          )}
+          {loading && (
+            <p class="planner-search-results__message">
+              {t.search.loadingGroup}
+            </p>
+          )}
+          {error && (
+            <div class="planner-error" role="alert">
+              <p>{error}</p>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setAttempted(false);
+                  setError("");
+                }}
+              >
+                {t.list.retry}
+              </Button>
+            </div>
+          )}
+          {preview && !loading && (
+            <>
+              <div class="planner-group-result__items">
+                {preview.items.map((item) => (
+                  <label
+                    key={item.game.igdb_id}
+                    class="planner-group-result__item"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(item.game.igdb_id)}
+                      disabled={adding}
+                      onChange={() => toggleGame(item.game.igdb_id)}
+                    />
+                    <span>{item.game.name}</span>
+                    <small>
+                      {item.game.release_year ?? t.search.unknownYear}
+                    </small>
+                    <small>
+                      {item.already_in_backlog
+                        ? t.search.alreadyInBacklog
+                        : item.edition.label}
+                    </small>
+                  </label>
+                ))}
+              </div>
+              {preview.unavailable_sources.length > 0 && (
+                <p class="planner-group-result__warning">
+                  {t.search.sourceEvidenceUnavailable}
+                </p>
+              )}
+              {preview.rawg_attribution_required &&
+                preview.rawg_attribution_url && (
+                  <p class="planner-group-result__attribution">
+                    {t.search.rawgEvidence}{" "}
+                    <a href={preview.rawg_attribution_url}>RAWG</a>.
+                  </p>
+                )}
+              <Button
+                onClick={() => void addSelected()}
+                disabled={adding || selectedIds.size === 0}
+              >
+                {adding
+                  ? t.search.addingSelectedGames(selectedIds.size)
+                  : t.search.addSelectedGames(selectedIds.size)}
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+    </article>
+  );
 }
 
 function SearchResultCartridge({

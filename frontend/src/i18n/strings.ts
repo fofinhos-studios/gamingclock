@@ -88,6 +88,18 @@ export const strings = {
       failed: "Search failed",
       alreadyAdded: (name: string) => `${name} is already in your backlog.`,
       addGame: (name: string) => `Add ${name} to backlog`,
+      groupsUnavailable: "Related game groups are unavailable.",
+      loadingGroup: "Loading games…",
+      groupPreviewFailed: "Could not load this game group.",
+      addGroupFailed: "Could not add these games.",
+      expandGroup: (name: string) => `Expand ${name}`,
+      collapseGroup: (name: string) => `Collapse ${name}`,
+      groupGames: (count: number) => `${count} games`,
+      alreadyInBacklog: "Already in backlog",
+      sourceEvidenceUnavailable: "Some source evidence is unavailable.",
+      rawgEvidence: "Data includes evidence from",
+      addSelectedGames: (count: number) => `Add ${count} selected games`,
+      addingSelectedGames: (count: number) => `Adding ${count} games…`,
     },
     list: {
       title: "Current list",
@@ -117,6 +129,15 @@ export const strings = {
       later: "Later",
       useTime: (label: string, duration: string) =>
         `Use ${label} time: ${duration}`,
+      groupTray: "Series and franchises in this backlog",
+      manageGroup: "Manage",
+      removeImport: "Remove import",
+      removeAllGroup: "Remove all",
+      groupGames: (count: number) => `${count} games`,
+      removeImportConfirm: (removed: number, kept: number) =>
+        `Remove this import? ${removed} games will be removed. ${kept} games will stay because they were added another way.`,
+      removeAllGroupConfirm: (name: string, count: number) =>
+        `Remove all ${name} games from this backlog? ${count} games will be removed, including games added another way.`,
     },
     availability: {
       heading: "Days and times",
@@ -325,6 +346,20 @@ export const strings = {
       failed: "Falha na busca",
       alreadyAdded: (name: string) => `${name} já está na sua lista.`,
       addGame: (name: string) => `Adicionar ${name} à lista`,
+      groupsUnavailable: "Grupos de jogos relacionados estão indisponíveis.",
+      loadingGroup: "Carregando jogos…",
+      groupPreviewFailed: "Não foi possível carregar este grupo de jogos.",
+      addGroupFailed: "Não foi possível adicionar estes jogos.",
+      expandGroup: (name: string) => `Expandir ${name}`,
+      collapseGroup: (name: string) => `Recolher ${name}`,
+      groupGames: (count: number) => `${count} jogos`,
+      alreadyInBacklog: "Já está na lista",
+      sourceEvidenceUnavailable:
+        "Algumas evidências de fontes estão indisponíveis.",
+      rawgEvidence: "Os dados incluem evidências do",
+      addSelectedGames: (count: number) =>
+        `Adicionar ${count} jogos selecionados`,
+      addingSelectedGames: (count: number) => `Adicionando ${count} jogos…`,
     },
     list: {
       title: "Lista atual",
@@ -354,6 +389,15 @@ export const strings = {
       later: "Depois",
       useTime: (label: string, duration: string) =>
         `Usar duração ${label}: ${duration}`,
+      groupTray: "Séries e franquias nesta lista",
+      manageGroup: "Gerenciar",
+      removeImport: "Remover importação",
+      removeAllGroup: "Remover todos",
+      groupGames: (count: number) => `${count} jogos`,
+      removeImportConfirm: (removed: number, kept: number) =>
+        `Remover esta importação? ${removed} jogos serão removidos. ${kept} jogos permanecerão porque foram adicionados de outra forma.`,
+      removeAllGroupConfirm: (name: string, count: number) =>
+        `Remover todos os jogos de ${name} desta lista? ${count} jogos serão removidos, inclusive jogos adicionados de outra forma.`,
     },
     availability: {
       heading: "Dias e horários",

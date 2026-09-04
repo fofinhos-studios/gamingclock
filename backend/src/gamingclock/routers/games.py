@@ -14,6 +14,7 @@ from gamingclock.models.catalog import (
     ListGame,
     ResolveGameRequest,
 )
+from gamingclock.models.game_groups import ResolveGamesRequest, ResolveGamesResponse
 from gamingclock.services.cache_warmer import PopularCacheWarmer
 from gamingclock.services.hltb import HLTBService
 from gamingclock.services.igdb import IGDBService
@@ -25,6 +26,7 @@ hltb_service = HLTBService()
 igdb_service = IGDBService()
 steamgriddb_service = SteamGridDBService()
 SEARCH_ENRICHMENT_LIMIT = 8
+RESOLVE_BATCH_CONCURRENCY = 4
 DEFAULT_WARM_CACHE_GAME_LIMIT = 20
 MAX_WARM_CACHE_GAME_LIMIT = 50
 logger = logging.getLogger(__name__)
@@ -43,22 +45,18 @@ async def search_games(response: Response, query: str) -> list[CatalogGame]:
 
 @router.post("/resolve", response_model=ListGame)
 async def resolve_game(request: ResolveGameRequest) -> ListGame:
-    if request.name:
-        catalog_game = CatalogGame(
-            igdb_id=request.igdb_id,
-            name=request.name,
-            cover_url=request.cover_url,
-            summary=request.summary,
-            genres=request.genres,
-            platforms=request.platforms,
-            release_year=request.release_year,
-            rating=request.rating,
-        )
-    else:
-        catalog_game = await igdb_service.get_by_id(request.igdb_id)
-        if isinstance(catalog_game, dict):
-            catalog_game = CatalogGame.model_validate(catalog_game)
-    return await _enrich_catalog_game(catalog_game)
+    return await _resolve_request(request)
+
+
+@router.post("/resolve-batch", response_model=ResolveGamesResponse)
+async def resolve_games(request: ResolveGamesRequest) -> ResolveGamesResponse:
+    semaphore = asyncio.Semaphore(RESOLVE_BATCH_CONCURRENCY)
+
+    async def resolve_one(game: ResolveGameRequest) -> ListGame:
+        async with semaphore:
+            return await _resolve_request(game)
+
+    return ResolveGamesResponse(games=list(await asyncio.gather(*(resolve_one(game) for game in request.games))))
 
 
 @router.get("/artwork", response_model=GameArtwork)
@@ -120,6 +118,25 @@ async def _enrich_catalog_game(catalog_game: CatalogGame) -> ListGame:
         main_extra_hours=main_extra_hours,
         completionist_hours=completionist_hours,
     )
+
+
+async def _resolve_request(request: ResolveGameRequest) -> ListGame:
+    if request.name:
+        catalog_game = CatalogGame(
+            igdb_id=request.igdb_id,
+            name=request.name,
+            cover_url=request.cover_url,
+            summary=request.summary,
+            genres=request.genres,
+            platforms=request.platforms,
+            release_year=request.release_year,
+            rating=request.rating,
+        )
+    else:
+        catalog_game = await igdb_service.get_by_id(request.igdb_id)
+        if isinstance(catalog_game, dict):
+            catalog_game = CatalogGame.model_validate(catalog_game)
+    return await _enrich_catalog_game(catalog_game)
 
 
 async def _get_steamgriddb_artwork(game_name: str) -> GameArtwork:

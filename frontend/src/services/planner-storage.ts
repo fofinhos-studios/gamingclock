@@ -45,6 +45,7 @@ export function createInitialPlannerState(
     id: createPlannerListId(),
     name: defaultBacklogName,
     games: [],
+    group_imports: [],
   } satisfies GameList;
 
   return {
@@ -67,6 +68,7 @@ export function loadPlannerState(
 ): PlannerState {
   const currentState = parsePlannerState(readStoredValue(STORAGE_KEY));
   if (currentState) {
+    savePlannerState(currentState);
     return currentState;
   }
 
@@ -101,10 +103,12 @@ function migrateLegacyState(value: unknown): PlannerState | null {
     return null;
   }
 
-  const backlogs = value.backlogs.map((backlog) => ({
-    ...backlog,
-    id: createPlannerListId(),
-  }));
+  const backlogs = normalizeBacklogs(
+    value.backlogs.map((backlog) => ({
+      ...backlog,
+      id: createPlannerListId(),
+    })),
+  );
 
   return {
     activeTab: value.activeTab,
@@ -145,7 +149,7 @@ function parsePlannerState(value: unknown): PlannerState | null {
 
   return {
     activeTab: value.activeTab,
-    backlogs: value.backlogs,
+    backlogs: normalizeBacklogs(value.backlogs),
     activeBacklogId,
     availability: value.availability,
     algorithm: value.algorithm,
@@ -246,6 +250,19 @@ function isLegacyBacklogList(value: unknown): value is LegacyGameList[] {
         isGameList(backlog.games),
     )
   );
+}
+
+function normalizeBacklogs(backlogs: GameList[]): GameList[] {
+  return backlogs.map((backlog) => ({
+    ...backlog,
+    group_imports: backlog.group_imports ?? [],
+    games: backlog.games.map((game) => ({
+      ...game,
+      added_individually: game.added_individually ?? true,
+      group_import_ids: game.group_import_ids ?? [],
+      group_keys: game.group_keys ?? [],
+    })),
+  }));
 }
 
 function isGameList(value: unknown): value is ListGame[] {

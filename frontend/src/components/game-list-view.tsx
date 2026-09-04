@@ -12,7 +12,7 @@ import {
 } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { useLanguage } from "../i18n/i18n";
-import type { HLTBCategory, ListGame } from "../types";
+import type { GameGroupImport, HLTBCategory, ListGame } from "../types";
 import { GameCartridge } from "./game-cartridge";
 import { Button } from "./ui";
 
@@ -25,6 +25,9 @@ interface Props {
   onMoveGame: (index: number, direction: -1 | 1) => void;
   onReorderGames: (sourceIndex: number, targetIndex: number) => void;
   onRenameList: (name: string) => void;
+  groupImports?: GameGroupImport[];
+  onRemoveGroupImport?: (importId: string) => void;
+  onRemoveGroup?: (groupKey: string) => void;
 }
 
 type DropTarget = {
@@ -51,12 +54,16 @@ export function GameListView({
   onMoveGame,
   onReorderGames,
   onRenameList,
+  groupImports = [],
+  onRemoveGroupImport,
+  onRemoveGroup,
 }: Props) {
   const { t } = useLanguage();
   const [isRenaming, setIsRenaming] = useState(false);
   const [draftName, setDraftName] = useState(name);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
+  const [managedImportId, setManagedImportId] = useState<string | null>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -177,6 +184,11 @@ export function GameListView({
                 dropTarget?.index === index
                   ? ` planner-backlog-row--drop-${dropTarget.position}`
                   : ""
+              }${
+                managedImportId &&
+                game.group_import_ids?.includes(managedImportId)
+                  ? " planner-backlog-row--active"
+                  : ""
               }`}
               draggable
               onDragStart={(event) => {
@@ -215,6 +227,20 @@ export function GameListView({
               onDragEnd={resetDragState}
             >
               <GameCartridge game={game} />
+              {game.group_import_ids?.[0] &&
+                groupImports.find(
+                  (groupImport) =>
+                    groupImport.id === game.group_import_ids?.[0],
+                ) && (
+                  <p class="planner-group-source-chip">
+                    {
+                      groupImports.find(
+                        (groupImport) =>
+                          groupImport.id === game.group_import_ids?.[0],
+                      )?.display_name
+                    }
+                  </p>
+                )}
 
               <div class="planner-backlog-row__controls">
                 <fieldset class="planner-chip-group">
@@ -366,6 +392,75 @@ export function GameListView({
             </article>
           ))}
         </div>
+      )}
+      {groupImports.length > 0 && (
+        <section class="planner-group-tray" aria-label={t.list.groupTray}>
+          <h3 class="planner-panel__title">{t.list.groupTray}</h3>
+          {groupImports.map((groupImport) => {
+            const associatedGames = games.filter((game) =>
+              game.group_import_ids?.includes(groupImport.id),
+            );
+            return (
+              <div key={groupImport.id} class="planner-group-tray__row">
+                <span>
+                  {groupImport.display_name} ·{" "}
+                  {t.list.groupGames(associatedGames.length)}
+                </span>
+                <div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setManagedImportId(groupImport.id)}
+                  >
+                    {t.list.manageGroup}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const removed = associatedGames.filter(
+                        (game) =>
+                          !game.added_individually &&
+                          (game.group_import_ids?.length ?? 0) === 1,
+                      ).length;
+                      const kept = associatedGames.length - removed;
+                      if (
+                        window.confirm(
+                          t.list.removeImportConfirm(removed, kept),
+                        )
+                      ) {
+                        onRemoveGroupImport?.(groupImport.id);
+                      }
+                    }}
+                  >
+                    {t.list.removeImport}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const count = games.filter((game) =>
+                        game.group_keys?.includes(groupImport.group_key),
+                      ).length;
+                      if (
+                        window.confirm(
+                          t.list.removeAllGroupConfirm(
+                            groupImport.display_name,
+                            count,
+                          ),
+                        )
+                      ) {
+                        onRemoveGroup?.(groupImport.group_key);
+                      }
+                    }}
+                  >
+                    {t.list.removeAllGroup}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </section>
       )}
     </section>
   );

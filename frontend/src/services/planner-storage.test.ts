@@ -89,6 +89,31 @@ describe("planner storage", () => {
       finishByDate: null,
       maxSessionHours: 4,
     });
+    expect(state.backlogs[0].group_imports).toEqual([]);
+  });
+
+  test("migrates stored games to direct additions without changing their schedule fields", () => {
+    window.localStorage.setItem(
+      "gaming-clock.planner.v2",
+      JSON.stringify({
+        activeTab: "games",
+        activeBacklogId: "list-a",
+        backlogs: [{ id: "list-a", name: "First", games: [resolvedGame] }],
+        availability: null,
+        algorithm: "sequential",
+        schedule: null,
+        startDate: "2026-08-21",
+      }),
+    );
+
+    const state = loadPlannerState("2026-08-21");
+
+    expect(state.backlogs[0].games[0]).toMatchObject({
+      ...resolvedGame,
+      added_individually: true,
+      group_import_ids: [],
+      group_keys: [],
+    });
   });
 
   test("keeps the selected list after stored lists are reordered or the old list is removed", () => {

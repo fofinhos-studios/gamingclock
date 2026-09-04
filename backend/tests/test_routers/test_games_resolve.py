@@ -68,6 +68,42 @@ def test_resolve_game_returns_unresolved_item_when_hltb_misses(client):
     assert data["main_story_hours"] is None
 
 
+def test_resolve_batch_preserves_the_requested_order(client):
+    with (
+        patch("gamingclock.routers.games.igdb_service") as mock_igdb,
+        patch("gamingclock.routers.games.hltb_service") as mock_hltb,
+    ):
+        mock_igdb.get_by_id = AsyncMock(
+            side_effect=[
+                {
+                    "igdb_id": 2,
+                    "name": "Second",
+                    "cover_url": "",
+                    "summary": "",
+                    "genres": [],
+                    "platforms": [],
+                    "release_year": 2002,
+                    "rating": None,
+                },
+                {
+                    "igdb_id": 1,
+                    "name": "First",
+                    "cover_url": "",
+                    "summary": "",
+                    "genres": [],
+                    "platforms": [],
+                    "release_year": 2001,
+                    "rating": None,
+                },
+            ]
+        )
+        mock_hltb.search = AsyncMock(return_value=[])
+        response = client.post("/games/resolve-batch", json={"games": [{"igdb_id": 2}, {"igdb_id": 1}]})
+
+    assert response.status_code == 200
+    assert [game["igdb_id"] for game in response.json()["games"]] == [2, 1]
+
+
 def test_resolve_game_includes_steamgriddb_artwork(client):
     with (
         patch("gamingclock.routers.games.igdb_service") as mock_igdb,
@@ -126,7 +162,5 @@ def test_get_game_artwork_returns_only_search_card_artwork(client):
         "logo_url": "https://cdn.example/ff7-logo.png",
         "hero_url": "https://cdn.example/ff7-hero.jpg",
     }
-    assert response.headers["cache-control"] == (
-        "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800"
-    )
+    assert response.headers["cache-control"] == ("public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800")
     mock_steamgriddb.get_artwork.assert_awaited_once_with("Final Fantasy VII")

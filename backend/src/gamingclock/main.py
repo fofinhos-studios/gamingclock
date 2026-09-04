@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from gamingclock.routers.game_groups import close_group_services
+from gamingclock.routers.game_groups import router as game_groups_router
 from gamingclock.routers.games import close_services
 from gamingclock.routers.games import router as games_router
 from gamingclock.routers.schedule import router as schedule_router
@@ -27,6 +29,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(_app: FastAPI):
     yield
     await close_services()
+    await close_group_services()
 
 
 app = FastAPI(title="GamingClock", version="0.1.0", lifespan=lifespan)
@@ -40,6 +43,7 @@ app.add_middleware(
 )
 
 app.include_router(games_router)
+app.include_router(game_groups_router)
 app.include_router(schedule_router)
 
 

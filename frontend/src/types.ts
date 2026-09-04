@@ -1,5 +1,58 @@
 export type HLTBStatus = "loading" | "resolved" | "unresolved";
 export type HLTBCategory = "main" | "extras" | "completionist";
+export type GameGroupKind = "series" | "franchise";
+export type GameGroupSource = "igdb" | "rawg" | "wikidata";
+
+export interface GameGroupEvidence {
+  source: GameGroupSource;
+  label: string;
+}
+
+export interface GameGroupSearchResult {
+  group_key: string;
+  display_name: string;
+  scope_name: string;
+  card_kind: GameGroupKind;
+  candidate_count: number;
+  sources: GameGroupEvidence[];
+  warning: string | null;
+}
+
+export interface GameGroupPreviewItem {
+  game: CatalogGame;
+  order: number;
+  initially_selected: boolean;
+  already_in_backlog: boolean;
+  evidence: Array<{ source: GameGroupSource; relation: string; label: string }>;
+  edition: { state: string; label: string };
+}
+
+export interface GameGroupPreview {
+  group: GameGroupSearchResult;
+  items: GameGroupPreviewItem[];
+  excluded_items: Array<{ label: string; reason: string }>;
+  possible_matches: Array<{
+    source: GameGroupSource;
+    source_id: string;
+    name: string;
+    release_year: number | null;
+    reason: string;
+    igdb_id: number | null;
+  }>;
+  unavailable_sources: GameGroupSource[];
+  rawg_attribution_required: boolean;
+  rawg_attribution_url: string | null;
+}
+
+export interface GameGroupImport {
+  id: string;
+  group_key: string;
+  display_name: string;
+  card_kind: GameGroupKind;
+  sources: GameGroupSource[];
+  selected_igdb_ids: number[];
+  created_at: string;
+}
 
 export interface CatalogGame {
   igdb_id: number;
@@ -28,12 +81,16 @@ export interface ListGame extends CatalogGame {
   main_extra_hours: number | null;
   completionist_hours: number | null;
   selected_hltb_category?: HLTBCategory;
+  added_individually?: boolean;
+  group_import_ids?: string[];
+  group_keys?: string[];
 }
 
 export interface GameList {
   id: string;
   name: string;
   games: ListGame[];
+  group_imports?: GameGroupImport[];
 }
 
 export interface DayAvailability {

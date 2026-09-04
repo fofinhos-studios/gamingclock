@@ -4,15 +4,20 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
 import { LanguageProvider } from "../i18n/i18n";
-import { getGameArtwork, searchGames } from "../services/api";
+import { getGameArtwork, searchGameGroups, searchGames } from "../services/api";
 import { GameSearch } from "./game-search";
 
 vi.mock("../services/api", () => ({
   searchGames: vi.fn(),
+  searchGameGroups: vi.fn().mockResolvedValue([]),
+  previewGameGroup: vi.fn(),
   getGameArtwork: vi.fn(),
 }));
 
-afterEach(() => vi.clearAllMocks());
+afterEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(searchGameGroups).mockResolvedValue([]);
+});
 
 describe("GameSearch", () => {
   test("renders as a compact spotlight search dock before a query", () => {

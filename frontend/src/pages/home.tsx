@@ -22,6 +22,7 @@ import {
   generateSchedule,
   getApiErrorMessage,
   resolveGame,
+  resolveGames,
 } from "../services/api";
 import {
   createPlannerListId,
@@ -30,6 +31,7 @@ import {
 } from "../services/planner-storage";
 import {
   type CatalogGame,
+  type GameGroupPreview,
   type GameList,
   type HLTBCategory,
   type ListGame,
@@ -263,6 +265,7 @@ export function HomePage() {
     backlogId: string,
     preserveCardData = false,
   ) => {
+    const importedGame = "added_individually" in game ? game : undefined;
     void resolveGame(game)
       .then((resolvedGame) => {
         const nextGame: ListGame = preserveCardData
@@ -279,6 +282,9 @@ export function HomePage() {
               ...resolvedGame,
               hltb_error: null,
               selected_hltb_category: "main",
+              added_individually: importedGame?.added_individually ?? false,
+              group_import_ids: importedGame?.group_import_ids ?? [],
+              group_keys: importedGame?.group_keys ?? [],
             };
         setBacklogs((currentBacklogs) =>
           currentBacklogs.map((backlog) =>
@@ -331,6 +337,9 @@ export function HomePage() {
       completionist_hours: null,
       hltb_error: null,
       selected_hltb_category: "main",
+      added_individually: true,
+      group_import_ids: [],
+      group_keys: [],
     };
 
     setBacklogs((currentBacklogs) =>
@@ -342,6 +351,78 @@ export function HomePage() {
     );
     clearGeneratedSchedule();
     resolveBacklogGame(game, targetBacklogId);
+  };
+
+  const addGameGroup = async (
+    preview: GameGroupPreview,
+    selectedIgdbIds: number[],
+  ) => {
+    const targetBacklogId = activeBacklogId;
+    const selected = new Set(selectedIgdbIds);
+    const selectedItems = preview.items.filter((item) =>
+      selected.has(item.game.igdb_id),
+    );
+    const existingIds = new Set(games.map((game) => game.igdb_id));
+    const newItems = selectedItems.filter(
+      (item) => !existingIds.has(item.game.igdb_id),
+    );
+    const resolved = newItems.length
+      ? await resolveGames(newItems.map((item) => item.game))
+      : [];
+    const importId = createPlannerListId();
+    const groupImport = {
+      id: importId,
+      group_key: preview.group.group_key,
+      display_name: preview.group.display_name,
+      card_kind: preview.group.card_kind,
+      sources: preview.group.sources.map((source) => source.source),
+      selected_igdb_ids: selectedItems.map((item) => item.game.igdb_id),
+      created_at: new Date().toISOString(),
+    };
+    const resolvedById = new Map(resolved.map((game) => [game.igdb_id, game]));
+    setBacklogs((currentBacklogs) =>
+      currentBacklogs.map((backlog) => {
+        if (backlog.id !== targetBacklogId) {
+          return backlog;
+        }
+        const nextGames = backlog.games.map((game) =>
+          selected.has(game.igdb_id)
+            ? {
+                ...game,
+                group_import_ids: [
+                  ...new Set([...(game.group_import_ids ?? []), importId]),
+                ],
+                group_keys: [
+                  ...new Set([
+                    ...(game.group_keys ?? []),
+                    preview.group.group_key,
+                  ]),
+                ],
+              }
+            : game,
+        );
+        for (const item of selectedItems) {
+          const resolvedGame = resolvedById.get(item.game.igdb_id);
+          if (!resolvedGame) {
+            continue;
+          }
+          nextGames.push({
+            ...resolvedGame,
+            hltb_error: null,
+            selected_hltb_category: "main",
+            added_individually: false,
+            group_import_ids: [importId],
+            group_keys: [preview.group.group_key],
+          });
+        }
+        return {
+          ...backlog,
+          games: nextGames,
+          group_imports: [...(backlog.group_imports ?? []), groupImport],
+        };
+      }),
+    );
+    clearGeneratedSchedule();
   };
 
   const retryGame = (igdbId: number) => {
@@ -385,6 +466,86 @@ export function HomePage() {
             }
           : backlog,
       ),
+    );
+    clearGeneratedSchedule();
+  };
+
+  const removeGroupImport = (importId: string) => {
+    setBacklogs((currentBacklogs) =>
+      currentBacklogs.map((backlog) => {
+        if (backlog.id !== activeBacklogId) {
+          return backlog;
+        }
+        const targetImport = backlog.group_imports?.find(
+          (groupImport) => groupImport.id === importId,
+        );
+        if (!targetImport) {
+          return backlog;
+        }
+        const remainingImports = (backlog.group_imports ?? []).filter(
+          (groupImport) => groupImport.id !== importId,
+        );
+        const nextGames = backlog.games.flatMap((game) => {
+          if (!game.group_import_ids?.includes(importId)) {
+            return [game];
+          }
+          const groupImportIds = game.group_import_ids.filter(
+            (id) => id !== importId,
+          );
+          if (!game.added_individually && groupImportIds.length === 0) {
+            return [];
+          }
+          const groupKeys =
+            game.group_keys?.filter(
+              (key) =>
+                key !== targetImport.group_key ||
+                remainingImports.some(
+                  (groupImport) =>
+                    groupImport.group_key === key &&
+                    groupImportIds.includes(groupImport.id),
+                ),
+            ) ?? [];
+          return [
+            {
+              ...game,
+              group_import_ids: groupImportIds,
+              group_keys: groupKeys,
+            },
+          ];
+        });
+        return {
+          ...backlog,
+          games: nextGames,
+          group_imports: remainingImports.filter((groupImport) =>
+            nextGames.some((game) =>
+              game.group_import_ids?.includes(groupImport.id),
+            ),
+          ),
+        };
+      }),
+    );
+    clearGeneratedSchedule();
+  };
+
+  const removeGroup = (groupKey: string) => {
+    setBacklogs((currentBacklogs) =>
+      currentBacklogs.map((backlog) => {
+        if (backlog.id !== activeBacklogId) {
+          return backlog;
+        }
+        const nextGames = backlog.games.filter(
+          (game) => !game.group_keys?.includes(groupKey),
+        );
+        return {
+          ...backlog,
+          games: nextGames,
+          group_imports: (backlog.group_imports ?? []).filter((groupImport) =>
+            nextGames.some((game) =>
+              game.group_import_ids?.includes(groupImport.id),
+            ),
+          ),
+        };
+      }),
     );
     clearGeneratedSchedule();
   };
@@ -661,13 +822,17 @@ export function HomePage() {
                   <PlannerGamesStep
                     backlogName={backlogName}
                     games={games}
+                    groupImports={activeBacklog.group_imports}
                     onAddGame={addGame}
+                    onAddGameGroup={addGameGroup}
                     onSelectGameTime={selectGameTime}
                     onRemoveGame={removeGame}
                     onRetryGame={retryGame}
                     onMoveGame={moveGame}
                     onReorderGames={reorderGames}
                     onRenameBacklog={renameBacklog}
+                    onRemoveGroupImport={removeGroupImport}
+                    onRemoveGroup={removeGroup}
                   />
                 </section>
 
