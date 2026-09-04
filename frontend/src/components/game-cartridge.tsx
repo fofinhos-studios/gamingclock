@@ -124,7 +124,7 @@ export function GameCartridge({
           <PlatformIcons
             class="game-cartridge__platforms"
             platforms={game.platforms}
-            maxIcons={3}
+            maxIcons={2}
             showFallback={false}
           />
         </div>
