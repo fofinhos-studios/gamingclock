@@ -1358,7 +1358,7 @@
   }
 
   :root[data-theme="light"] .platform-icons__icon {
-    mix-blend-mode: multiply;
+    mix-blend-mode: darken;
   }
 
   .platform-icons__more {
@@ -2520,12 +2520,12 @@
   }
 
   .game-cartridge__platforms .platform-icons__icon {
-    width: 1.25rem;
-    height: 0.85rem;
+    width: 2.25rem;
+    height: 1.35rem;
   }
 
   .game-cartridge__platforms .platform-icons__more {
-    font-size: 0.5rem;
+    font-size: 0.62rem;
   }
 
   .planner-backlog-row {
