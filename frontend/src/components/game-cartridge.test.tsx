@@ -83,8 +83,8 @@ describe("GameCartridge", () => {
     expect(
       view.container
         .querySelector(".game-cartridge__identity")
-        ?.nextElementSibling?.classList.contains("game-cartridge__platforms"),
-    ).toBe(true);
+        ?.querySelector(".game-cartridge__platforms"),
+    ).toBeTruthy();
     expect(view.getByText("GENRE")).toBeTruthy();
     expect(view.getByText("Adventure")).toBeTruthy();
   });

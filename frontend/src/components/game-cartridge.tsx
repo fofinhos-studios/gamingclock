@@ -121,14 +121,13 @@ export function GameCartridge({
           <h3 class="game-cartridge__title planner-backlog-row__title">
             {game.name}
           </h3>
+          <PlatformIcons
+            class="game-cartridge__platforms"
+            platforms={game.platforms}
+            maxIcons={2}
+            showFallback={false}
+          />
         </div>
-
-        <PlatformIcons
-          class="game-cartridge__platforms"
-          platforms={game.platforms}
-          maxIcons={2}
-          showFallback={false}
-        />
 
         <dl class="game-cartridge__label" aria-label={`${game.name} details`}>
           <div>
