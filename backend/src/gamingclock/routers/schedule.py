@@ -21,6 +21,37 @@ from gamingclock.services.scheduler import DeadlineCapacityError, SchedulerServi
 router = APIRouter(prefix="/schedule", tags=["schedule"])
 
 scheduler_service = SchedulerService()
+MAX_CALENDAR_URL_COMPRESSED_BYTES = 64 * 1024
+MAX_CALENDAR_URL_DECOMPRESSED_BYTES = 256 * 1024
+MAX_CALENDAR_URL_PAYLOAD_CHARS = (MAX_CALENDAR_URL_COMPRESSED_BYTES * 4 + 2) // 3
+
+
+class CalendarUrlPayloadTooLargeError(ValueError):
+    """Raised when a portable calendar URL exceeds resource limits."""
+
+
+def _decode_calendar_url_payload(payload: str, encoding: str) -> bytes:
+    if len(payload) > MAX_CALENDAR_URL_PAYLOAD_CHARS:
+        raise CalendarUrlPayloadTooLargeError
+
+    padded_payload = payload + "=" * (-len(payload) % 4)
+    decoded = base64.b64decode(padded_payload.encode("ascii"), altchars=b"-_", validate=True)
+    if len(decoded) > MAX_CALENDAR_URL_COMPRESSED_BYTES:
+        raise CalendarUrlPayloadTooLargeError
+
+    if encoding == "plain":
+        return decoded
+    if encoding != "deflate":
+        raise ValueError("unsupported encoding")
+
+    decompressor = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
+    decompressed = decompressor.decompress(decoded, MAX_CALENDAR_URL_DECOMPRESSED_BYTES + 1)
+    if len(decompressed) > MAX_CALENDAR_URL_DECOMPRESSED_BYTES or decompressor.unconsumed_tail:
+        raise CalendarUrlPayloadTooLargeError
+    decompressed += decompressor.flush(MAX_CALENDAR_URL_DECOMPRESSED_BYTES + 1 - len(decompressed))
+    if len(decompressed) > MAX_CALENDAR_URL_DECOMPRESSED_BYTES or not decompressor.eof:
+        raise CalendarUrlPayloadTooLargeError
+    return decompressed
 
 
 def _build_schedule_games(request: ScheduleRequest) -> list[Game]:
@@ -92,13 +123,10 @@ async def calendar_url(
 ) -> Response:
     """Serve an iCalendar document from a portable, client-generated payload."""
     try:
-        padded_payload = payload + "=" * (-len(payload) % 4)
-        decoded = base64.b64decode(padded_payload.encode("ascii"), altchars=b"-_", validate=True)
-        if encoding == "deflate":
-            decoded = zlib.decompress(decoded, wbits=-zlib.MAX_WBITS)
-        elif encoding != "plain":
-            raise ValueError("unsupported encoding")
+        decoded = _decode_calendar_url_payload(payload, encoding)
         request = CalendarUrlRequest.model_validate_json(decoded)
+    except CalendarUrlPayloadTooLargeError as error:
+        raise HTTPException(status_code=413, detail="Calendar URL payload is too large") from error
     except (
         UnicodeEncodeError,
         binascii.Error,
