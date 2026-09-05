@@ -636,7 +636,6 @@
     outline-offset: 2px;
   }
 
-  .backlog-manager__label,
   .backlog-manager__meta,
   .backlog-manager__select small,
   .backlog-manager__hint {
@@ -645,7 +644,6 @@
     letter-spacing: 0.04em;
   }
 
-  .backlog-manager__label,
   .backlog-manager__meta,
   .backlog-manager__hint,
   .backlog-manager__select small {
