@@ -54,7 +54,7 @@ class ScheduleRequest(BaseModel):
 
 
 class PlaySession(BaseModel):
-    game_name: str
+    game_name: str = Field(min_length=1, max_length=200)
     date: datetime.date
     start_time: datetime.time
     duration_hours: float = Field(gt=0)
@@ -77,5 +77,5 @@ class IcalRequest(ScheduleRequest):
 class CalendarUrlRequest(BaseModel):
     """Portable calendar export payload embedded in a shareable URL."""
 
-    game_list_name: str
-    sessions: list[PlaySession]
+    game_list_name: str = Field(min_length=1, max_length=200)
+    sessions: list[PlaySession] = Field(max_length=500)

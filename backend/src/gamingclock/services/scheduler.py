@@ -76,25 +76,45 @@ class SchedulerService:
             current += datetime.timedelta(days=1)
 
         if not slots:
-            raise DeadlineCapacityError(
-                "No selected play times fall between the start date and Finish by date."
-            )
+            raise DeadlineCapacityError("No selected play times fall between the start date and Finish by date.")
 
         total_hours = sum(game.main_story_hours for game in games)
-        if total_hours > len(slots) * max_session_hours + 1e-9:
-            required = total_hours / len(slots)
+        slot_capacities = [min(window.hours, max_session_hours) for _, window in slots]
+        total_capacity = sum(slot_capacities)
+        if total_hours > total_capacity + 1e-9:
             raise DeadlineCapacityError(
-                f"This deadline requires {required:.1f}-hour sessions. "
+                f"This deadline has only {total_capacity:.1f} hours of session capacity. "
                 "Choose a later date, more play days, or a longer session limit."
             )
 
-        budgets = [total_hours / len(slots)] * len(slots)
-        budgets[-1] = total_hours - sum(budgets[:-1])
+        budgets = self._allocate_finish_by_budgets(slot_capacities, total_hours)
         if algorithm == ScheduleAlgorithm.SEQUENTIAL:
             return self._finish_by_sequential(games, slots, budgets)
         if algorithm == ScheduleAlgorithm.ALTERNATING:
             return self._finish_by_alternating(games, slots, budgets)
         raise ValueError(f"Unknown algorithm: {algorithm}")
+
+    @staticmethod
+    def _allocate_finish_by_budgets(slot_capacities: list[float], total_hours: float) -> list[float]:
+        """Spread time evenly without allocating more than any window can hold."""
+        budgets = [0.0] * len(slot_capacities)
+        remaining_slots = set(range(len(slot_capacities)))
+        remaining_hours = total_hours
+
+        while remaining_slots:
+            equal_share = remaining_hours / len(remaining_slots)
+            constrained_slots = [index for index in remaining_slots if slot_capacities[index] < equal_share - 1e-9]
+            if not constrained_slots:
+                for index in remaining_slots:
+                    budgets[index] = equal_share
+                return budgets
+
+            for index in constrained_slots:
+                budgets[index] = slot_capacities[index]
+                remaining_hours -= slot_capacities[index]
+                remaining_slots.remove(index)
+
+        return budgets
 
     def _finish_by_sequential(
         self,
