@@ -69,7 +69,6 @@ export function BacklogManager({
         <div id="backlog-manager-panel" class="backlog-manager__panel">
           <div class="backlog-manager__panel-heading">
             <div>
-              <p class="backlog-manager__label">{t.app.backlogs}</p>
               <h2>{t.app.backlogs}</h2>
             </div>
           </div>

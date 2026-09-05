@@ -17,7 +17,7 @@ from gamingclock.models.catalog import (
 from gamingclock.models.game_groups import ResolveGamesRequest, ResolveGamesResponse
 from gamingclock.services.cache_warmer import PopularCacheWarmer
 from gamingclock.services.hltb import HLTBService
-from gamingclock.services.igdb import IGDBService
+from gamingclock.services.igdb import IGDBNotFoundError, IGDBService, IGDBUpstreamError
 from gamingclock.services.steamgriddb import SteamGridDBService
 
 router = APIRouter(prefix="/games", tags=["games"])
@@ -133,7 +133,12 @@ async def _resolve_request(request: ResolveGameRequest) -> ListGame:
             rating=request.rating,
         )
     else:
-        catalog_game = await igdb_service.get_by_id(request.igdb_id)
+        try:
+            catalog_game = await igdb_service.get_by_id(request.igdb_id)
+        except IGDBNotFoundError as error:
+            raise HTTPException(status_code=404, detail="Game not found") from error
+        except IGDBUpstreamError as error:
+            raise HTTPException(status_code=502, detail="Game catalog is unavailable") from error
         if isinstance(catalog_game, dict):
             catalog_game = CatalogGame.model_validate(catalog_game)
     return await _enrich_catalog_game(catalog_game)
@@ -155,7 +160,11 @@ async def _get_steamgriddb_artwork(game_name: str) -> GameArtwork:
 
 
 async def close_services() -> None:
-    await hltb_service.aclose()
+    await asyncio.gather(
+        hltb_service.aclose(),
+        igdb_service.aclose(),
+        steamgriddb_service.aclose(),
+    )
 
 
 def _unresolved_game(catalog_game: CatalogGame, artwork: GameArtwork) -> ListGame:

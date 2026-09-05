@@ -94,7 +94,7 @@ class ListGame(BaseModel):
 
 
 class ResolveGameRequest(BaseModel):
-    igdb_id: int
+    igdb_id: int = Field(gt=0)
     name: str | None = None
     cover_url: str = ""
     summary: str = ""

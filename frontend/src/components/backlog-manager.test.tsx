@@ -42,6 +42,7 @@ describe("BacklogManager", () => {
 
     await user.click(view.getByRole("button", { name: /manage backlogs/i }));
 
+    expect(view.getAllByText(/^backlogs$/i)).toHaveLength(1);
     expect(view.getByRole("button", { name: /create backlog/i })).toBeTruthy();
   });
 

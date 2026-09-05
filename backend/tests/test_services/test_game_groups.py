@@ -1,4 +1,6 @@
 import asyncio
+from typing import cast
+from unittest.mock import AsyncMock
 
 import httpx
 import pytest
@@ -19,6 +21,24 @@ from gamingclock.services.game_groups import (
     _ExternalGame,
     _merge_candidates,
 )
+from gamingclock.services.igdb import IGDBService
+
+
+@pytest.mark.asyncio
+async def test_game_group_explorer_does_not_close_an_injected_igdb_service():
+    igdb_close = AsyncMock()
+    rawg_close = AsyncMock()
+    wikidata_close = AsyncMock()
+    igdb = cast(IGDBService, type("IGDB", (), {"aclose": igdb_close})())
+    rawg = cast(RAWGAdapter, type("RAWG", (), {"aclose": rawg_close})())
+    wikidata = cast(WikidataAdapter, type("Wikidata", (), {"aclose": wikidata_close})())
+    explorer = GameGroupExplorer(igdb=igdb, rawg=rawg, wikidata=wikidata)
+
+    await explorer.aclose()
+
+    igdb_close.assert_not_awaited()
+    rawg_close.assert_awaited_once()
+    wikidata_close.assert_awaited_once()
 
 
 def _candidate(

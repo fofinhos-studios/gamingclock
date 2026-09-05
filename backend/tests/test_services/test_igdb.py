@@ -1,7 +1,7 @@
 import httpx
 import pytest
 
-from gamingclock.services.igdb import IGDBService
+from gamingclock.services.igdb import IGDBNotFoundError, IGDBService, IGDBUpstreamError
 
 
 def _token_response() -> httpx.Response:
@@ -265,6 +265,65 @@ async def test_igdb_get_by_id_returns_mocked_game(monkeypatch):
 
     assert result.igdb_id == 22
     assert result.name == "Chrono Trigger"
+
+
+@pytest.mark.asyncio
+async def test_igdb_get_by_id_raises_not_found_for_unknown_local_id(monkeypatch):
+    monkeypatch.delenv("IGDB_CLIENT_ID", raising=False)
+    monkeypatch.delenv("IGDB_CLIENT_SECRET", raising=False)
+
+    with pytest.raises(IGDBNotFoundError):
+        await IGDBService().get_by_id(404)
+
+
+@pytest.mark.asyncio
+async def test_igdb_get_by_id_raises_not_found_for_empty_remote_results(monkeypatch):
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "id.twitch.tv":
+            return _token_response()
+        return httpx.Response(200, json=[])
+
+    monkeypatch.setenv("IGDB_CLIENT_ID", "client-id")
+    monkeypatch.setenv("IGDB_CLIENT_SECRET", "client-secret")
+    service = IGDBService(
+        http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+        token_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+    )
+
+    with pytest.raises(IGDBNotFoundError):
+        await service.get_by_id(404)
+
+
+@pytest.mark.asyncio
+async def test_igdb_get_by_id_wraps_remote_failures(monkeypatch):
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "id.twitch.tv":
+            return _token_response()
+        return httpx.Response(503)
+
+    monkeypatch.setenv("IGDB_CLIENT_ID", "client-id")
+    monkeypatch.setenv("IGDB_CLIENT_SECRET", "client-secret")
+    service = IGDBService(
+        http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+        token_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+    )
+
+    with pytest.raises(IGDBUpstreamError):
+        await service.get_by_id(7)
+
+
+@pytest.mark.asyncio
+async def test_igdb_does_not_close_injected_clients():
+    game_client = httpx.AsyncClient()
+    token_client = httpx.AsyncClient()
+    service = IGDBService(http_client=game_client, token_client=token_client)
+
+    await service.aclose()
+
+    assert not game_client.is_closed
+    assert not token_client.is_closed
+    await game_client.aclose()
+    await token_client.aclose()
 
 
 @pytest.mark.asyncio

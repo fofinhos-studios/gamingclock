@@ -8,15 +8,9 @@ export const strings = {
     app: {
       skipToPlanner: "Skip to planner",
       backlogs: "Backlogs",
-      currentBacklog: "Current backlog",
       manageBacklogs: "Manage backlogs",
-      newBacklog: "New backlog",
       createBacklog: "Create backlog",
       newBacklogNameLabel: "New backlog name",
-      allBacklogs: (games: number, hours: string) =>
-        `All backlogs: ${games} games, ${hours}h`,
-      backlogCount: (count: number) =>
-        `${count} backlog${count === 1 ? "" : "s"}`,
       backlogStats: (games: number, hours: string) =>
         `${games} game${games === 1 ? "" : "s"} · ${hours} hours`,
       backlogSelection: (name: string, games: number, hours: string) =>
@@ -121,7 +115,6 @@ export const strings = {
       addingSelectedGames: (count: number) => `Adding ${count} games…`,
     },
     list: {
-      title: "Current list",
       backlogName: "Backlog name",
       renameBacklog: (name: string) => `Rename ${name}`,
       emptyTitle: "No games in this backlog yet.",
@@ -164,38 +157,11 @@ export const strings = {
         finishByCalendarCopy:
           "Choose the days and preferred start times for your sessions. Finish by will calculate the duration needed for each date.",
         calendarLabel: "Weekly play calendar",
-        presets: "Quick presets",
         weeknights: "Weeknights",
         weekends: "Weekends",
         everyDay: "Every day",
-        clear: "Clear",
         clearWeek: "Clear week",
-        scheduleMode: "Weekly schedule",
-        sameSchedule: "Same schedule",
-        customSchedule: "Customize by day",
-        sameScheduleCopy:
-          "Use one duration and start time on every selected day",
-        customScheduleCopy:
-          "Choose a different duration or start time for each day",
-        customScheduleHint: "Select a day to edit its duration and start time.",
-        durationPerDay: "Duration per selected day",
-        durationHint: "Choose how long you want to play each day.",
-        durationHours: "Hours",
-        durationMinutes: "Minutes",
-        startTime: "Start time",
-        startTimeHint: "Choose a time from 06:00 to 23:59.",
-        weeklyDays: "Weekly days",
-        daysCopy: "Pick the days you usually play.",
-        dayHours: (day: string) => `${day} hours`,
-        dayMinutes: (day: string) => `${day} minutes`,
-        dayStartTime: (day: string) => `${day} start time`,
-        hoursAt: (duration: string, time: string) => `${duration} / ${time}`,
         weeklyTotal: (duration: string) => `${duration} per week`,
-        selectDayError: "Choose at least one play day before saving.",
-        hoursError: "Set each duration to more than zero.",
-        startTimeError: "Choose a start time from 06:00 to 23:59.",
-        saved: "Saved",
-        save: "Save play time",
       },
       days: [
         "Monday",
@@ -277,15 +243,9 @@ export const strings = {
     app: {
       skipToPlanner: "Pular para o planejador",
       backlogs: "Listas",
-      currentBacklog: "Lista atual",
       manageBacklogs: "Gerenciar listas",
-      newBacklog: "Nova lista",
       createBacklog: "Criar lista",
       newBacklogNameLabel: "Nome da nova lista",
-      allBacklogs: (games: number, hours: string) =>
-        `Todas as listas: ${games} jogos, ${hours}h`,
-      backlogCount: (count: number) =>
-        `${count} lista${count === 1 ? "" : "s"}`,
       backlogStats: (games: number, hours: string) =>
         `${games} jogo${games === 1 ? "" : "s"} · ${hours} horas`,
       backlogSelection: (name: string, games: number, hours: string) =>
@@ -395,7 +355,6 @@ export const strings = {
       addingSelectedGames: (count: number) => `Adicionando ${count} jogos…`,
     },
     list: {
-      title: "Lista atual",
       backlogName: "Nome da lista",
       renameBacklog: (name: string) => `Renomear ${name}`,
       emptyTitle: "Ainda não há jogos nesta lista.",
@@ -438,39 +397,11 @@ export const strings = {
         finishByCalendarCopy:
           "Escolha os dias e horários preferidos para começar as sessões. Terminar até calculará a duração necessária em cada data.",
         calendarLabel: "Calendário semanal de jogo",
-        presets: "Atalhos rápidos",
         weeknights: "Dias úteis",
         weekends: "Fins de semana",
         everyDay: "Todos os dias",
-        clear: "Limpar",
         clearWeek: "Limpar semana",
-        scheduleMode: "Rotina semanal",
-        sameSchedule: "Mesma rotina",
-        customSchedule: "Personalizar por dia",
-        sameScheduleCopy:
-          "Use uma duração e um horário de início em todos os dias selecionados",
-        customScheduleCopy:
-          "Escolha uma duração ou horário de início diferente para cada dia",
-        customScheduleHint:
-          "Selecione um dia para editar sua duração e horário de início.",
-        durationPerDay: "Duração por dia selecionado",
-        durationHint: "Escolha por quanto tempo jogar em cada dia.",
-        durationHours: "Horas",
-        durationMinutes: "Minutos",
-        startTime: "Horário de início",
-        startTimeHint: "Escolha um horário entre 06:00 e 23:59.",
-        weeklyDays: "Dias da semana",
-        daysCopy: "Escolha os dias em que você costuma jogar.",
-        dayHours: (day: string) => `Horas de ${day}`,
-        dayMinutes: (day: string) => `Minutos de ${day}`,
-        dayStartTime: (day: string) => `Horário de início de ${day}`,
-        hoursAt: (duration: string, time: string) => `${duration} / ${time}`,
         weeklyTotal: (duration: string) => `${duration} por semana`,
-        selectDayError: "Escolha pelo menos um dia antes de salvar.",
-        hoursError: "Defina cada duração como maior que zero.",
-        startTimeError: "Escolha um horário entre 06:00 e 23:59.",
-        saved: "Salvo",
-        save: "Salvar tempo de jogo",
       },
       days: [
         "Segunda-feira",

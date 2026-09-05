@@ -14,6 +14,12 @@ class SteamGridDBService:
 
     def __init__(self, http_client: httpx.AsyncClient | None = None):
         self._http_client = http_client or httpx.AsyncClient()
+        self._owns_http_client = http_client is None
+
+    async def aclose(self) -> None:
+        """Close the internally-created client without affecting injected clients."""
+        if self._owns_http_client:
+            await self._http_client.aclose()
 
     async def get_artwork(self, game_name: str) -> GameArtwork:
         api_key = os.getenv("STEAMGRIDDB_API_KEY")

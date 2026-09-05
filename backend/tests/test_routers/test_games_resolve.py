@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock, patch
 
 from gamingclock.models.catalog import GameArtwork
+from gamingclock.services.igdb import IGDBNotFoundError, IGDBUpstreamError
 
 
 def test_resolve_game_returns_resolved_item(client):
@@ -39,6 +40,30 @@ def test_resolve_game_returns_resolved_item(client):
     assert data["cover_url"] == "https://example.com/cover.png"
     assert data["hltb_status"] == "resolved"
     assert data["main_story_hours"] == 36.5
+
+
+def test_resolve_game_rejects_non_positive_igdb_ids(client):
+    response = client.post("/games/resolve", json={"igdb_id": 0})
+
+    assert response.status_code == 422
+
+
+def test_resolve_game_returns_not_found_for_unknown_ids(client):
+    with patch("gamingclock.routers.games.igdb_service") as mock_igdb:
+        mock_igdb.get_by_id = AsyncMock(side_effect=IGDBNotFoundError("missing"))
+        response = client.post("/games/resolve", json={"igdb_id": 404})
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Game not found"
+
+
+def test_resolve_game_returns_bad_gateway_when_igdb_is_unavailable(client):
+    with patch("gamingclock.routers.games.igdb_service") as mock_igdb:
+        mock_igdb.get_by_id = AsyncMock(side_effect=IGDBUpstreamError("down"))
+        response = client.post("/games/resolve", json={"igdb_id": 10})
+
+    assert response.status_code == 502
+    assert response.json()["detail"] == "Game catalog is unavailable"
 
 
 def test_resolve_game_returns_unresolved_item_when_hltb_misses(client):

@@ -88,6 +88,14 @@ def test_schedule_request():
     assert req.availability.days[0].start_hour == 20
 
 
+def test_schedule_request_start_date_uses_a_factory():
+    factory = ScheduleRequest.model_fields["start_date"].default_factory
+
+    assert factory is not None
+    assert factory.__self__ is datetime.date
+    assert factory.__name__ == "today"
+
+
 def test_finish_by_request_requires_a_valid_deadline():
     with pytest.raises(ValueError, match="finish_by_date is required"):
         ScheduleRequest(
