@@ -555,6 +555,7 @@ class GameGroupExplorer:
         wikidata: WikidataAdapter | None = None,
     ):
         self._igdb = igdb or IGDBService()
+        self._owns_igdb = igdb is None
         self._rawg = rawg or RAWGAdapter()
         self._wikidata = wikidata or WikidataAdapter()
         self._search_cache: dict[str, tuple[float, list[GameGroupSearchResult]]] = {}
@@ -980,7 +981,10 @@ class GameGroupExplorer:
         )
 
     async def aclose(self) -> None:
-        await asyncio.gather(self._rawg.aclose(), self._wikidata.aclose())
+        closers = [self._rawg.aclose(), self._wikidata.aclose()]
+        if self._owns_igdb:
+            closers.append(self._igdb.aclose())
+        await asyncio.gather(*closers)
 
     @staticmethod
     def _trim_cache(cache: dict[str, tuple[float, Any]]) -> None:

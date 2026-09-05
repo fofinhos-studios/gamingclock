@@ -14,6 +14,14 @@ from gamingclock.models.catalog import CatalogGame, CatalogGameVariant, IGDBGame
 logger = logging.getLogger(__name__)
 
 
+class IGDBNotFoundError(LookupError):
+    """Raised when IGDB has no game for a requested ID."""
+
+
+class IGDBUpstreamError(RuntimeError):
+    """Raised when IGDB cannot provide a requested game."""
+
+
 class IGDBService:
     """Use IGDB in configured environments and a small catalog for local work."""
 
@@ -69,6 +77,8 @@ class IGDBService:
     ):
         self._http_client = http_client or httpx.AsyncClient()
         self._token_client = token_client or httpx.AsyncClient()
+        self._owns_http_client = http_client is None
+        self._owns_token_client = token_client is None
         self._access_token: str | None = None
         self._expires_at = 0.0
         self._search_visit_popularity_cache: dict[int, tuple[float, float]] = {}
@@ -127,29 +137,44 @@ class IGDBService:
                         (time.perf_counter() - started_at) * 1000,
                     )
                     return game
-            raise RuntimeError(f"IGDB game not found: {igdb_id}")
+            raise IGDBNotFoundError(f"IGDB game not found: {igdb_id}")
 
-        client_id, token = await self._get_auth_headers()
-        body = (
-            f"fields {self._GAME_FIELDS};"
-            f"where id = {igdb_id};"
-            "limit 1;"
-        )
-        response = await self._http_client.post(
-            "https://api.igdb.com/v4/games",
-            headers={"Client-ID": client_id, "Authorization": f"Bearer {token}"},
-            content=body,
-        )
-        response.raise_for_status()
-        results = response.json()
-        if not results:
-            raise RuntimeError(f"IGDB game not found: {igdb_id}")
-        game = self._to_catalog_game(results[0])
+        try:
+            client_id, token = await self._get_auth_headers()
+            body = (
+                f"fields {self._GAME_FIELDS};"
+                f"where id = {igdb_id};"
+                "limit 1;"
+            )
+            response = await self._http_client.post(
+                "https://api.igdb.com/v4/games",
+                headers={"Client-ID": client_id, "Authorization": f"Bearer {token}"},
+                content=body,
+            )
+            response.raise_for_status()
+            results = response.json()
+            if not results:
+                raise IGDBNotFoundError(f"IGDB game not found: {igdb_id}")
+            game = self._to_catalog_game(results[0])
+        except IGDBNotFoundError:
+            raise
+        except (httpx.HTTPError, KeyError, TypeError, ValueError) as error:
+            raise IGDBUpstreamError("IGDB game lookup failed") from error
         logger.info(
             "IGDB get-by-id complete source=remote duration_ms=%.1f",
             (time.perf_counter() - started_at) * 1000,
         )
         return game
+
+    async def aclose(self) -> None:
+        """Close clients created by this service, but never injected clients."""
+        clients = []
+        if self._owns_http_client:
+            clients.append(self._http_client.aclose())
+        if self._owns_token_client:
+            clients.append(self._token_client.aclose())
+        if clients:
+            await asyncio.gather(*clients)
 
     async def popular_games(self, limit: int = 20) -> list[CatalogGame]:
         """Blend current, recent-release, and all-time games for cache warming."""

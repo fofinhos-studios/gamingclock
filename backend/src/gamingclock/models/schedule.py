@@ -1,7 +1,7 @@
 import datetime
 from enum import StrEnum
 
-from pydantic import BaseModel, Field, computed_field, model_validator
+from pydantic import BaseModel, Field, computed_field, field_validator, model_validator
 
 from gamingclock.models.catalog import ListGame
 
@@ -37,10 +37,17 @@ class ScheduleRequest(BaseModel):
     games: list[ListGame]
     availability: WeeklyAvailability
     algorithm: ScheduleAlgorithm = ScheduleAlgorithm.SEQUENTIAL
-    start_date: datetime.date = datetime.date.today()
+    start_date: datetime.date = Field(default_factory=datetime.date.today)
     planning_mode: PlanningMode = PlanningMode.WEEKLY
     finish_by_date: datetime.date | None = None
     max_session_hours: float = Field(default=4.0, gt=0)
+
+    @field_validator("game_list_name")
+    @classmethod
+    def reject_control_characters_in_game_list_name(cls, value: str) -> str:
+        if any(ord(character) < 32 or ord(character) == 127 for character in value):
+            raise ValueError("game_list_name cannot contain control characters")
+        return value
 
     @model_validator(mode="after")
     def validate_finish_by_settings(self) -> ScheduleRequest:
@@ -79,3 +86,10 @@ class CalendarUrlRequest(BaseModel):
 
     game_list_name: str
     sessions: list[PlaySession]
+
+    @field_validator("game_list_name")
+    @classmethod
+    def reject_control_characters_in_game_list_name(cls, value: str) -> str:
+        if any(ord(character) < 32 or ord(character) == 127 for character in value):
+            raise ValueError("game_list_name cannot contain control characters")
+        return value

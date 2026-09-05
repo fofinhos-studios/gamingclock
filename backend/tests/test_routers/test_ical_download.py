@@ -2,6 +2,8 @@ import base64
 import json
 import zlib
 
+import pytest
+
 
 def test_download_ical(client):
     response = client.post(
@@ -37,6 +39,40 @@ def test_download_ical(client):
     assert "BEGIN:VCALENDAR" in body
     assert "FF7" in body
     assert "T180000" in body
+
+
+@pytest.mark.parametrize(
+    ("game_list_name", "expected_filename"),
+    [
+        ('Weekend "RPGs"', "Weekend%20%22RPGs%22.ics"),
+        ("Pokémon", "Pok%C3%A9mon.ics"),
+    ],
+)
+def test_download_ical_uses_an_rfc5987_safe_filename(client, game_list_name, expected_filename):
+    response = client.post(
+        "/schedule/ical",
+        json={
+            "game_list_name": game_list_name,
+            "games": [],
+            "availability": {"days": [{"day_of_week": 0, "hours": 1}]},
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["content-disposition"] == f"attachment; filename*=utf-8''{expected_filename}"
+
+
+def test_download_ical_rejects_control_characters_in_the_filename(client):
+    response = client.post(
+        "/schedule/ical",
+        json={
+            "game_list_name": "unsafe\r\nname",
+            "games": [],
+            "availability": {"days": [{"day_of_week": 0, "hours": 1}]},
+        },
+    )
+
+    assert response.status_code == 422
 
 
 def test_download_ical_skips_unresolved_games(client):

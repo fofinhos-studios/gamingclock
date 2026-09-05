@@ -5,6 +5,17 @@ from gamingclock.services.steamgriddb import SteamGridDBService
 
 
 @pytest.mark.asyncio
+async def test_steamgriddb_does_not_close_an_injected_client():
+    client = httpx.AsyncClient()
+    service = SteamGridDBService(http_client=client)
+
+    await service.aclose()
+
+    assert not client.is_closed
+    await client.aclose()
+
+
+@pytest.mark.asyncio
 async def test_steamgriddb_returns_cover_logo_and_hero_for_the_best_name_match(monkeypatch):
     requests: list[httpx.Request] = []
 
