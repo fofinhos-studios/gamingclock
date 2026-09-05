@@ -125,15 +125,12 @@ export const strings = {
       backlogName: "Backlog name",
       renameBacklog: (name: string) => `Rename ${name}`,
       emptyTitle: "No games in this backlog yet.",
-      emptyCopy: "Search for a game, then add it to this list.",
       noImage: "No image",
       playtimeOptions: (name: string) => `${name} playtime options`,
       retrieving: "Retrieving playtime",
       unavailable: "Playtime unavailable",
       retry: "Retry",
       retryPlaytime: (name: string) => `Retry ${name} playtime`,
-      onboarding:
-        "Choose a playtime for each game. Select Main, Main + Extras, or Completionist.",
       main: "Main",
       extras: "Main + Extras",
       completionist: "Completionist",
@@ -162,7 +159,6 @@ export const strings = {
       heading: "Days and times",
       form: {
         heading: "Availability",
-        weeklyCalendar: "Your week",
         calendarCopy:
           "Click a time to add one hour. Drag a block to move it, or pull its lower edge to change the duration.",
         finishByCalendarCopy:
@@ -230,7 +226,6 @@ export const strings = {
       generating: "Generating",
       generated: "Generated",
       generate: "Generate Schedule",
-      ready: "Ready to plan",
       previewHeading: "Plan preview",
       previewList: "List",
       previewGames: "Games",
@@ -404,15 +399,12 @@ export const strings = {
       backlogName: "Nome da lista",
       renameBacklog: (name: string) => `Renomear ${name}`,
       emptyTitle: "Ainda não há jogos nesta lista.",
-      emptyCopy: "Busque um jogo e adicione-o a esta lista.",
       noImage: "Sem imagem",
       playtimeOptions: (name: string) => `Opções de duração de ${name}`,
       retrieving: "Buscando duração",
       unavailable: "Duração indisponível",
       retry: "Tentar novamente",
       retryPlaytime: (name: string) => `Tentar duração de ${name} novamente`,
-      onboarding:
-        "Escolha uma duração para cada jogo. Selecione Principal, Principal + Extras ou Completista.",
       main: "Principal",
       extras: "Principal + Extras",
       completionist: "Completista",
@@ -441,7 +433,6 @@ export const strings = {
       heading: "Dias e horários",
       form: {
         heading: "Disponibilidade",
-        weeklyCalendar: "Sua semana",
         calendarCopy:
           "Clique em um horário para adicionar uma hora. Arraste um bloco para movê-lo ou puxe a borda inferior para ajustar a duração.",
         finishByCalendarCopy:
@@ -511,7 +502,6 @@ export const strings = {
       generating: "Gerando",
       generated: "Gerado",
       generate: "Gerar cronograma",
-      ready: "Pronto para planejar",
       previewHeading: "Prévia do plano",
       previewList: "Lista",
       previewGames: "Jogos",

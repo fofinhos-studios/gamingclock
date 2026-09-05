@@ -471,7 +471,6 @@ export function AvailabilityForm({
 
       <div class="availability-week__toolbar">
         <div>
-          <p class="section-eyebrow">{t.availability.form.weeklyCalendar}</p>
           <p class="availability-week__copy">
             {planningMode === "finish_by"
               ? t.availability.form.finishByCalendarCopy

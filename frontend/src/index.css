@@ -1461,14 +1461,6 @@
     gap: 0.3rem;
   }
 
-  .planner-hltb-onboarding {
-    flex-basis: 100%;
-    color: var(--foreground-muted);
-    font-size: 0.75rem;
-    line-height: 1.35;
-    text-align: right;
-  }
-
   .planner-hltb-option {
     display: inline-flex;
     align-items: center;
@@ -2574,10 +2566,6 @@
   .planner-backlog-row .planner-chip-group {
     width: 100%;
     justify-content: start;
-  }
-
-  .planner-backlog-row .planner-hltb-onboarding {
-    text-align: left;
   }
 
   .planner-backlog-row__actions {

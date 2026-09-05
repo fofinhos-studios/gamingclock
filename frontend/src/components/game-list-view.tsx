@@ -172,7 +172,6 @@ export function GameListView({
             aria-hidden="true"
           />
           <p class="planner-empty-state__title">{t.list.emptyTitle}</p>
-          <p class="planner-empty-state__text">{t.list.emptyCopy}</p>
         </div>
       ) : (
         <div class="planner-backlog-list">
@@ -273,11 +272,6 @@ export function GameListView({
                     </>
                   ) : (
                     <>
-                      {games.length === 1 && index === 0 && (
-                        <span class="planner-hltb-onboarding">
-                          {t.list.onboarding}
-                        </span>
-                      )}
                       {[
                         ["main", t.list.main, game.main_story_hours],
                         ["extras", t.list.extras, game.main_extra_hours],

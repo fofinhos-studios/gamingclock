@@ -447,10 +447,10 @@ describe("HomePage", () => {
         ).toBeTruthy(),
       );
       expect(
-        view.getByText(
+        view.queryByText(
           /choose a playtime for each game\. select main, main \+ extras, or completionist/i,
         ),
-      ).toBeTruthy();
+      ).toBeNull();
       expect(
         view
           .getByRole("button", { name: /use main time: 27h 30m/i })

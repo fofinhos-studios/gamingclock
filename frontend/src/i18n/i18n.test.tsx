@@ -66,8 +66,12 @@ describe("i18n", () => {
     expect(strings.en.tabs).not.toHaveProperty("intro");
     expect(strings.en.tabs).not.toHaveProperty("copy");
     expect(strings.en.availability).not.toHaveProperty("copy");
+    expect(strings.en.availability.form).not.toHaveProperty("weeklyCalendar");
     expect(strings.en.availability.form).not.toHaveProperty("startHourCopy");
     expect(strings.en.schedule).not.toHaveProperty("copy");
+    expect(strings.en.schedule).not.toHaveProperty("ready");
+    expect(strings.en.list).not.toHaveProperty("emptyCopy");
+    expect(strings.en.list).not.toHaveProperty("onboarding");
     expect(strings.en.schedule).not.toHaveProperty("section");
     expect(strings.en.schedule).not.toHaveProperty("output");
     expect(
@@ -82,9 +86,15 @@ describe("i18n", () => {
     expect(strings["pt-BR"].tabs).not.toHaveProperty("copy");
     expect(strings["pt-BR"].availability).not.toHaveProperty("copy");
     expect(strings["pt-BR"].availability.form).not.toHaveProperty(
+      "weeklyCalendar",
+    );
+    expect(strings["pt-BR"].availability.form).not.toHaveProperty(
       "startHourCopy",
     );
     expect(strings["pt-BR"].schedule).not.toHaveProperty("copy");
+    expect(strings["pt-BR"].schedule).not.toHaveProperty("ready");
+    expect(strings["pt-BR"].list).not.toHaveProperty("emptyCopy");
+    expect(strings["pt-BR"].list).not.toHaveProperty("onboarding");
     expect(strings["pt-BR"].schedule).not.toHaveProperty("section");
     expect(strings["pt-BR"].schedule).not.toHaveProperty("output");
     expect(

@@ -272,7 +272,6 @@ export function PlannerScheduleStep({
             class="planner-schedule-preview"
             aria-labelledby="schedule-preview-heading"
           >
-            <p class="section-eyebrow">{t.schedule.ready}</p>
             <h3 id="schedule-preview-heading">{t.schedule.previewHeading}</h3>
             <dl class="planner-preview-list">
               <div>
