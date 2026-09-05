@@ -22,6 +22,10 @@ if not application_logger.handlers:
     application_logger.addHandler(handler)
 application_logger.setLevel(logging.INFO)
 application_logger.propagate = False
+# httpx includes full request URLs in INFO logs. OAuth token exchanges may carry
+# client credentials in query parameters, so never emit transport-level request logs.
+for http_logger_name in ("httpx", "httpcore"):
+    logging.getLogger(http_logger_name).setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
