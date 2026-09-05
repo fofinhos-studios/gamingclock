@@ -55,24 +55,24 @@ test("uses a compact horizontal stage navigation instead of a sidebar", async ()
   expect(stylesheet).toMatch(/\.planner-step-actions\s*\{/);
 });
 
-test("uses distinct raised surfaces for planner panes and empty states", async () => {
+test("uses flat planner panes and empty states", async () => {
   const stylesheet = await readStylesheet();
 
   expect(stylesheet).toMatch(
-    /\.planner-pane\s*\{[\s\S]*?background:\s*linear-gradient\(/,
+    /\.planner-pane\s*\{[^}]*?background:\s*var\(--surface\);[^}]*?box-shadow:\s*none;/,
   );
   expect(stylesheet).toMatch(
     /\.planner-empty-state\s*\{[^}]*?background:\s*var\(--surface-hover\);/,
   );
 });
 
-test("builds the workspace from inset metal and solid planner surfaces", async () => {
+test("uses flat workspace and form-control surfaces", async () => {
   const stylesheet = await readStylesheet();
 
   expect(stylesheet).toMatch(/--panel-glass:\s*var\(--surface-\d+\);/);
   expect(stylesheet).toMatch(/--canvas-texture:/);
   expect(stylesheet).toMatch(
-    /\.planner-app__workspace\s*\{[\s\S]*?box-shadow:\s*[\s\S]*?inset/,
+    /\.planner-app__workspace\s*\{[^}]*?background:\s*var\(--panel-chassis\);[^}]*?box-shadow:\s*none;/,
   );
   expect(stylesheet).toMatch(
     /\.planner-pane\s*\{[\s\S]*?background:\s*var\(--surface\);/,
@@ -81,7 +81,7 @@ test("builds the workspace from inset metal and solid planner surfaces", async (
     /\.planner-pane\s*\{[\s\S]*?backdrop-filter:\s*blur\(/,
   );
   expect(stylesheet).toMatch(
-    /\.ui-input,[\s\S]*?\.ui-select\s*\{[\s\S]*?box-shadow:\s*inset/,
+    /\.ui-input,[\s\S]*?\.ui-select\s*\{[^}]*?box-shadow:\s*none;/,
   );
 });
 

@@ -330,12 +330,8 @@
     padding: clamp(0.8rem, 2vw, 1.5rem);
     min-width: 0;
     border: 1px solid var(--metal-highlight);
-    background:
-      linear-gradient(135deg, var(--panel-chassis), var(--panel-glass)),
-      var(--brushed-metal);
-    box-shadow:
-      inset 1px 1px 0 var(--metal-highlight),
-      inset -1px -1px 0 var(--metal-shadow);
+    background: var(--panel-chassis);
+    box-shadow: none;
   }
 
   .planner-identity {
@@ -823,9 +819,7 @@
     min-width: 0;
     border: 1px solid var(--foreground-16);
     background: var(--surface);
-    box-shadow:
-      inset 1px 1px 0 var(--metal-highlight),
-      inset -1px -1px 0 var(--metal-shadow);
+    box-shadow: none;
   }
 
   .planner-pane--backlog {
@@ -2847,9 +2841,7 @@
     font-family: var(--font-mono);
     font-size: 0.82rem;
     letter-spacing: -0.01em;
-    box-shadow:
-      inset 1px 1px 0 var(--foreground-04),
-      inset 0 0.25rem 0.7rem var(--foreground-08);
+    box-shadow: none;
   }
 
   .ui-input::placeholder {
