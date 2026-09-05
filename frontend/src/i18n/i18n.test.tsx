@@ -72,6 +72,9 @@ describe("i18n", () => {
     expect(strings.en.schedule).not.toHaveProperty("ready");
     expect(strings.en.list).not.toHaveProperty("emptyCopy");
     expect(strings.en.list).not.toHaveProperty("onboarding");
+    expect(strings.en.list).not.toHaveProperty("title");
+    expect(strings.en.availability.form).not.toHaveProperty("durationHint");
+    expect(strings.en.availability.form).not.toHaveProperty("daysCopy");
     expect(strings.en.schedule).not.toHaveProperty("section");
     expect(strings.en.schedule).not.toHaveProperty("output");
     expect(
@@ -95,6 +98,11 @@ describe("i18n", () => {
     expect(strings["pt-BR"].schedule).not.toHaveProperty("ready");
     expect(strings["pt-BR"].list).not.toHaveProperty("emptyCopy");
     expect(strings["pt-BR"].list).not.toHaveProperty("onboarding");
+    expect(strings["pt-BR"].list).not.toHaveProperty("title");
+    expect(strings["pt-BR"].availability.form).not.toHaveProperty(
+      "durationHint",
+    );
+    expect(strings["pt-BR"].availability.form).not.toHaveProperty("daysCopy");
     expect(strings["pt-BR"].schedule).not.toHaveProperty("section");
     expect(strings["pt-BR"].schedule).not.toHaveProperty("output");
     expect(
@@ -121,11 +129,5 @@ describe("i18n", () => {
       "Monte seu plano de jogo",
     );
     expect(strings["pt-BR"].schedule.heading).toBe("Data e método");
-  });
-
-  test("explains the duration choice without exposing validation rules", () => {
-    expect(strings["pt-BR"].availability.form.durationHint).toBe(
-      "Escolha por quanto tempo jogar em cada dia.",
-    );
   });
 });
